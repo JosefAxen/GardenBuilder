@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\..\src\SharedKernel\GardenBuilder.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\src\Contracts\GardenBuilder.Contracts.csproj" />
   </ItemGroup>
 </Project>
