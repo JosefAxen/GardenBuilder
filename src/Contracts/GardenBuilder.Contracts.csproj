@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Interfaces and plain data objects that modules use to talk to each other. No module internals. -->
+  <ItemGroup>
+    <ProjectReference Include="..\SharedKernel\GardenBuilder.SharedKernel.csproj" />
+  </ItemGroup>
+</Project>

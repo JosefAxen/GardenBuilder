@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="NetArchTest.Rules" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SharedKernel\GardenBuilder.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\src\Contracts\GardenBuilder.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Garden\GardenBuilder.Modules.Garden.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Catalog\GardenBuilder.Modules.Catalog.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Design\GardenBuilder.Modules.Design.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Pricing\GardenBuilder.Modules.Pricing.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Leads\GardenBuilder.Modules.Leads.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Ai\GardenBuilder.Modules.Ai.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Identity\GardenBuilder.Modules.Identity.csproj" />
+  </ItemGroup>
+</Project>

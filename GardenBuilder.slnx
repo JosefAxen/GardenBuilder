@@ -1,0 +1,53 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Api/">
+    <Project Path="src/Api/GardenBuilder.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/AppHost/">
+    <Project Path="src/AppHost/GardenBuilder.AppHost.csproj" />
+  </Folder>
+  <Folder Name="/src/Contracts/">
+    <Project Path="src/Contracts/GardenBuilder.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Ai/">
+    <Project Path="src/Modules/Ai/GardenBuilder.Modules.Ai.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Catalog/">
+    <Project Path="src/Modules/Catalog/GardenBuilder.Modules.Catalog.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Design/">
+    <Project Path="src/Modules/Design/GardenBuilder.Modules.Design.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Garden/">
+    <Project Path="src/Modules/Garden/GardenBuilder.Modules.Garden.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Identity/">
+    <Project Path="src/Modules/Identity/GardenBuilder.Modules.Identity.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Leads/">
+    <Project Path="src/Modules/Leads/GardenBuilder.Modules.Leads.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Pricing/">
+    <Project Path="src/Modules/Pricing/GardenBuilder.Modules.Pricing.csproj" />
+  </Folder>
+  <Folder Name="/src/ServiceDefaults/">
+    <Project Path="src/ServiceDefaults/GardenBuilder.ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/src/SharedKernel/">
+    <Project Path="src/SharedKernel/GardenBuilder.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/src/Worker/">
+    <Project Path="src/Worker/GardenBuilder.Worker.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/Architecture/">
+    <Project Path="tests/Architecture/GardenBuilder.ArchitectureTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Integration/">
+    <Project Path="tests/Integration/GardenBuilder.IntegrationTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Unit/">
+    <Project Path="tests/Unit/GardenBuilder.UnitTests.csproj" />
+  </Folder>
+</Solution>
