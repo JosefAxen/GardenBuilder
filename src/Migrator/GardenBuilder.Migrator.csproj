@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+  <!-- Applies all modules' database migrations, then exits. Runs as its own step before new code starts. -->
+  <PropertyGroup>
+    <UserSecretsId>gardenbuilder-migrator</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ServiceDefaults\GardenBuilder.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\Modules\Garden\GardenBuilder.Modules.Garden.csproj" />
+    <ProjectReference Include="..\Modules\Catalog\GardenBuilder.Modules.Catalog.csproj" />
+    <ProjectReference Include="..\Modules\Design\GardenBuilder.Modules.Design.csproj" />
+    <ProjectReference Include="..\Modules\Pricing\GardenBuilder.Modules.Pricing.csproj" />
+    <ProjectReference Include="..\Modules\Leads\GardenBuilder.Modules.Leads.csproj" />
+    <ProjectReference Include="..\Modules\Ai\GardenBuilder.Modules.Ai.csproj" />
+    <ProjectReference Include="..\Modules\Identity\GardenBuilder.Modules.Identity.csproj" />
+  </ItemGroup>
+</Project>

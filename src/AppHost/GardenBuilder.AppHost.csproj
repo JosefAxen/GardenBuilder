@@ -12,5 +12,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Api\GardenBuilder.Api.csproj" />
     <ProjectReference Include="..\Worker\GardenBuilder.Worker.csproj" />
+    <ProjectReference Include="..\Migrator\GardenBuilder.Migrator.csproj" />
   </ItemGroup>
 </Project>

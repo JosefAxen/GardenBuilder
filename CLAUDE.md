@@ -11,6 +11,10 @@ Drömträdgård: customers design their garden in 3D from stock items and send a
 - One test project: `dotnet test --project tests/Unit/GardenBuilder.UnitTests.csproj`
 - Web: `npm --prefix src/web run dev | build | lint`
 - Package versions live in `Directory.Packages.props` (central package management). Never put versions in a csproj.
+- Add a migration (dotnet-ef is a local tool, run `dotnet tool restore` once):
+  `dotnet ef migrations add <Name> --project src/Modules/<Module> --startup-project src/Api --context <Module>DbContext --output-dir Infrastructure/Migrations`
+- Migrations are applied by `src/Migrator`, which runs before the API and worker (Aspire waits for it). Never call
+  `Migrate()` from the API or the worker. Tables and columns are snake_case (EFCore.NamingConventions).
 
 ## Language
 

@@ -1,4 +1,5 @@
 using GardenBuilder.Contracts;
+using GardenBuilder.Contracts.Database;
 using GardenBuilder.Modules.Catalog.Features.ListArticles;
 using GardenBuilder.Modules.Catalog.Infrastructure;
 using Microsoft.AspNetCore.Builder;
@@ -23,8 +24,10 @@ public static class CatalogModule
 
         builder.Services.AddDbContext<CatalogDbContext>((services, options) => options.UseNpgsql(
             services.GetRequiredService<IConfiguration>().GetConnectionString(ResourceNames.Database),
-            npgsql => npgsql.MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schema)));
+            npgsql => npgsql.MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schema))
+            .UseSnakeCaseNamingConvention());
         builder.EnrichNpgsqlDbContext<CatalogDbContext>();
+        builder.Services.AddScoped<IModuleMigrator, CatalogMigrator>();
 
         return builder;
     }
