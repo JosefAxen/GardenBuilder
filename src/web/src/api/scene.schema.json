@@ -1,0 +1,289 @@
+{
+  "title": "SceneDocument",
+  "type": "object",
+  "properties": {
+    "formatVersion": {
+      "type": "integer"
+    },
+    "elements": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SceneElement"
+      }
+    }
+  },
+  "required": [
+    "formatVersion",
+    "elements"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Point2": {
+      "title": "Point2",
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ElementStatus": {
+      "title": "ElementStatus",
+      "enum": [
+        "existing-keep",
+        "existing-remove",
+        "new"
+      ]
+    },
+    "MeasurementSource": {
+      "title": "MeasurementSource",
+      "enum": [
+        "estimated",
+        "customer",
+        "verified"
+      ]
+    },
+    "PlotElement": {
+      "title": "PlotElement",
+      "properties": {
+        "kind": {
+          "const": "plot"
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Point2"
+          }
+        },
+        "sloped": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "status": {
+          "$ref": "#/$defs/ElementStatus"
+        },
+        "measurementSource": {
+          "$ref": "#/$defs/MeasurementSource"
+        }
+      },
+      "required": [
+        "kind",
+        "points",
+        "sloped",
+        "id",
+        "status",
+        "measurementSource"
+      ],
+      "additionalProperties": false
+    },
+    "RoofShape": {
+      "title": "RoofShape",
+      "enum": [
+        "flat",
+        "gable"
+      ]
+    },
+    "BuildingElement": {
+      "title": "BuildingElement",
+      "properties": {
+        "kind": {
+          "const": "building"
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Point2"
+          }
+        },
+        "height": {
+          "type": "number"
+        },
+        "roof": {
+          "$ref": "#/$defs/RoofShape"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "status": {
+          "$ref": "#/$defs/ElementStatus"
+        },
+        "measurementSource": {
+          "$ref": "#/$defs/MeasurementSource"
+        }
+      },
+      "required": [
+        "kind",
+        "points",
+        "height",
+        "roof",
+        "id",
+        "status",
+        "measurementSource"
+      ],
+      "additionalProperties": false
+    },
+    "SurfaceMaterial": {
+      "title": "SurfaceMaterial",
+      "enum": [
+        "grass",
+        "paving",
+        "gravel",
+        "decking",
+        "bed"
+      ]
+    },
+    "SurfaceElement": {
+      "title": "SurfaceElement",
+      "properties": {
+        "kind": {
+          "const": "surface"
+        },
+        "articleId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Point2"
+          }
+        },
+        "material": {
+          "$ref": "#/$defs/SurfaceMaterial"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "status": {
+          "$ref": "#/$defs/ElementStatus"
+        },
+        "measurementSource": {
+          "$ref": "#/$defs/MeasurementSource"
+        }
+      },
+      "required": [
+        "kind",
+        "articleId",
+        "points",
+        "material",
+        "id",
+        "status",
+        "measurementSource"
+      ],
+      "additionalProperties": false
+    },
+    "LineElement": {
+      "title": "LineElement",
+      "properties": {
+        "kind": {
+          "const": "line"
+        },
+        "articleId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Point2"
+          }
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "status": {
+          "$ref": "#/$defs/ElementStatus"
+        },
+        "measurementSource": {
+          "$ref": "#/$defs/MeasurementSource"
+        }
+      },
+      "required": [
+        "kind",
+        "articleId",
+        "points",
+        "id",
+        "status",
+        "measurementSource"
+      ],
+      "additionalProperties": false
+    },
+    "PointElement": {
+      "title": "PointElement",
+      "properties": {
+        "kind": {
+          "const": "point"
+        },
+        "articleId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "position": {
+          "$ref": "#/$defs/Point2"
+        },
+        "rotation": {
+          "type": "number"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "status": {
+          "$ref": "#/$defs/ElementStatus"
+        },
+        "measurementSource": {
+          "$ref": "#/$defs/MeasurementSource"
+        }
+      },
+      "required": [
+        "kind",
+        "articleId",
+        "position",
+        "rotation",
+        "id",
+        "status",
+        "measurementSource"
+      ],
+      "additionalProperties": false
+    },
+    "SceneElement": {
+      "title": "SceneElement",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PlotElement"
+        },
+        {
+          "$ref": "#/$defs/BuildingElement"
+        },
+        {
+          "$ref": "#/$defs/SurfaceElement"
+        },
+        {
+          "$ref": "#/$defs/LineElement"
+        },
+        {
+          "$ref": "#/$defs/PointElement"
+        }
+      ]
+    }
+  }
+}

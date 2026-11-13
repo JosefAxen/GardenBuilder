@@ -43,6 +43,10 @@
   <Folder Name="/src/Worker/">
     <Project Path="src/Worker/GardenBuilder.Worker.csproj" />
   </Folder>
+  <Folder Name="/tools/" />
+  <Folder Name="/tools/SchemaExport/">
+    <Project Path="tools/SchemaExport/GardenBuilder.SchemaExport.csproj" />
+  </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/Architecture/">
     <Project Path="tests/Architecture/GardenBuilder.ArchitectureTests.csproj" />

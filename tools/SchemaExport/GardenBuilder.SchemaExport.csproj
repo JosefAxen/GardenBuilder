@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Writes the scene JSON schema for the web client. Run through "npm run gen:scene" in src/web. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Contracts\GardenBuilder.Contracts.csproj" />
+  </ItemGroup>
+</Project>
