@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Contracts\GardenBuilder.Contracts.csproj" />
+    <ProjectReference Include="..\..\SharedKernel\GardenBuilder.SharedKernel.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="GardenBuilder.UnitTests" />
+    <InternalsVisibleTo Include="GardenBuilder.IntegrationTests" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: src/web/package-lock.json
+
+      - name: Web client – install, lint, build
+        working-directory: src/web
+        run: |
+          npm ci
+          npm run lint
+          npm run build
+
+      - name: .NET – build
+        run: dotnet build GardenBuilder.slnx -c Release
+
+      - name: .NET – test (unit, architecture, integration with Testcontainers)
+        run: dotnet test --solution GardenBuilder.slnx -c Release --no-build

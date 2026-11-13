@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!-- A web host so Azure Container Apps can probe /health and /alive. It exposes no API endpoints. -->
+  <PropertyGroup>
+    <UserSecretsId>gardenbuilder-worker</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ServiceDefaults\GardenBuilder.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\Modules\Ai\GardenBuilder.Modules.Ai.csproj" />
+  </ItemGroup>
+</Project>
