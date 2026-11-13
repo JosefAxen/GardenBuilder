@@ -1,23 +1,19 @@
 import { create } from 'zustand'
 import type { SceneDocument, SceneElement, Vec2 } from '../api/scene'
+import { demoScene } from './demoScene'
 
 /**
  * Editor state. The scene document lives here and React Three Fiber renders from it;
- * no state lives only in three.js objects. Every change is a command, which gives undo and redo.
+ * no state lives only in three.js objects. Every change to the document is a command, which gives undo and redo.
  */
 export type SceneCommand =
   | { type: 'add'; element: SceneElement }
-  | { type: 'move'; id: string; position: Vec2 }
+  | { type: 'move'; id: string; position: Vec2; rotation?: number }
+  /** Swaps the article but keeps place and rotation, so the customer can quickly try alternatives. */
+  | { type: 'replace'; id: string; articleId: string }
   | { type: 'remove'; id: string }
-
-type SceneState = {
-  document: SceneDocument
-  past: SceneDocument[]
-  future: SceneDocument[]
-  execute: (command: SceneCommand) => void
-  undo: () => void
-  redo: () => void
-}
+  /** Several commands that undo and redo as one step. */
+  | { type: 'batch'; commands: SceneCommand[] }
 
 export function applyCommand(document: SceneDocument, command: SceneCommand): SceneDocument {
   switch (command.type) {
@@ -27,30 +23,66 @@ export function applyCommand(document: SceneDocument, command: SceneCommand): Sc
       return {
         ...document,
         elements: document.elements.map((e) =>
-          e.id === command.id && e.kind === 'point' ? { ...e, position: command.position } : e,
+          e.id === command.id && e.kind === 'point'
+            ? { ...e, position: command.position, rotation: command.rotation ?? e.rotation }
+            : e,
         ),
+      }
+    case 'replace':
+      return {
+        ...document,
+        elements: document.elements.map((e) => (e.id === command.id ? { ...e, articleId: command.articleId } : e)),
       }
     case 'remove':
       return { ...document, elements: document.elements.filter((e) => e.id !== command.id) }
+    case 'batch':
+      return command.commands.reduce(applyCommand, document)
   }
 }
 
-const demoScene: SceneDocument = {
-  formatVersion: 1,
-  measurementSource: 'estimated',
-  elements: [
-    { id: 'plot', kind: 'plot', status: 'existing-keep', points: [{ x: -12, y: -9 }, { x: 12, y: -9 }, { x: 12, y: 9 }, { x: -12, y: 9 }] },
-    { id: 'house', kind: 'building', status: 'existing-keep', height: 5, roof: 'gable', points: [{ x: -5, y: 2 }, { x: 5, y: 2 }, { x: 5, y: 8 }, { x: -5, y: 8 }] },
-    { id: 'lawn', kind: 'surface', status: 'new', material: 'grass', points: [{ x: -11, y: -8 }, { x: 11, y: -8 }, { x: 11, y: 1 }, { x: -11, y: 1 }] },
-    { id: 'tree-1', kind: 'point', status: 'new', position: { x: -8, y: -5 }, rotation: 0 },
-    { id: 'tree-2', kind: 'point', status: 'new', position: { x: 7, y: -4 }, rotation: 0 },
-  ],
+/** What a click in the scene does. */
+export type Tool =
+  | { mode: 'select' }
+  | { mode: 'place'; articleId: string }
+  | { mode: 'line'; articleId: string; start?: Vec2 }
+
+/** An element being dragged. Kept outside the document until the drop, so one drag is one undo step. */
+export type Drag = { id: string; position: Vec2; offset: Vec2; moved: boolean }
+
+export type Perf = { fps: number; drawCalls: number; triangles: number }
+
+type SceneState = {
+  document: SceneDocument
+  past: SceneDocument[]
+  future: SceneDocument[]
+  selectedId: string | null
+  tool: Tool
+  drag: Drag | null
+  /** Ground point under the pointer, for the placement preview. */
+  hover: Vec2 | null
+  detail: 'low' | 'high'
+  perf: Perf | null
+  execute: (command: SceneCommand) => void
+  undo: () => void
+  redo: () => void
+  select: (id: string | null) => void
+  setTool: (tool: Tool) => void
+  setDrag: (drag: Drag | null) => void
+  setHover: (hover: Vec2 | null) => void
+  setDetail: (detail: 'low' | 'high') => void
+  setPerf: (perf: Perf) => void
 }
 
 export const useSceneStore = create<SceneState>((set) => ({
   document: demoScene,
   past: [],
   future: [],
+  selectedId: null,
+  tool: { mode: 'select' },
+  drag: null,
+  hover: null,
+  detail: 'low',
+  perf: null,
   execute: (command) =>
     set((state) => ({
       document: applyCommand(state.document, command),
@@ -69,4 +101,10 @@ export const useSceneStore = create<SceneState>((set) => ({
       if (!next) return state
       return { document: next, past: [...state.past, state.document], future: rest }
     }),
+  select: (selectedId) => set({ selectedId }),
+  setTool: (tool) => set({ tool, hover: null }),
+  setDrag: (drag) => set({ drag }),
+  setHover: (hover) => set({ hover }),
+  setDetail: (detail) => set({ detail }),
+  setPerf: (perf) => set({ perf }),
 }))
