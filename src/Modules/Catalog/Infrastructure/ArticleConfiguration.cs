@@ -17,8 +17,8 @@ internal sealed class ArticleConfiguration : IEntityTypeConfiguration<Article>
         builder.Property(a => a.StockStatus).HasConversion<string>().HasMaxLength(32);
         builder.ComplexProperty(a => a.Price, price =>
         {
-            price.Property(p => p.Amount).HasColumnName("price_amount").HasPrecision(18, 2);
-            price.Property(p => p.Currency).HasColumnName("price_currency").HasMaxLength(3);
+            price.Property(p => p.Amount).HasPrecision(18, 2);
+            price.Property(p => p.Currency).HasMaxLength(3);
         });
     }
 }

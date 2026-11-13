@@ -9,6 +9,9 @@
   <Folder Name="/src/Contracts/">
     <Project Path="src/Contracts/GardenBuilder.Contracts.csproj" />
   </Folder>
+  <Folder Name="/src/Migrator/">
+    <Project Path="src/Migrator/GardenBuilder.Migrator.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/" />
   <Folder Name="/src/Modules/Ai/">
     <Project Path="src/Modules/Ai/GardenBuilder.Modules.Ai.csproj" />

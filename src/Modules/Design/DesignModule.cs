@@ -1,4 +1,5 @@
 using GardenBuilder.Contracts;
+using GardenBuilder.Contracts.Database;
 using GardenBuilder.Modules.Design.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -22,8 +23,10 @@ public static class DesignModule
 
         builder.Services.AddDbContext<DesignDbContext>((services, options) => options.UseNpgsql(
             services.GetRequiredService<IConfiguration>().GetConnectionString(ResourceNames.Database),
-            npgsql => npgsql.MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schema)));
+            npgsql => npgsql.MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schema))
+            .UseSnakeCaseNamingConvention());
         builder.EnrichNpgsqlDbContext<DesignDbContext>();
+        builder.Services.AddScoped<IModuleMigrator, DesignMigrator>();
 
         return builder;
     }
