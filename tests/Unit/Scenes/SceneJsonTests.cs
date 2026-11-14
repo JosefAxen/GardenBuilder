@@ -89,6 +89,43 @@ public sealed class SceneJsonTests
     }
 
     [Fact]
+    public void Rejects_null_element()
+    {
+        Assert.Throws<JsonException>(() => SceneJson.Deserialize("""{"formatVersion":1,"elements":[null]}"""));
+    }
+
+    [Fact]
+    public void Rejects_enum_written_as_number()
+    {
+        const string json = """
+            {"formatVersion":1,"elements":[{"kind":"point","id":"019a7d3c-0000-7000-8000-000000000005","status":5,
+             "measurementSource":"estimated","articleId":null,"position":{"x":1,"y":2},"rotation":0}]}
+            """;
+
+        Assert.Throws<JsonException>(() => SceneJson.Deserialize(json));
+    }
+
+    [Fact]
+    public void Rejects_duplicate_property()
+    {
+        const string json = """
+            {"formatVersion":1,"elements":[{"kind":"point","id":"019a7d3c-0000-7000-8000-000000000006","status":"new",
+             "measurementSource":"estimated","articleId":null,"position":{"x":1,"y":2,"x":999},"rotation":0}]}
+            """;
+
+        Assert.Throws<JsonException>(() => SceneJson.Deserialize(json));
+    }
+
+    [Fact]
+    public void Unsupported_format_version_is_named_in_the_error()
+    {
+        // A future version may carry fields this version does not know; the error must say "version", not "camera".
+        var error = Assert.Throws<JsonException>(() => SceneJson.Deserialize("""{"formatVersion":2,"elements":[],"camera":{}}"""));
+
+        Assert.Contains("format version 2", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Rejects_missing_elements()
     {
         Assert.Throws<JsonException>(() => SceneJson.Deserialize("""{"formatVersion":1}"""));

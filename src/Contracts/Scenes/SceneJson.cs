@@ -20,15 +20,44 @@ public static class SceneJson
     /// <summary>Reads a scene. Throws <see cref="JsonException"/> for any malformed input.</summary>
     public static SceneDocument Deserialize(string json)
     {
+        EnsureSupportedFormatVersion(json);
+
+        SceneDocument scene;
         try
         {
-            return JsonSerializer.Deserialize<SceneDocument>(json, Options)
+            scene = JsonSerializer.Deserialize<SceneDocument>(json, Options)
                 ?? throw new JsonException("A scene document cannot be null.");
         }
         catch (NotSupportedException exception)
         {
             // System.Text.Json reports some malformed polymorphic input this way; callers handle one exception type.
             throw new JsonException(exception.Message, exception);
+        }
+
+        // Nullability of generic arguments is not enforced while reading, so [null] would otherwise get through.
+        if (scene.Elements.Any(element => element is null))
+        {
+            throw new JsonException("A scene element cannot be null.");
+        }
+
+        return scene;
+    }
+
+    /// <summary>
+    /// Reads only "formatVersion" first, so a document from another format version is reported as exactly that,
+    /// instead of failing on whatever new property that version happens to have.
+    /// </summary>
+    private static void EnsureSupportedFormatVersion(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        if (document.RootElement.ValueKind == JsonValueKind.Object
+            && document.RootElement.TryGetProperty("formatVersion", out var version)
+            && version.ValueKind == JsonValueKind.Number
+            && version.TryGetInt32(out var number)
+            && number != SceneDocument.CurrentFormatVersion)
+        {
+            throw new JsonException(
+                $"Unsupported scene format version {number}; this version reads format version {SceneDocument.CurrentFormatVersion}.");
         }
     }
 
@@ -154,9 +183,12 @@ public static class SceneJson
             AllowOutOfOrderMetadataProperties = true,
             // The web defaults accept numbers written as strings ("5"); a scene must use real numbers.
             NumberHandling = JsonNumberHandling.Strict,
+            // Otherwise {"x":1,"x":999} silently reads as 999.
+            AllowDuplicateProperties = false,
             TypeInfoResolver = new DefaultJsonTypeInfoResolver { Modifiers = { RequireAllPoint2Coordinates } },
         };
-        options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.KebabCaseLower));
+        // Enums only as their names: "status": 5 means nothing and must not slip past the rules.
+        options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.KebabCaseLower, allowIntegerValues: false));
         options.MakeReadOnly();
         return options;
     }
