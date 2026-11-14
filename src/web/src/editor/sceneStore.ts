@@ -1,6 +1,7 @@
 import { create } from 'zustand'
-import type { SceneDocument, SceneElement, Point2 } from '../api/scene'
+import type { Point2, SceneDocument, SceneElement } from '../api/scene'
 import { demoScene } from './demoScene'
+import { placementProblem } from './placement'
 
 /**
  * Editor state. The scene document lives here and React Three Fiber renders from it;
@@ -15,29 +16,39 @@ export type SceneCommand =
   /** Several commands that undo and redo as one step. */
   | { type: 'batch'; commands: SceneCommand[] }
 
+/**
+ * Changes the one element with this id. Returns the same document when there is no such element or the update
+ * leaves it as it was, so a command that changes nothing can be recognised and does not become an undo step.
+ */
+function updateElement(document: SceneDocument, id: string, update: (e: SceneElement) => SceneElement): SceneDocument {
+  const index = document.elements.findIndex((e) => e.id === id)
+  if (index < 0) return document
+  const updated = update(document.elements[index])
+  if (updated === document.elements[index]) return document
+  return { ...document, elements: document.elements.with(index, updated) }
+}
+
+/** Applies a command. Returns the same document object when nothing changes. */
 export function applyCommand(document: SceneDocument, command: SceneCommand): SceneDocument {
   switch (command.type) {
     case 'add':
       return { ...document, elements: [...document.elements, command.element] }
     case 'move':
-      return {
-        ...document,
-        elements: document.elements.map((e) =>
-          e.id === command.id && e.kind === 'point'
-            ? { ...e, position: command.position, rotation: command.rotation ?? e.rotation }
-            : e,
-        ),
-      }
+      return updateElement(document, command.id, (e) => {
+        if (e.kind !== 'point') return e
+        const rotation = command.rotation ?? e.rotation
+        const unchanged = e.position.x === command.position.x && e.position.y === command.position.y && e.rotation === rotation
+        return unchanged ? e : { ...e, position: command.position, rotation }
+      })
     case 'replace':
-      return {
-        ...document,
-        // Only elements that point at an article can be swapped; the plot and buildings have none.
-        elements: document.elements.map((e) =>
-          e.id === command.id && 'articleId' in e ? { ...e, articleId: command.articleId } : e,
-        ),
-      }
+      // Only elements that point at an article can be swapped; the plot and buildings have none.
+      return updateElement(document, command.id, (e) =>
+        'articleId' in e && e.articleId !== command.articleId ? { ...e, articleId: command.articleId } : e,
+      )
     case 'remove':
-      return { ...document, elements: document.elements.filter((e) => e.id !== command.id) }
+      return document.elements.some((e) => e.id === command.id)
+        ? { ...document, elements: document.elements.filter((e) => e.id !== command.id) }
+        : document
     case 'batch':
       return command.commands.reduce(applyCommand, document)
   }
@@ -63,6 +74,8 @@ type SceneState = {
   drag: Drag | null
   /** Ground point under the pointer, for the placement preview. */
   hover: Point2 | null
+  /** A short message to the customer, in Swedish, for example why something could not be placed. */
+  notice: string | null
   detail: 'low' | 'high'
   perf: Perf | null
   execute: (command: SceneCommand) => void
@@ -71,12 +84,17 @@ type SceneState = {
   select: (id: string | null) => void
   setTool: (tool: Tool) => void
   setDrag: (drag: Drag | null) => void
+  /** Ends a drag where the pointer was released: one move, or nothing if the spot is not allowed. */
+  dropDrag: () => void
+  /** Ends a drag that was interrupted (the window lost focus, the browser cancelled the pointer): nothing moves. */
+  cancelDrag: () => void
   setHover: (hover: Point2 | null) => void
+  setNotice: (notice: string | null) => void
   setDetail: (detail: 'low' | 'high') => void
   setPerf: (perf: Perf) => void
 }
 
-export const useSceneStore = create<SceneState>((set) => ({
+export const useSceneStore = create<SceneState>((set, get) => ({
   document: demoScene,
   past: [],
   future: [],
@@ -84,14 +102,15 @@ export const useSceneStore = create<SceneState>((set) => ({
   tool: { mode: 'select' },
   drag: null,
   hover: null,
+  notice: null,
   detail: 'low',
   perf: null,
   execute: (command) =>
-    set((state) => ({
-      document: applyCommand(state.document, command),
-      past: [...state.past, state.document],
-      future: [],
-    })),
+    set((state) => {
+      const document = applyCommand(state.document, command)
+      if (document === state.document) return state
+      return { document, past: [...state.past, state.document], future: [], notice: null }
+    }),
   undo: () =>
     set((state) => {
       const previous = state.past.at(-1)
@@ -105,9 +124,20 @@ export const useSceneStore = create<SceneState>((set) => ({
       return { document: next, past: [...state.past, state.document], future: rest }
     }),
   select: (selectedId) => set({ selectedId }),
-  setTool: (tool) => set({ tool, hover: null }),
+  setTool: (tool) => set({ tool, hover: null, notice: null }),
   setDrag: (drag) => set({ drag }),
+  dropDrag: () => {
+    const { drag, document, execute } = get()
+    if (!drag) return
+    set({ drag: null })
+    if (!drag.moved) return
+    const problem = placementProblem(document, [drag.position])
+    if (problem) set({ notice: problem })
+    else execute({ type: 'move', id: drag.id, position: drag.position })
+  },
+  cancelDrag: () => set({ drag: null }),
   setHover: (hover) => set({ hover }),
+  setNotice: (notice) => set({ notice }),
   setDetail: (detail) => set({ detail }),
   setPerf: (perf) => set({ perf }),
 }))

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using GardenBuilder.Contracts.Scenes;
 using GardenBuilder.SharedKernel;
 
@@ -123,6 +124,47 @@ public sealed class SceneJsonTests
         var error = Assert.Throws<JsonException>(() => SceneJson.Deserialize("""{"formatVersion":2,"elements":[],"camera":{}}"""));
 
         Assert.Contains("format version 2", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Rejects_number_too_large_to_be_finite()
+    {
+        // 1e400 overflows a double and would otherwise be read as Infinity.
+        const string json = """
+            {"formatVersion":1,"elements":[{"kind":"point","id":"019a7d3c-0000-7000-8000-000000000007","status":"new",
+             "measurementSource":"estimated","articleId":null,"position":{"x":1e400,"y":2},"rotation":0}]}
+            """;
+
+        Assert.Throws<JsonException>(() => SceneJson.Deserialize(json));
+    }
+
+    [Fact]
+    public void Two_different_types_with_the_same_name_fail_the_schema_export()
+    {
+        var root = new JsonObject
+        {
+            ["a"] = new JsonObject { ["title"] = "Thing", ["type"] = "string" },
+            ["b"] = new JsonObject { ["title"] = "Thing", ["type"] = "number" },
+        };
+
+        var error = Assert.Throws<InvalidOperationException>(() => SceneJson.HoistNamedTypes(root, []));
+
+        Assert.Contains("Thing", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_same_type_used_twice_is_described_once()
+    {
+        var root = new JsonObject
+        {
+            ["a"] = new JsonObject { ["title"] = "Thing", ["type"] = "string" },
+            ["b"] = new JsonObject { ["title"] = "Thing", ["type"] = "string" },
+        };
+        var defs = new JsonObject();
+
+        SceneJson.HoistNamedTypes(root, defs);
+
+        Assert.Single(defs);
     }
 
     [Fact]

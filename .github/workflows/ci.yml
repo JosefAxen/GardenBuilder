@@ -24,11 +24,12 @@ jobs:
           cache: npm
           cache-dependency-path: src/web/package-lock.json
 
-      - name: Web client – install, lint, build
+      - name: Web client – install, lint, test, build
         working-directory: src/web
         run: |
           npm ci
           npm run lint
+          npm test
           npm run build
 
       - name: Web client – generated scene types are up to date

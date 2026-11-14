@@ -77,12 +77,12 @@ function CatalogPanel() {
           <div className="editor-row">
             {selected.kind === 'point' && (
               <>
-                <button onClick={() => rotateSelected(1)} title="Q">⟲ Vrid</button>
-                <button onClick={() => rotateSelected(-1)} title="E">⟳ Vrid</button>
+                <button onClick={() => rotateSelected(1)} title="Snabbtangent: Q">⟲ Vrid</button>
+                <button onClick={() => rotateSelected(-1)} title="Snabbtangent: E">⟳ Vrid</button>
               </>
             )}
             {selected.kind !== 'surface' && (
-              <button onClick={removeSelected} title="Delete">Ta bort</button>
+              <button onClick={removeSelected} title="Snabbtangent: Delete">Ta bort</button>
             )}
           </div>
           <p className="editor-hint">Välj "Byt" på en artikel nedan för att byta ut den här. Plats och vridning behålls.</p>
@@ -128,6 +128,7 @@ function StatusBar() {
   const perf = useSceneStore((s) => s.perf)
   const elements = useSceneStore((s) => s.document.elements)
   const detail = useSceneStore((s) => s.detail)
+  const notice = useSceneStore((s) => s.notice)
   const { setDetail } = useSceneStore.getState()
 
   const crowdedCount = useMemo(() => {
@@ -146,6 +147,11 @@ function StatusBar() {
     <div className="editor-status">
       <span>{placedCount} element</span>
       {crowdedCount > 0 && <span className="warning">{crowdedCount} växter står för tätt</span>}
+      {notice && (
+        <span className="warning" role="status">
+          {notice}
+        </span>
+      )}
       <span className="spacer" />
       {perf && (
         <span className="perf">
@@ -185,8 +191,8 @@ export function EditorPage() {
         <span className="spacer" />
         <button onClick={addStress}>Lägg till 300 växter</button>
         <button onClick={clearNew}>Rensa nya växter</button>
-        <button onClick={undo} disabled={past.length === 0} title="Ctrl+Z">Ångra</button>
-        <button onClick={redo} disabled={future.length === 0} title="Ctrl+Y">Gör om</button>
+        <button onClick={undo} disabled={past.length === 0} title="Snabbtangent: Ctrl+Z">Ångra</button>
+        <button onClick={redo} disabled={future.length === 0} title="Snabbtangent: Ctrl+Y">Gör om</button>
       </header>
       <CatalogPanel />
       <main className="editor-canvas">

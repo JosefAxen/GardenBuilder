@@ -40,8 +40,26 @@ public static class SceneJson
             throw new JsonException("A scene element cannot be null.");
         }
 
+        // A number like 1e400 overflows to Infinity, which nothing downstream can use and Serialize refuses to write.
+        if (!scene.Elements.All(HasOnlyFiniteNumbers))
+        {
+            throw new JsonException("A scene can only contain finite numbers.");
+        }
+
         return scene;
     }
+
+    private static bool HasOnlyFiniteNumbers(SceneElement element) => element switch
+    {
+        PlotElement plot => plot.Points.All(IsFinite),
+        BuildingElement building => building.Points.All(IsFinite) && double.IsFinite(building.Height),
+        SurfaceElement surface => surface.Points.All(IsFinite),
+        LineElement line => line.Points.All(IsFinite),
+        PointElement point => IsFinite(point.Position) && double.IsFinite(point.Rotation),
+        _ => true,
+    };
+
+    private static bool IsFinite(Point2 point) => double.IsFinite(point.X) && double.IsFinite(point.Y);
 
     /// <summary>
     /// Reads only "formatVersion" first, so a document from another format version is reported as exactly that,
@@ -112,7 +130,7 @@ public static class SceneJson
         type == typeof(Point2) || type.Namespace == typeof(SceneDocument).Namespace;
 
     /// <summary>Replaces every titled schema below <paramref name="node"/> with a "$ref" into <paramref name="defs"/>.</summary>
-    private static void HoistNamedTypes(JsonNode node, JsonObject defs)
+    internal static void HoistNamedTypes(JsonNode node, JsonObject defs)
     {
         switch (node)
         {
@@ -143,13 +161,31 @@ public static class SceneJson
     {
         if (child is JsonObject schema && schema["title"] is JsonValue title && title.TryGetValue<string>(out var name))
         {
-            if (!defs.ContainsKey(name))
+            var reference = new JsonObject { ["$ref"] = "#/$defs/" + name };
+
+            // The exporter writes a repeated type as a "$ref" to its first use; that is the same type, not a new shape.
+            if (schema.ContainsKey("$ref"))
             {
-                HoistNamedTypes(schema, defs);
+                return reference;
+            }
+
+            HoistNamedTypes(schema, defs);
+            if (defs[name] is { } existing)
+            {
+                // "$defs" is keyed on the type name; two different shapes under one name would silently merge.
+                if (!JsonNode.DeepEquals(existing, schema))
+                {
+                    throw new InvalidOperationException(
+                        $"Two different schemas are both named '{name}'. Rename one of the types or describe them alike. "
+                        + $"First: {existing.ToJsonString()} Second: {schema.ToJsonString()}");
+                }
+            }
+            else
+            {
                 defs[name] = schema.DeepClone();
             }
 
-            return new JsonObject { ["$ref"] = "#/$defs/" + name };
+            return reference;
         }
 
         HoistNamedTypes(child, defs);

@@ -7,6 +7,7 @@ import type { BuildingElement, Point2, SceneElement, SurfaceMaterial } from '../
 import { findArticle, type LineArticle, type ModelKind } from './demoCatalog'
 import { LineView } from './LineView'
 import { buildModels } from './models'
+import { placementProblem } from './placement'
 import { GrowthRings, PartInstances, type PlacedPoint } from './PointInstances'
 import { useSceneStore } from './sceneStore'
 import { findCrowdedPlants } from './spacing'
@@ -124,7 +125,7 @@ function Scene() {
   const hover = useSceneStore((s) => s.hover)
   const selectedId = useSceneStore((s) => s.selectedId)
   const detail = useSceneStore((s) => s.detail)
-  const { execute, select, setTool, setDrag, setHover } = useSceneStore.getState()
+  const { execute, select, setTool, setDrag, setHover, setNotice } = useSceneStore.getState()
 
   const models = useMemo(() => buildModels(detail), [detail])
   useEffect(() => () => Object.values(models).flat().forEach((p) => p.geometry.dispose()), [models])
@@ -159,16 +160,19 @@ function Scene() {
   )
 
   // The drop is one 'move' command, so a whole drag undoes in one step.
+  // A release anywhere drops the element. If the pointer is lost instead (the window loses focus, or the browser
+  // cancels the pointer), the drag is cancelled so it can never get stuck with the camera locked.
   useEffect(() => {
-    const onPointerUp = () => {
-      const current = useSceneStore.getState().drag
-      if (!current) return
-      if (current.moved) execute({ type: 'move', id: current.id, position: current.position })
-      setDrag(null)
+    const { dropDrag, cancelDrag } = useSceneStore.getState()
+    window.addEventListener('pointerup', dropDrag)
+    window.addEventListener('pointercancel', cancelDrag)
+    window.addEventListener('blur', cancelDrag)
+    return () => {
+      window.removeEventListener('pointerup', dropDrag)
+      window.removeEventListener('pointercancel', cancelDrag)
+      window.removeEventListener('blur', cancelDrag)
     }
-    window.addEventListener('pointerup', onPointerUp)
-    return () => window.removeEventListener('pointerup', onPointerUp)
-  }, [execute, setDrag])
+  }, [])
 
   const startDrag = (id: string, event: ThreeEvent<PointerEvent>) => {
     if (useSceneStore.getState().tool.mode !== 'select' || event.button !== 0) return
@@ -192,14 +196,26 @@ function Scene() {
     if (event.delta > 4) return // The camera was dragged, not clicked.
     const ground = fromGround(event.point)
     switch (tool.mode) {
-      case 'place':
-        execute({
-          type: 'add',
-          element: { id: newId(), kind: 'point', status: 'new', measurementSource: 'estimated', articleId: tool.articleId, position: ground, rotation: 0 },
-        })
+      case 'place': {
+        const problem = placementProblem(useSceneStore.getState().document, [ground])
+        if (problem) setNotice(problem)
+        else
+          execute({
+            type: 'add',
+            element: { id: newId(), kind: 'point', status: 'new', measurementSource: 'estimated', articleId: tool.articleId, position: ground, rotation: 0 },
+          })
         break
-      case 'line':
-        if (!tool.start) setTool({ ...tool, start: ground })
+      }
+      case 'line': {
+        const document = useSceneStore.getState().document
+        if (!tool.start) {
+          const problem = placementProblem(document, [ground])
+          if (problem) setNotice(problem)
+          else setTool({ ...tool, start: ground })
+          break
+        }
+        const problem = placementProblem(document, [tool.start, ground])
+        if (problem) setNotice(problem)
         else {
           execute({
             type: 'add',
@@ -208,6 +224,7 @@ function Scene() {
           setTool({ mode: 'line', articleId: tool.articleId })
         }
         break
+      }
       case 'select':
         // Only the nearest hit counts: a click on a plant must not also deselect it through the ground.
         if (event.intersections[0]?.eventObject === event.eventObject) select(null)

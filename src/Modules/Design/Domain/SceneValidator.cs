@@ -22,6 +22,12 @@ internal static class SceneValidator
 
     public const double MinPolygonArea = 0.01;
 
+    /// <summary>
+    /// Area divided by perimeter squared: about 0.06 for a square and about width / (4 × length) for a long strip.
+    /// Below this a polygon is a sliver (a strip more than about 250 times longer than wide), not a plot or a bed.
+    /// </summary>
+    public const double MinCompactness = 0.001;
+
     public const double MaxBuildingHeight = 30;
 
     public static IReadOnlyList<SceneError> Validate(SceneDocument scene)
@@ -90,11 +96,25 @@ internal static class SceneValidator
         _ => null,
     };
 
-    private static SceneError? CheckPolygon(Guid id, IReadOnlyList<Point2> points) =>
-        CheckPoints(id, points, minimum: 3)
-        ?? (new Polygon(points).Area.SquareMeters < MinPolygonArea
-            ? new SceneError("degenerate-polygon", id, $"Polygon {id} has almost no area.")
-            : null);
+    private static SceneError? CheckPolygon(Guid id, IReadOnlyList<Point2> points)
+    {
+        if (CheckPoints(id, points, minimum: 3) is { } pointsError)
+        {
+            return pointsError;
+        }
+
+        var polygon = new Polygon(points);
+        if (polygon.IsSelfIntersecting)
+        {
+            return new SceneError("self-intersecting", id, $"Polygon {id} crosses itself.");
+        }
+
+        var area = polygon.Area.SquareMeters;
+        var perimeter = polygon.Perimeter.Meters;
+        return area < MinPolygonArea || area / (perimeter * perimeter) < MinCompactness
+            ? new SceneError("degenerate-polygon", id, $"Polygon {id} has almost no area or is a thin sliver.")
+            : null;
+    }
 
     private static SceneError? CheckPoints(Guid id, IReadOnlyList<Point2> points, int minimum)
     {

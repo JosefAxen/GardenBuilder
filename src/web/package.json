@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "test": "vitest run",
     "preview": "vite preview",
     "gen:scene": "dotnet run --project ../../tools/SchemaExport -- src/api/scene.schema.json && npm run gen:scene:ts",
     "gen:scene:ts": "json2ts -i src/api/scene.schema.json -o src/api/scene.generated.ts --bannerComment \"/* Generated from scene.schema.json by npm run gen:scene. Do not edit. */\""
@@ -29,6 +30,7 @@
     "json-schema-to-typescript": "^15.0.4",
     "oxlint": "^1.90.0",
     "typescript": "~7.0.2",
-    "vite": "^8.3.6"
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0"
   }
 }

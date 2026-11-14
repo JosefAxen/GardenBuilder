@@ -87,6 +87,31 @@ public sealed class SceneValidatorTests
     }
 
     [Fact]
+    public void Plot_thinner_than_a_hand_is_an_error()
+    {
+        // 1 000 m long and 2 cm wide: the area (20 m²) passes an absolute limit, but no real plot looks like this.
+        var error = SingleError(ValidScene(Plot with { Points = [new(0, 0), new(1000, 0), new(1000, 0.02), new(0, 0.02)] }));
+
+        Assert.Equal("degenerate-polygon", error.Code);
+    }
+
+    [Fact]
+    public void Long_narrow_bed_is_allowed()
+    {
+        // 20 × 0.5 m, a normal bed along a fence, must stay valid.
+        Assert.Empty(SceneValidator.Validate(ValidScene(Lawn with { Points = [new(-9, -9), new(9, -9), new(9, -8.5), new(-9, -8.5)] })));
+    }
+
+    [Fact]
+    public void Self_intersecting_plot_is_an_error()
+    {
+        var error = SingleError(ValidScene(Plot with { Points = [new(-10, -10), new(10, 10), new(10, -10), new(-10, 10)] }));
+
+        Assert.Equal("self-intersecting", error.Code);
+        Assert.Equal(Plot.Id, error.ElementId);
+    }
+
+    [Fact]
     public void Far_away_coordinate_is_an_error()
     {
         var error = SingleError(ValidScene(Tree with { Position = new(1e9, 0) }));
