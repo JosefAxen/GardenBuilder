@@ -1,11 +1,11 @@
 import type { ThreeEvent } from '@react-three/fiber'
 import { useMemo } from 'react'
-import type { Vec2 } from '../api/scene'
+import type { Point2 } from '../api/scene'
 import type { LineArticle } from './demoCatalog'
 
-type Segment = { mid: Vec2; length: number; angle: number; from: Vec2 }
+type Segment = { mid: Point2; length: number; angle: number; from: Point2 }
 
-function segments(points: Vec2[]): Segment[] {
+function segments(points: Point2[]): Segment[] {
   return points.slice(1).map((to, i) => {
     const from = points[i]
     const dx = to.x - from.x
@@ -28,7 +28,7 @@ export function LineView({
   ghost,
   onPointerDown,
 }: {
-  points: Vec2[]
+  points: Point2[]
   article: LineArticle
   selected?: boolean
   ghost?: boolean

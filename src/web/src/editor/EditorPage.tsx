@@ -57,7 +57,7 @@ function CatalogPanel() {
   const { setTool, execute, select } = useSceneStore.getState()
 
   const selected = elements.find((e) => e.id === selectedId)
-  const selectedArticle = findArticle(selected?.articleId)
+  const selectedArticle = findArticle(selected && 'articleId' in selected ? selected.articleId : null)
   const categories = useMemo(() => {
     const groups = new Map<string, Article[]>()
     for (const article of articles) groups.set(article.category, [...(groups.get(article.category) ?? []), article])
@@ -81,7 +81,9 @@ function CatalogPanel() {
                 <button onClick={() => rotateSelected(-1)} title="E">⟳ Vrid</button>
               </>
             )}
-            <button onClick={removeSelected} title="Delete">Ta bort</button>
+            {selected.kind !== 'surface' && (
+              <button onClick={removeSelected} title="Delete">Ta bort</button>
+            )}
           </div>
           <p className="editor-hint">Välj "Byt" på en artikel nedan för att byta ut den här. Plats och vridning behålls.</p>
         </section>
@@ -108,7 +110,10 @@ function CatalogPanel() {
                   {canReplace && (
                     <button onClick={() => execute({ type: 'replace', id: selected.id, articleId: article.id })}>Byt</button>
                   )}
-                  <button onClick={() => (active ? setTool({ mode: 'select' }) : startPlacing(article))}>{active ? 'Klar' : 'Lägg till'}</button>
+                  {/* Surfaces need a polygon tool, which does not exist yet; they can only be swapped. */}
+                  {article.geometry !== 'surface' && (
+                    <button onClick={() => (active ? setTool({ mode: 'select' }) : startPlacing(article))}>{active ? 'Klar' : 'Lägg till'}</button>
+                  )}
                 </li>
               )
             })}

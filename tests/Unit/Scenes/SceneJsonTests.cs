@@ -78,6 +78,17 @@ public sealed class SceneJsonTests
     }
 
     [Fact]
+    public void Rejects_point_without_coordinate()
+    {
+        const string json = """
+            {"formatVersion":1,"elements":[{"kind":"point","id":"019a7d3c-0000-7000-8000-000000000004","status":"new",
+             "measurementSource":"estimated","articleId":null,"position":{"x":1},"rotation":0}]}
+            """;
+
+        Assert.Throws<JsonException>(() => SceneJson.Deserialize(json));
+    }
+
+    [Fact]
     public void Rejects_missing_elements()
     {
         Assert.Throws<JsonException>(() => SceneJson.Deserialize("""{"formatVersion":1}"""));

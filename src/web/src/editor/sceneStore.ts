@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { SceneDocument, SceneElement, Vec2 } from '../api/scene'
+import type { SceneDocument, SceneElement, Point2 } from '../api/scene'
 import { demoScene } from './demoScene'
 
 /**
@@ -8,7 +8,7 @@ import { demoScene } from './demoScene'
  */
 export type SceneCommand =
   | { type: 'add'; element: SceneElement }
-  | { type: 'move'; id: string; position: Vec2; rotation?: number }
+  | { type: 'move'; id: string; position: Point2; rotation?: number }
   /** Swaps the article but keeps place and rotation, so the customer can quickly try alternatives. */
   | { type: 'replace'; id: string; articleId: string }
   | { type: 'remove'; id: string }
@@ -31,7 +31,10 @@ export function applyCommand(document: SceneDocument, command: SceneCommand): Sc
     case 'replace':
       return {
         ...document,
-        elements: document.elements.map((e) => (e.id === command.id ? { ...e, articleId: command.articleId } : e)),
+        // Only elements that point at an article can be swapped; the plot and buildings have none.
+        elements: document.elements.map((e) =>
+          e.id === command.id && 'articleId' in e ? { ...e, articleId: command.articleId } : e,
+        ),
       }
     case 'remove':
       return { ...document, elements: document.elements.filter((e) => e.id !== command.id) }
@@ -44,10 +47,10 @@ export function applyCommand(document: SceneDocument, command: SceneCommand): Sc
 export type Tool =
   | { mode: 'select' }
   | { mode: 'place'; articleId: string }
-  | { mode: 'line'; articleId: string; start?: Vec2 }
+  | { mode: 'line'; articleId: string; start?: Point2 }
 
 /** An element being dragged. Kept outside the document until the drop, so one drag is one undo step. */
-export type Drag = { id: string; position: Vec2; offset: Vec2; moved: boolean }
+export type Drag = { id: string; position: Point2; offset: Point2; moved: boolean }
 
 export type Perf = { fps: number; drawCalls: number; triangles: number }
 
@@ -59,7 +62,7 @@ type SceneState = {
   tool: Tool
   drag: Drag | null
   /** Ground point under the pointer, for the placement preview. */
-  hover: Vec2 | null
+  hover: Point2 | null
   detail: 'low' | 'high'
   perf: Perf | null
   execute: (command: SceneCommand) => void
@@ -68,7 +71,7 @@ type SceneState = {
   select: (id: string | null) => void
   setTool: (tool: Tool) => void
   setDrag: (drag: Drag | null) => void
-  setHover: (hover: Vec2 | null) => void
+  setHover: (hover: Point2 | null) => void
   setDetail: (detail: 'low' | 'high') => void
   setPerf: (perf: Perf) => void
 }

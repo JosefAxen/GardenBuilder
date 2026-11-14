@@ -127,6 +127,23 @@ public static class SceneJson
         return child;
     }
 
+    /// <summary>
+    /// Point2 is a struct, so System.Text.Json builds it with the default constructor and a missing "y" would silently
+    /// become 0. Marking both coordinates required makes reading reject it and the schema say so.
+    /// </summary>
+    private static void RequireAllPoint2Coordinates(JsonTypeInfo typeInfo)
+    {
+        if (typeInfo.Type != typeof(Point2))
+        {
+            return;
+        }
+
+        foreach (var property in typeInfo.Properties)
+        {
+            property.IsRequired = true;
+        }
+    }
+
     private static JsonSerializerOptions CreateOptions()
     {
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
@@ -137,7 +154,7 @@ public static class SceneJson
             AllowOutOfOrderMetadataProperties = true,
             // The web defaults accept numbers written as strings ("5"); a scene must use real numbers.
             NumberHandling = JsonNumberHandling.Strict,
-            TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
+            TypeInfoResolver = new DefaultJsonTypeInfoResolver { Modifiers = { RequireAllPoint2Coordinates } },
         };
         options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.KebabCaseLower));
         options.MakeReadOnly();

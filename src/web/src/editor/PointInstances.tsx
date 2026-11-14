@@ -1,12 +1,12 @@
 import type { ThreeEvent } from '@react-three/fiber'
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import { Color, type InstancedMesh, Matrix4, Quaternion, Vector3 } from 'three'
-import type { Vec2 } from '../api/scene'
+import type { Point2 } from '../api/scene'
 import type { PointArticle } from './demoCatalog'
 import type { ModelPart } from './models'
 
 /** A point element joined with its article, ready to draw. */
-export type PlacedPoint = { id: string; position: Vec2; rotation: number; article: PointArticle; removed: boolean }
+export type PlacedPoint = { id: string; position: Point2; rotation: number; article: PointArticle; removed: boolean }
 
 const UP = new Vector3(0, 1, 0)
 const matrix = new Matrix4()

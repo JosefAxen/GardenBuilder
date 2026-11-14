@@ -1,6 +1,6 @@
-import type { Vec2 } from '../api/scene'
+import type { Point2 } from '../api/scene'
 
-export type PlantFootprint = { id: string; position: Vec2; matureWidth: number }
+export type PlantFootprint = { id: string; position: Point2; matureWidth: number }
 
 /** Two plants are too close when their centres are nearer than this share of the sum of their mature radii. */
 const CROWDING_FACTOR = 0.7

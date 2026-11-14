@@ -2,7 +2,8 @@ import { OrbitControls } from '@react-three/drei'
 import { Canvas, type ThreeEvent, useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import { Plane, Shape, Vector2, Vector3 } from 'three'
-import type { BuildingElement, SceneElement, Vec2 } from '../api/scene'
+import { newId } from '../api/ids'
+import type { BuildingElement, Point2, SceneElement, SurfaceMaterial } from '../api/scene'
 import { findArticle, type LineArticle, type ModelKind } from './demoCatalog'
 import { LineView } from './LineView'
 import { buildModels } from './models'
@@ -11,11 +12,11 @@ import { useSceneStore } from './sceneStore'
 import { findCrowdedPlants } from './spacing'
 
 // Scene coordinates are (x = east, y = north). In three.js the ground is the XZ plane with -Z as north.
-const toShape = (points: Vec2[]) => new Shape(points.map((p) => new Vector2(p.x, p.y)))
-const fromGround = (point: Vector3): Vec2 => ({ x: point.x, y: -point.z })
+const toShape = (points: Point2[]) => new Shape(points.map((p) => new Vector2(p.x, p.y)))
+const fromGround = (point: Vector3): Point2 => ({ x: point.x, y: -point.z })
 const GROUND = new Plane(new Vector3(0, 1, 0), 0)
 
-const SURFACE_COLORS: Record<string, string> = {
+const SURFACE_COLORS: Record<SurfaceMaterial, string> = {
   grass: '#7fb069',
   paving: '#c9c2b5',
   gravel: '#d8d0bf',
@@ -23,12 +24,24 @@ const SURFACE_COLORS: Record<string, string> = {
   bed: '#6b4f3a',
 }
 
-function FlatPolygon({ points, color, elevation }: { points: Vec2[]; color: string; elevation: number }) {
+function FlatPolygon({
+  points,
+  color,
+  elevation,
+  selected,
+  onPointerDown,
+}: {
+  points: Point2[]
+  color: string
+  elevation: number
+  selected?: boolean
+  onPointerDown?: (event: ThreeEvent<PointerEvent>) => void
+}) {
   const shape = useMemo(() => toShape(points), [points])
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, elevation, 0]} receiveShadow>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, elevation, 0]} receiveShadow onPointerDown={onPointerDown}>
       <shapeGeometry args={[shape]} />
-      <meshStandardMaterial color={color} />
+      <meshStandardMaterial color={color} emissive={selected ? '#665500' : '#000000'} />
     </mesh>
   )
 }
@@ -45,12 +58,29 @@ function Building({ element }: { element: BuildingElement }) {
 
 /** Polygons and buildings: few, rarely changed, drawn as plain meshes. */
 function StaticElement({ element, index }: { element: SceneElement; index: number }) {
+  const selected = useSceneStore((s) => s.selectedId === element.id)
+  const selectSurface = (event: ThreeEvent<PointerEvent>) => {
+    const { tool, select } = useSceneStore.getState()
+    if (tool.mode !== 'select' || event.button !== 0) return
+    event.stopPropagation()
+    select(element.id)
+  }
+
   switch (element.kind) {
     case 'plot':
       return <FlatPolygon points={element.points} color="#b9c9a3" elevation={0} />
     case 'surface':
       // Later surfaces lie a little higher so overlapping polygons do not flicker.
-      return <FlatPolygon points={element.points} color={SURFACE_COLORS[element.material] ?? '#999999'} elevation={0.01 + index * 0.002} />
+      // A surface takes its article's colour; an existing surface without an article falls back to its material.
+      return (
+        <FlatPolygon
+          points={element.points}
+          color={findArticle(element.articleId)?.color ?? SURFACE_COLORS[element.material]}
+          elevation={0.01 + index * 0.002}
+          selected={selected}
+          onPointerDown={selectSurface}
+        />
+      )
     case 'building':
       return <Building element={element} />
     default:
@@ -163,12 +193,18 @@ function Scene() {
     const ground = fromGround(event.point)
     switch (tool.mode) {
       case 'place':
-        execute({ type: 'add', element: { id: crypto.randomUUID(), kind: 'point', status: 'new', articleId: tool.articleId, position: ground, rotation: 0 } })
+        execute({
+          type: 'add',
+          element: { id: newId(), kind: 'point', status: 'new', measurementSource: 'estimated', articleId: tool.articleId, position: ground, rotation: 0 },
+        })
         break
       case 'line':
         if (!tool.start) setTool({ ...tool, start: ground })
         else {
-          execute({ type: 'add', element: { id: crypto.randomUUID(), kind: 'line', status: 'new', articleId: tool.articleId, points: [tool.start, ground] } })
+          execute({
+            type: 'add',
+            element: { id: newId(), kind: 'line', status: 'new', measurementSource: 'estimated', articleId: tool.articleId, points: [tool.start, ground] },
+          })
           setTool({ mode: 'line', articleId: tool.articleId })
         }
         break

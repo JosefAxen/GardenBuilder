@@ -31,6 +31,12 @@ jobs:
           npm run lint
           npm run build
 
+      - name: Web client – generated scene types are up to date
+        working-directory: src/web
+        run: |
+          npm run gen:scene:ts
+          git diff --exit-code -- src/api/scene.generated.ts
+
       - name: .NET – build
         run: dotnet build GardenBuilder.slnx -c Release
 
