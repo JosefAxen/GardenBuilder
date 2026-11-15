@@ -27,6 +27,7 @@ public static class PricingModule
             .UseSnakeCaseNamingConvention());
         builder.EnrichNpgsqlDbContext<PricingDbContext>();
         builder.Services.AddScoped<IModuleMigrator, PricingMigrator>();
+        builder.Services.AddScoped<PriceSettingsStore>();
 
         return builder;
     }
