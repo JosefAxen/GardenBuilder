@@ -24,6 +24,23 @@ dotnet run --project src/AppHost
 The Aspire dashboard opens in the browser and links to every service. The web client runs on Vite and proxies
 `/api` to the API.
 
+### Fill the catalog
+
+The catalog starts empty. In the Aspire dashboard, press **Start** on the `catalog-import` resource. It imports the
+example articles from `assets/catalog/artiklar-exempel.xlsx` and prints `Klart: … nya, … ändrade, … utgångna.` in
+its console. Run it again after changing the file; the import is all or nothing and matches articles on article number.
+
+To import another file, run the tool yourself with the connection string from the dashboard (resource
+`gardenbuilder`):
+
+```powershell
+$env:ConnectionStrings__gardenbuilder = "<connection string>"
+dotnet run --project tools/CatalogImport -- import path/to/articles.xlsx
+```
+
+`dotnet run --project tools/CatalogImport -- example <file.xlsx>` writes the example file to start
+from. The columns are described in `docs/superpowers/specs/2026-11-14-catalog-design.md`.
+
 ## Test
 
 ```bash

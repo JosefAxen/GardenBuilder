@@ -1,7 +1,7 @@
 import type { ThreeEvent } from '@react-three/fiber'
 import { useMemo } from 'react'
 import type { Point2 } from '../api/scene'
-import type { LineArticle } from './demoCatalog'
+import type { CatalogArticle } from '../api/catalog'
 
 type Segment = { mid: Point2; length: number; angle: number; from: Point2 }
 
@@ -29,38 +29,41 @@ export function LineView({
   onPointerDown,
 }: {
   points: Point2[]
-  article: LineArticle
+  article: CatalogArticle
   selected?: boolean
   ghost?: boolean
   onPointerDown?: (event: ThreeEvent<PointerEvent>) => void
 }) {
   const parts = useMemo(() => segments(points), [points])
+  // The catalog requires both for hedges and fences; the fallbacks only guard a broken article.
+  const height = article.height ?? 1
+  const width = article.width ?? 0.3
   const emissive = selected ? '#665500' : '#000000'
   const material = <meshStandardMaterial color={article.color} emissive={emissive} flatShading transparent={ghost} opacity={ghost ? 0.5 : 1} />
 
   return (
     <group onPointerDown={onPointerDown}>
       {parts.map((s, i) =>
-        article.style === 'hedge' ? (
-          <mesh key={i} position={[s.mid.x, article.height / 2, -s.mid.y]} rotation={[0, s.angle, 0]} castShadow receiveShadow>
-            <boxGeometry args={[s.length, article.height, article.width]} />
+        article.typeModel === 'hedge' ? (
+          <mesh key={i} position={[s.mid.x, height / 2, -s.mid.y]} rotation={[0, s.angle, 0]} castShadow receiveShadow>
+            <boxGeometry args={[s.length, height, width]} />
             {material}
           </mesh>
         ) : (
           <group key={i} position={[s.mid.x, 0, -s.mid.y]} rotation={[0, s.angle, 0]}>
             {[0.3, 0.8].map((h) => (
-              <mesh key={h} position={[0, article.height * h, 0]} castShadow>
+              <mesh key={h} position={[0, height * h, 0]} castShadow>
                 <boxGeometry args={[s.length, 0.08, 0.04]} />
                 {material}
               </mesh>
             ))}
-            <mesh position={[0, article.height * 0.5, 0.03]} castShadow>
-              <boxGeometry args={[s.length, article.height * 0.85, 0.02]} />
+            <mesh position={[0, height * 0.5, 0.03]} castShadow>
+              <boxGeometry args={[s.length, height * 0.85, 0.02]} />
               {material}
             </mesh>
             {postOffsets(s.length).map((x) => (
-              <mesh key={x} position={[x, article.height / 2, 0]} castShadow>
-                <boxGeometry args={[0.1, article.height, 0.1]} />
+              <mesh key={x} position={[x, height / 2, 0]} castShadow>
+                <boxGeometry args={[0.1, height, 0.1]} />
                 {material}
               </mesh>
             ))}

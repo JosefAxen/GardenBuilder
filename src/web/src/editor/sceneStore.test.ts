@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { SceneDocument } from '../api/scene'
-import { applyCommand, useSceneStore } from './sceneStore'
+import { addStressTest, applyCommand, useSceneStore } from './sceneStore'
+import { thuja } from './testArticles'
 
 const tree = {
   kind: 'point' as const,
@@ -50,6 +51,47 @@ describe('applyCommand returns the same document when nothing changes', () => {
 
   it('an empty batch', () => {
     expect(applyCommand(scene, { type: 'batch', commands: [] })).toBe(scene)
+  })
+})
+
+describe('replace on a surface', () => {
+  it('sets its material', () => {
+    const lawn = {
+      kind: 'surface' as const,
+      id: 'lawn',
+      status: 'existing-keep' as const,
+      measurementSource: 'estimated' as const,
+      articleId: null,
+      material: 'grass' as const,
+      points: [{ x: 1, y: 1 }, { x: 4, y: 1 }, { x: 4, y: 4 }],
+    }
+    const withLawn: SceneDocument = { ...scene, elements: [...scene.elements, lawn] }
+
+    const result = applyCommand(withLawn, { type: 'replace', id: 'lawn', articleId: 'bed-article', material: 'bed' })
+
+    expect(result.elements[2]).toMatchObject({ articleId: 'bed-article', material: 'bed' })
+  })
+})
+
+describe('the stress test', () => {
+  beforeEach(() => {
+    useSceneStore.setState({ document: scene, past: [], future: [], measuring: false })
+  })
+
+  it('adds 300 plants and turns on measuring', () => {
+    addStressTest([thuja])
+
+    const state = useSceneStore.getState()
+    expect(state.measuring).toBe(true)
+    expect(state.document.elements).toHaveLength(scene.elements.length + 300)
+    expect(state.past).toHaveLength(1)
+  })
+
+  it('does nothing without plants in stock', () => {
+    addStressTest([{ ...thuja, stockStatus: 'out-of-stock' }])
+
+    expect(useSceneStore.getState().document).toBe(scene)
+    expect(useSceneStore.getState().measuring).toBe(false)
   })
 })
 

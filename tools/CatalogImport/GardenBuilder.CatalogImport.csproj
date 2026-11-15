@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+  <!-- Imports the catalog from an Excel file, or writes the example file. Started from the Aspire dashboard. -->
+  <PropertyGroup>
+    <!-- dotnet run starts in the folder it was called from, so relative file paths mean what the caller expects. -->
+    <RunWorkingDirectory>$(MSBuildStartupDirectory)</RunWorkingDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ServiceDefaults\GardenBuilder.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Catalog\GardenBuilder.Modules.Catalog.csproj" />
+  </ItemGroup>
+</Project>

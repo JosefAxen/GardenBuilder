@@ -1,12 +1,13 @@
-import type { ThreeEvent } from '@react-three/fiber'
+import { type ThreeEvent, useThree } from '@react-three/fiber'
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import { Color, type InstancedMesh, Matrix4, Quaternion, Vector3 } from 'three'
 import type { Point2 } from '../api/scene'
-import type { PointArticle } from './demoCatalog'
+import type { CatalogArticle } from '../api/catalog'
+import { renderScale } from './sizing'
 import type { ModelPart } from './models'
 
 /** A point element joined with its article, ready to draw. */
-export type PlacedPoint = { id: string; position: Point2; rotation: number; article: PointArticle; removed: boolean }
+export type PlacedPoint = { id: string; position: Point2; rotation: number; article: CatalogArticle; removed: boolean }
 
 const UP = new Vector3(0, 1, 0)
 const matrix = new Matrix4()
@@ -33,6 +34,7 @@ export function PartInstances({
   onPointerDown: (id: string, event: ThreeEvent<PointerEvent>) => void
 }) {
   const ref = useRef<InstancedMesh>(null)
+  const invalidate = useThree((s) => s.invalidate)
   const capacity = capacityFor(items.length)
 
   useLayoutEffect(() => {
@@ -42,9 +44,9 @@ export function PartInstances({
       // Scene (x east, y north) to three.js (x, z = -north).
       position.set(item.position.x, 0, -item.position.y)
       quaternion.setFromAxisAngle(UP, item.rotation)
-      scale.setScalar(item.article.scale)
+      scale.setScalar(renderScale(item.article))
       mesh.setMatrixAt(i, matrix.compose(position, quaternion, scale))
-      const source = part.color === 'primary' ? item.article.color : part.color === 'accent' ? item.article.accent : part.color
+      const source = part.color === 'primary' ? item.article.color : part.color === 'accent' ? item.article.accentColor : part.color
       color.set(source ?? '#ffffff')
       // Existing elements that will be removed are drawn faded, so the customer sees what goes away.
       if (item.removed) color.lerp(REMOVED, 0.7)
@@ -54,7 +56,9 @@ export function PartInstances({
     mesh.instanceMatrix.needsUpdate = true
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
     mesh.computeBoundingSphere()
-  }, [items, part, capacity])
+    // The matrices are written straight to the GPU, past React, so ask for a new frame (the scene renders on demand).
+    invalidate()
+  }, [items, part, capacity, invalidate])
 
   return (
     <instancedMesh
@@ -77,7 +81,8 @@ export function PartInstances({
 /** Rings on the ground that show each plant's mature width; red where plants stand too close. */
 export function GrowthRings({ items, crowded }: { items: PlacedPoint[]; crowded: Set<string> }) {
   const ref = useRef<InstancedMesh>(null)
-  const plants = useMemo(() => items.filter((i) => i.article.matureWidth !== undefined), [items])
+  const invalidate = useThree((s) => s.invalidate)
+  const plants = useMemo(() => items.filter((i) => i.article.matureWidth !== null), [items])
   const capacity = capacityFor(plants.length)
 
   useLayoutEffect(() => {
@@ -93,7 +98,8 @@ export function GrowthRings({ items, crowded }: { items: PlacedPoint[]; crowded:
     mesh.count = plants.length
     mesh.instanceMatrix.needsUpdate = true
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
-  }, [plants, crowded, capacity])
+    invalidate()
+  }, [plants, crowded, capacity, invalidate])
 
   return (
     <instancedMesh key={capacity} ref={ref} args={[undefined, undefined, capacity]} raycast={() => null}>

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
-import type { Point2, SceneDocument, SceneElement } from '../api/scene'
-import { demoScene } from './demoScene'
+import type { Point2, SceneDocument, SceneElement, SurfaceMaterial } from '../api/scene'
+import type { CatalogArticle } from '../api/catalog'
+import { demoScene, stressElements } from './demoScene'
 import { placementProblem } from './placement'
 
 /**
@@ -11,7 +12,7 @@ export type SceneCommand =
   | { type: 'add'; element: SceneElement }
   | { type: 'move'; id: string; position: Point2; rotation?: number }
   /** Swaps the article but keeps place and rotation, so the customer can quickly try alternatives. */
-  | { type: 'replace'; id: string; articleId: string }
+  | { type: 'replace'; id: string; articleId: string; material?: SurfaceMaterial }
   | { type: 'remove'; id: string }
   /** Several commands that undo and redo as one step. */
   | { type: 'batch'; commands: SceneCommand[] }
@@ -41,10 +42,14 @@ export function applyCommand(document: SceneDocument, command: SceneCommand): Sc
         return unchanged ? e : { ...e, position: command.position, rotation }
       })
     case 'replace':
-      // Only elements that point at an article can be swapped; the plot and buildings have none.
-      return updateElement(document, command.id, (e) =>
-        'articleId' in e && e.articleId !== command.articleId ? { ...e, articleId: command.articleId } : e,
-      )
+      // Only elements that point at an article can be swapped; the plot and buildings have none. A surface also
+      // takes the new article's material, so the scene and the catalog say the same thing.
+      return updateElement(document, command.id, (e) => {
+        if (!('articleId' in e)) return e
+        const material = e.kind === 'surface' && command.material ? command.material : undefined
+        if (e.articleId === command.articleId && (material === undefined || (e.kind === 'surface' && e.material === material))) return e
+        return material ? { ...e, articleId: command.articleId, material } : { ...e, articleId: command.articleId }
+      })
     case 'remove':
       return document.elements.some((e) => e.id === command.id)
         ? { ...document, elements: document.elements.filter((e) => e.id !== command.id) }
@@ -78,6 +83,8 @@ type SceneState = {
   notice: string | null
   detail: 'low' | 'high'
   perf: Perf | null
+  /** While on, the scene is drawn every frame so the fps reading means something; otherwise only on change. */
+  measuring: boolean
   execute: (command: SceneCommand) => void
   undo: () => void
   redo: () => void
@@ -92,6 +99,7 @@ type SceneState = {
   setNotice: (notice: string | null) => void
   setDetail: (detail: 'low' | 'high') => void
   setPerf: (perf: Perf) => void
+  setMeasuring: (on: boolean) => void
 }
 
 export const useSceneStore = create<SceneState>((set, get) => ({
@@ -105,6 +113,7 @@ export const useSceneStore = create<SceneState>((set, get) => ({
   notice: null,
   detail: 'low',
   perf: null,
+  measuring: false,
   execute: (command) =>
     set((state) => {
       const document = applyCommand(state.document, command)
@@ -140,4 +149,17 @@ export const useSceneStore = create<SceneState>((set, get) => ({
   setNotice: (notice) => set({ notice }),
   setDetail: (detail) => set({ detail }),
   setPerf: (perf) => set({ perf }),
+  setMeasuring: (measuring) => set({ measuring, perf: null }),
 }))
+
+/**
+ * PROTOTYPE: adds 300 plants from the catalog in one undo step and turns on measuring, for the performance target in
+ * docs/design.md. Does nothing when no plant is in stock (for example before the catalog has loaded).
+ */
+export function addStressTest(articles: CatalogArticle[]) {
+  const plants = articles.filter((a) => a.geometry === 'point' && a.stockStatus === 'in-stock')
+  if (plants.length === 0) return
+  const { document, execute, setMeasuring } = useSceneStore.getState()
+  execute({ type: 'batch', commands: stressElements(300, plants, document.elements.length).map((element) => ({ type: 'add', element })) })
+  setMeasuring(true)
+}

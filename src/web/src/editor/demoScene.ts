@@ -1,6 +1,6 @@
 import type { PointElement, SceneDocument, SceneElement } from '../api/scene'
 import { newId } from '../api/ids'
-import { pointArticles } from './demoCatalog'
+import type { CatalogArticle } from '../api/catalog'
 import demoSceneJson from './demoScene.json'
 
 /**
@@ -20,11 +20,11 @@ function mulberry32(seed: number) {
   }
 }
 
-/** PROTOTYPE: point elements spread over the lawn, for the performance target in docs/design.md. */
-export function stressElements(count: number, seed = 42): SceneElement[] {
+/** PROTOTYPE: point elements spread over the lawn, for the performance target in docs/design.md. `articles` must not be empty. */
+export function stressElements(count: number, articles: CatalogArticle[], seed = 42): SceneElement[] {
   const random = mulberry32(seed)
   return Array.from({ length: count }, (): PointElement => {
-    const article = pointArticles[Math.floor(random() * pointArticles.length)]
+    const article = articles[Math.floor(random() * articles.length)]
     return {
       id: newId(),
       kind: 'point',

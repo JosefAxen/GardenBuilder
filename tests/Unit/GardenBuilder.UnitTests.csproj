@@ -3,5 +3,6 @@
     <ProjectReference Include="..\..\src\SharedKernel\GardenBuilder.SharedKernel.csproj" />
     <ProjectReference Include="..\..\src\Contracts\GardenBuilder.Contracts.csproj" />
     <ProjectReference Include="..\..\src\Modules\Design\GardenBuilder.Modules.Design.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Catalog\GardenBuilder.Modules.Catalog.csproj" />
   </ItemGroup>
 </Project>
