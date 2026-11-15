@@ -90,6 +90,54 @@ public sealed class Polygon
         }
     }
 
+    /// <summary>
+    /// True when two edges that are not neighbours cross or touch, like a bowtie. Area, perimeter and
+    /// <see cref="Contains"/> give meaningless answers for such a polygon.
+    /// </summary>
+    public bool IsSelfIntersecting
+    {
+        get
+        {
+            var n = Points.Count;
+            for (var i = 0; i < n; i++)
+            {
+                for (var j = i + 1; j < n; j++)
+                {
+                    // Edges i and j share a corner when they are next to each other (including last and first).
+                    var neighbours = j == i + 1 || (i == 0 && j == n - 1);
+                    if (!neighbours && SegmentsIntersect(Points[i], Points[(i + 1) % n], Points[j], Points[(j + 1) % n]))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+    }
+
+    private static bool SegmentsIntersect(Point2 a, Point2 b, Point2 c, Point2 d)
+    {
+        var d1 = Cross(c, d, a);
+        var d2 = Cross(c, d, b);
+        var d3 = Cross(a, b, c);
+        var d4 = Cross(a, b, d);
+        if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0)))
+        {
+            return true;
+        }
+
+        // Touching or overlapping: a point lies on the other segment.
+        return (d1 == 0 && OnSegment(c, d, a)) || (d2 == 0 && OnSegment(c, d, b))
+            || (d3 == 0 && OnSegment(a, b, c)) || (d4 == 0 && OnSegment(a, b, d));
+    }
+
+    /// <summary>Which side of the line from <paramref name="p"/> to <paramref name="q"/> the point <paramref name="r"/> is on.</summary>
+    private static double Cross(Point2 p, Point2 q, Point2 r) => ((q.X - p.X) * (r.Y - p.Y)) - ((q.Y - p.Y) * (r.X - p.X));
+
+    private static bool OnSegment(Point2 p, Point2 q, Point2 r) =>
+        Math.Min(p.X, q.X) <= r.X && r.X <= Math.Max(p.X, q.X) && Math.Min(p.Y, q.Y) <= r.Y && r.Y <= Math.Max(p.Y, q.Y);
+
     /// <summary>Ray casting point-in-polygon test. Points exactly on an edge may go either way.</summary>
     public bool Contains(Point2 point)
     {

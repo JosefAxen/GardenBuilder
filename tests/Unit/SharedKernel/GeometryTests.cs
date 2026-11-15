@@ -44,6 +44,28 @@ public sealed class GeometryTests
     }
 
     [Fact]
+    public void Rectangle_is_not_self_intersecting()
+    {
+        Assert.False(Rectangle10By5.IsSelfIntersecting);
+    }
+
+    [Fact]
+    public void Bowtie_is_self_intersecting()
+    {
+        var bowtie = new Polygon([new(0, 0), new(10, 10), new(10, 0), new(0, 10)]);
+
+        Assert.True(bowtie.IsSelfIntersecting);
+    }
+
+    [Fact]
+    public void Concave_polygon_is_not_self_intersecting()
+    {
+        var lShape = new Polygon([new(0, 0), new(10, 0), new(10, 4), new(4, 4), new(4, 10), new(0, 10)]);
+
+        Assert.False(lShape.IsSelfIntersecting);
+    }
+
+    [Fact]
     public void Polygon_requires_three_points()
     {
         Assert.Throws<ArgumentException>(() => new Polygon([new(0, 0), new(1, 1)]));

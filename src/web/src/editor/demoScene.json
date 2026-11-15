@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "elements": [
+    { "kind": "plot", "id": "019a7d3c-e000-7000-8000-000000000001", "status": "existing-keep", "measurementSource": "estimated", "sloped": false, "points": [{ "x": -12, "y": -9 }, { "x": 12, "y": -9 }, { "x": 12, "y": 9 }, { "x": -12, "y": 9 }] },
+    { "kind": "building", "id": "019a7d3c-e000-7000-8000-000000000002", "status": "existing-keep", "measurementSource": "estimated", "height": 5, "roof": "gable", "points": [{ "x": -5, "y": 2 }, { "x": 5, "y": 2 }, { "x": 5, "y": 8 }, { "x": -5, "y": 8 }] },
+    { "kind": "surface", "id": "019a7d3c-e000-7000-8000-000000000003", "status": "new", "measurementSource": "estimated", "articleId": "019a7d3c-a000-7000-8000-000000000017", "material": "grass", "points": [{ "x": -11, "y": -8 }, { "x": 11, "y": -8 }, { "x": 11, "y": 1 }, { "x": -11, "y": 1 }] },
+    { "kind": "surface", "id": "019a7d3c-e000-7000-8000-000000000004", "status": "new", "measurementSource": "estimated", "articleId": "019a7d3c-a000-7000-8000-000000000018", "material": "decking", "points": [{ "x": -4, "y": -1 }, { "x": 4, "y": -1 }, { "x": 4, "y": 2 }, { "x": -4, "y": 2 }] },
+    { "kind": "surface", "id": "019a7d3c-e000-7000-8000-000000000005", "status": "new", "measurementSource": "estimated", "articleId": "019a7d3c-a000-7000-8000-000000000019", "material": "bed", "points": [{ "x": -11, "y": 3 }, { "x": -7, "y": 3 }, { "x": -7, "y": 8 }, { "x": -11, "y": 8 }] },
+    { "kind": "line", "id": "019a7d3c-e000-7000-8000-000000000006", "status": "new", "measurementSource": "estimated", "articleId": "019a7d3c-a000-7000-8000-000000000014", "points": [{ "x": -11.5, "y": -8.6 }, { "x": 11.5, "y": -8.6 }] },
+    { "kind": "line", "id": "019a7d3c-e000-7000-8000-000000000007", "status": "existing-keep", "measurementSource": "estimated", "articleId": "019a7d3c-a000-7000-8000-000000000016", "points": [{ "x": 11.7, "y": -8.6 }, { "x": 11.7, "y": 8.6 }] },
+    { "kind": "point", "id": "019a7d3c-e000-7000-8000-000000000008", "status": "new", "measurementSource": "estimated", "articleId": "019a7d3c-a000-7000-8000-000000000001", "position": { "x": -8, "y": -5 }, "rotation": 0 },
+    { "kind": "point", "id": "019a7d3c-e000-7000-8000-000000000009", "status": "existing-keep", "measurementSource": "estimated", "articleId": "019a7d3c-a000-7000-8000-000000000002", "position": { "x": 7, "y": -4 }, "rotation": 0 },
+    { "kind": "point", "id": "019a7d3c-e000-7000-8000-000000000010", "status": "new", "measurementSource": "estimated", "articleId": "019a7d3c-a000-7000-8000-000000000009", "position": { "x": -10, "y": 4 }, "rotation": 0 },
+    { "kind": "point", "id": "019a7d3c-e000-7000-8000-000000000011", "status": "new", "measurementSource": "estimated", "articleId": "019a7d3c-a000-7000-8000-000000000009", "position": { "x": -9.4, "y": 4.2 }, "rotation": 0 },
+    { "kind": "point", "id": "019a7d3c-e000-7000-8000-000000000012", "status": "new", "measurementSource": "estimated", "articleId": "019a7d3c-a000-7000-8000-000000000010", "position": { "x": -8, "y": 6.5 }, "rotation": 0 },
+    { "kind": "point", "id": "019a7d3c-e000-7000-8000-000000000013", "status": "new", "measurementSource": "estimated", "articleId": "019a7d3c-a000-7000-8000-000000000012", "position": { "x": 3.4, "y": -0.5 }, "rotation": 0 },
+    { "kind": "point", "id": "019a7d3c-e000-7000-8000-000000000014", "status": "new", "measurementSource": "estimated", "articleId": "019a7d3c-a000-7000-8000-000000000013", "position": { "x": -2, "y": 0 }, "rotation": 0 }
+  ]
+}
