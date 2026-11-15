@@ -7,7 +7,7 @@ import {
   IcosahedronGeometry,
 } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
-import type { ModelKind, PointArticle } from './demoCatalog'
+import type { CatalogArticle } from '../api/catalog'
 
 /**
  * PROTOTYPE: type models generated in code, until the Quaternius GLB files are in place. Each model is a few parts,
@@ -20,11 +20,27 @@ export type ModelPart = {
   /** 'primary' and 'accent' take the article's colours; anything else is a fixed colour. */
   color: 'primary' | 'accent' | (string & {})
   /** Leave the part out for articles where it does not apply, for example blooms on a boxwood. */
-  when?: (article: PointArticle) => boolean
+  when?: (article: CatalogArticle) => boolean
 }
 
+/**
+ * Height in meters of each generated model at scale 1: the top of its highest part. Plants are scaled so this becomes
+ * their planting height (see sizing.ts).
+ */
+export const NOMINAL_HEIGHT = {
+  'deciduous-tree': 3.5,
+  conifer: 3.3,
+  shrub: 0.93,
+  perennial: 0.6,
+  pot: 1.0,
+  furniture: 0.95,
+} as const
+
+/** The type models drawn as a model at a point; the others are lines and surfaces generated from their shape. */
+export type PointModelKey = keyof typeof NOMINAL_HEIGHT
+
 const BARK = '#7a5a3a'
-const hasAccent = (a: PointArticle) => a.accent !== undefined
+const hasAccent = (a: CatalogArticle) => a.accentColor !== null
 
 function at(geometry: BufferGeometry, x: number, y: number, z = 0, scaleY = 1) {
   geometry.scale(1, scaleY, 1)
@@ -32,12 +48,12 @@ function at(geometry: BufferGeometry, x: number, y: number, z = 0, scaleY = 1) {
   return geometry
 }
 
-export function buildModels(detail: 'low' | 'high'): Record<ModelKind, ModelPart[]> {
+export function buildModels(detail: 'low' | 'high'): Record<PointModelKey, ModelPart[]> {
   const ico = detail === 'high' ? 3 : 0
   const radial = detail === 'high' ? 16 : 6
 
   return {
-    deciduous: [
+    'deciduous-tree': [
       { key: 'trunk', color: BARK, geometry: at(new CylinderGeometry(0.12, 0.18, 1.6, radial), 0, 0.8) },
       {
         key: 'crown',
@@ -52,7 +68,7 @@ export function buildModels(detail: 'low' | 'high'): Record<ModelKind, ModelPart
       { key: 'trunk', color: BARK, geometry: at(new CylinderGeometry(0.1, 0.14, 0.6, radial), 0, 0.3) },
       { key: 'crown', color: 'primary', geometry: at(new ConeGeometry(0.9, 2.8, radial + 1, detail === 'high' ? 6 : 1), 0, 1.9) },
     ],
-    bush: [
+    shrub: [
       { key: 'leaves', color: 'primary', geometry: at(detail === 'high' ? new IcosahedronGeometry(0.6, 3) : new DodecahedronGeometry(0.6, 0), 0, 0.45, 0, 0.8) },
       { key: 'blooms', color: 'accent', when: hasAccent, geometry: mergeGeometries([
         at(new IcosahedronGeometry(0.18, ico > 0 ? 1 : 0), 0.3, 0.8, 0.1),
@@ -72,7 +88,7 @@ export function buildModels(detail: 'low' | 'high'): Record<ModelKind, ModelPart
       { key: 'pot', color: 'primary', geometry: at(new CylinderGeometry(0.3, 0.22, 0.5, radial + 4), 0, 0.25) },
       { key: 'plant', color: 'accent', when: hasAccent, geometry: at(new IcosahedronGeometry(0.32, ico > 0 ? 2 : 0), 0, 0.68) },
     ],
-    bench: [
+    furniture: [
       {
         key: 'wood',
         color: 'primary',

@@ -4,10 +4,11 @@ import { useEffect, useMemo, useRef } from 'react'
 import { Plane, Shape, Vector2, Vector3 } from 'three'
 import { newId } from '../api/ids'
 import type { BuildingElement, Point2, SceneElement, SurfaceMaterial } from '../api/scene'
-import { findArticle, type LineArticle, type ModelKind } from './demoCatalog'
+import { findArticle, useCatalogStore } from './catalogStore'
 import { LineView } from './LineView'
-import { buildModels } from './models'
+import { buildModels, type ModelPart, type PointModelKey } from './models'
 import { placementProblem } from './placement'
+import { isPointModel } from './sizing'
 import { GrowthRings, PartInstances, type PlacedPoint } from './PointInstances'
 import { useSceneStore } from './sceneStore'
 import { findCrowdedPlants } from './spacing'
@@ -125,6 +126,8 @@ function Scene() {
   const hover = useSceneStore((s) => s.hover)
   const selectedId = useSceneStore((s) => s.selectedId)
   const detail = useSceneStore((s) => s.detail)
+  // Re-render when the catalog arrives, so elements whose article just loaded are drawn.
+  const articles = useCatalogStore((s) => s.articles)
   const { execute, select, setTool, setDrag, setHover, setNotice } = useSceneStore.getState()
 
   const models = useMemo(() => buildModels(detail), [detail])
@@ -134,12 +137,13 @@ function Scene() {
     () =>
       elements.flatMap((e): PlacedPoint[] => {
         if (e.kind !== 'point') return []
-        const article = findArticle(e.articleId)
-        if (article?.geometry !== 'point') return []
+        const article = findArticle(e.articleId, articles)
+        // Elements whose article is not in the catalog (not loaded, or discontinued) are skipped, not drawn wrong.
+        if (article?.geometry !== 'point' || !isPointModel(article.typeModel)) return []
         const position = drag?.id === e.id ? drag.position : e.position
         return [{ id: e.id, position, rotation: e.rotation, article, removed: e.status === 'existing-remove' }]
       }),
-    [elements, drag],
+    [elements, drag, articles],
   )
 
   const crowded = useMemo(
@@ -149,11 +153,11 @@ function Scene() {
 
   const parts = useMemo(
     () =>
-      (Object.entries(models) as [ModelKind, (typeof models)[ModelKind]][]).flatMap(([kind, modelParts]) =>
+      (Object.entries(models) as [PointModelKey, ModelPart[]][]).flatMap(([kind, modelParts]) =>
         modelParts.map((part) => ({
           key: `${kind}-${part.key}`,
           part,
-          items: placed.filter((p) => p.article.model === kind && (part.when?.(p.article) ?? true)),
+          items: placed.filter((p) => p.article.typeModel === kind && (part.when?.(p.article) ?? true)),
         })),
       ),
     [models, placed],
@@ -277,13 +281,13 @@ function Scene() {
 
       {ghost && <GrowthRings items={[ghost]} crowded={new Set()} />}
       {ghost &&
-        models[ghost.article.model].map((part) =>
+        models[ghost.article.typeModel as PointModelKey].map((part) =>
           part.when?.(ghost.article) === false ? null : (
             <PartInstances key={`ghost-${part.key}`} part={part} items={[ghost]} onPointerDown={() => {}} />
           ),
         )}
       {tool.mode === 'line' && tool.start && hover && placeArticle?.geometry === 'line' && (
-        <LineView points={[tool.start, hover]} article={placeArticle as LineArticle} ghost />
+        <LineView points={[tool.start, hover]} article={placeArticle} ghost />
       )}
 
       <OrbitControls makeDefault enabled={drag === null} maxPolarAngle={Math.PI / 2.1} />

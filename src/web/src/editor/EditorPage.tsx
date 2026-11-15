@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { Link } from 'react-router'
-import { articles, findArticle, type Article } from './demoCatalog'
+import type { CatalogArticle } from '../api/catalog'
+import { findArticle, useCatalogStore } from './catalogStore'
 import { stressElements } from './demoScene'
 import { SceneCanvas } from './SceneCanvas'
 import { useSceneStore } from './sceneStore'
@@ -54,17 +55,18 @@ function CatalogPanel() {
   const tool = useSceneStore((s) => s.tool)
   const selectedId = useSceneStore((s) => s.selectedId)
   const elements = useSceneStore((s) => s.document.elements)
+  const articles = useCatalogStore((s) => s.articles)
   const { setTool, execute, select } = useSceneStore.getState()
 
   const selected = elements.find((e) => e.id === selectedId)
   const selectedArticle = findArticle(selected && 'articleId' in selected ? selected.articleId : null)
   const categories = useMemo(() => {
-    const groups = new Map<string, Article[]>()
+    const groups = new Map<string, CatalogArticle[]>()
     for (const article of articles) groups.set(article.category, [...(groups.get(article.category) ?? []), article])
     return groups
-  }, [])
+  }, [articles])
 
-  const startPlacing = (article: Article) => {
+  const startPlacing = (article: CatalogArticle) => {
     select(null)
     setTool(article.geometry === 'point' ? { mode: 'place', articleId: article.id } : { mode: 'line', articleId: article.id })
   }
@@ -129,16 +131,17 @@ function StatusBar() {
   const elements = useSceneStore((s) => s.document.elements)
   const detail = useSceneStore((s) => s.detail)
   const notice = useSceneStore((s) => s.notice)
+  const articles = useCatalogStore((s) => s.articles)
   const { setDetail } = useSceneStore.getState()
 
   const crowdedCount = useMemo(() => {
     const plants = elements.flatMap((e) => {
       if (e.kind !== 'point') return []
-      const article = findArticle(e.articleId)
+      const article = findArticle(e.articleId, articles)
       return article?.geometry === 'point' && article.matureWidth ? [{ id: e.id, position: e.position, matureWidth: article.matureWidth }] : []
     })
     return findCrowdedPlants(plants).size
-  }, [elements])
+  }, [elements, articles])
 
   const placedCount = elements.filter((e) => e.kind === 'point' || e.kind === 'line').length
   const format = new Intl.NumberFormat('sv-SE')
@@ -171,9 +174,16 @@ export function EditorPage() {
   const { undo, redo, execute } = useSceneStore.getState()
   useKeyboardShortcuts()
 
+  // Fetch the catalog once when the editor opens.
+  useEffect(() => {
+    void useCatalogStore.getState().load()
+  }, [])
+
   const addStress = () => {
+    const plants = useCatalogStore.getState().articles.filter((a) => a.geometry === 'point' && a.stockStatus === 'in-stock')
+    if (plants.length === 0) return
     const seed = useSceneStore.getState().document.elements.length
-    execute({ type: 'batch', commands: stressElements(300, seed).map((element) => ({ type: 'add', element })) })
+    execute({ type: 'batch', commands: stressElements(300, plants, seed).map((element) => ({ type: 'add', element })) })
   }
 
   const clearNew = () => {
