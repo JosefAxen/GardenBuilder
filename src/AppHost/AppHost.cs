@@ -13,6 +13,13 @@ var blobs = storage.AddBlobs("blobs");
 var migrator = builder.AddProject<Projects.GardenBuilder_Migrator>("migrator")
     .WithReference(database).WaitFor(database);
 
+// Fills the catalog with the example articles. Starts only when someone presses Start in the dashboard.
+var exampleCatalog = Path.GetFullPath(Path.Combine(builder.AppHostDirectory, "..", "..", "assets", "catalog", "artiklar-exempel.xlsx"));
+builder.AddProject<Projects.GardenBuilder_CatalogImport>("catalog-import")
+    .WithReference(database).WaitForCompletion(migrator)
+    .WithArgs("import", exampleCatalog)
+    .WithExplicitStart();
+
 var api = builder.AddProject<Projects.GardenBuilder_Api>("api")
     .WithReference(database).WaitFor(database)
     .WithReference(blobs).WaitFor(blobs)

@@ -13,5 +13,6 @@
     <ProjectReference Include="..\Api\GardenBuilder.Api.csproj" />
     <ProjectReference Include="..\Worker\GardenBuilder.Worker.csproj" />
     <ProjectReference Include="..\Migrator\GardenBuilder.Migrator.csproj" />
+    <ProjectReference Include="..\..\tools\CatalogImport\GardenBuilder.CatalogImport.csproj" />
   </ItemGroup>
 </Project>

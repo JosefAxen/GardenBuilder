@@ -44,6 +44,9 @@
     <Project Path="src/Worker/GardenBuilder.Worker.csproj" />
   </Folder>
   <Folder Name="/tools/" />
+  <Folder Name="/tools/CatalogImport/">
+    <Project Path="tools/CatalogImport/GardenBuilder.CatalogImport.csproj" />
+  </Folder>
   <Folder Name="/tools/SchemaExport/">
     <Project Path="tools/SchemaExport/GardenBuilder.SchemaExport.csproj" />
   </Folder>
