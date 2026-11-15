@@ -1,5 +1,7 @@
 using GardenBuilder.Contracts;
+using GardenBuilder.Contracts.Catalog;
 using GardenBuilder.Contracts.Database;
+using GardenBuilder.Modules.Catalog.Features.ImportArticles;
 using GardenBuilder.Modules.Catalog.Features.ListArticles;
 using GardenBuilder.Modules.Catalog.Infrastructure;
 using Microsoft.AspNetCore.Builder;
@@ -28,6 +30,7 @@ public static class CatalogModule
             .UseSnakeCaseNamingConvention());
         builder.EnrichNpgsqlDbContext<CatalogDbContext>();
         builder.Services.AddScoped<IModuleMigrator, CatalogMigrator>();
+        builder.Services.AddScoped<ICatalogImport, CatalogImport>();
 
         return builder;
     }
