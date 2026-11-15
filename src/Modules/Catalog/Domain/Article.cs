@@ -60,6 +60,9 @@ internal sealed class Article
 
     public Light Light { get; private set; }
 
+    /// <summary>Hours of work per unit, for the labor part of the price.</summary>
+    public decimal LaborHours { get; private set; }
+
     public static Article Create(ArticleData data)
     {
         var article = new Article { Id = Ids.New() };
@@ -96,6 +99,7 @@ internal sealed class Article
         ClipHeight = data.ClipHeight;
         GrowthCmPerYear = data.GrowthCmPerYear;
         Light = data.Light;
+        LaborHours = data.LaborHours;
     }
 
     public void Discontinue() => StockStatus = StockStatus.Discontinued;
@@ -103,7 +107,7 @@ internal sealed class Article
     /// <summary>The article as import data, so an import can tell whether anything changed.</summary>
     public ArticleData ToData() => new(
         ArticleNumber, Name, Variety, Category, Unit, Price, StockStatus, TypeModel, Scale, Color, AccentColor,
-        HardinessZone, Height, Width, MatureHeight, MatureWidth, ClipHeight, GrowthCmPerYear, Light);
+        HardinessZone, Height, Width, MatureHeight, MatureWidth, ClipHeight, GrowthCmPerYear, Light, LaborHours);
 }
 
 internal enum ArticleUnit

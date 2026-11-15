@@ -35,6 +35,12 @@ public sealed class ExampleCatalogTests
     }
 
     [Fact]
+    public void Every_example_article_has_labor_hours()
+    {
+        Assert.All(ExampleCatalog.Articles, a => Assert.True(a.LaborHours > 0, $"{a.ArticleNumber} has no labor hours."));
+    }
+
+    [Fact]
     public void Example_covers_every_type_model()
     {
         Assert.All(Enum.GetValues<TypeModel>(), model => Assert.Contains(ExampleCatalog.Articles, a => a.TypeModel == model));

@@ -13,7 +13,7 @@ public sealed class CatalogListTests(ApiFactory factory) : IClassFixture<ApiFact
     private static ArticleData Thuja() => new(
         "TU-SM-080", "Tuja Smaragd 80–100 cm", "Tuja Smaragd", "Träd", ArticleUnit.Piece, Money.InSek(495m),
         StockStatus.InStock, TypeModel.Conifer, 1, "#3f7a3a", null, HardinessZone: 5, Height: 0.9, Width: null,
-        MatureHeight: 4, MatureWidth: 1.2, ClipHeight: null, GrowthCmPerYear: 20, Light.Sun | Light.PartShade);
+        MatureHeight: 4, MatureWidth: 1.2, ClipHeight: null, GrowthCmPerYear: 20, Light.Sun | Light.PartShade, LaborHours: 0.5m);
 
     [Fact]
     public async Task List_articles_returns_fields_and_hides_discontinued()
