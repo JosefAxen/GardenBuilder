@@ -64,12 +64,7 @@ internal static class ListArticles
         a.Name,
         a.Variety,
         a.Category,
-        a.Unit switch
-        {
-            ArticleUnit.Piece => "piece",
-            ArticleUnit.Meter => "meter",
-            _ => "square-meter",
-        },
+        ArticleUnits.Key(a.Unit),
         a.Price.Amount,
         a.Price.Currency,
         a.StockStatus == StockStatus.InStock ? "in-stock" : "out-of-stock",

@@ -117,6 +117,17 @@ internal enum ArticleUnit
     SquareMeter,
 }
 
+/// <summary>The unit keys the API uses: "piece", "meter" and "square-meter".</summary>
+internal static class ArticleUnits
+{
+    public static string Key(ArticleUnit unit) => unit switch
+    {
+        ArticleUnit.Piece => "piece",
+        ArticleUnit.Meter => "meter",
+        _ => "square-meter",
+    };
+}
+
 internal enum StockStatus
 {
     InStock,
