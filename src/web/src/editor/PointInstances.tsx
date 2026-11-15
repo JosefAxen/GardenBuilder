@@ -1,4 +1,4 @@
-import type { ThreeEvent } from '@react-three/fiber'
+import { type ThreeEvent, useThree } from '@react-three/fiber'
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import { Color, type InstancedMesh, Matrix4, Quaternion, Vector3 } from 'three'
 import type { Point2 } from '../api/scene'
@@ -34,6 +34,7 @@ export function PartInstances({
   onPointerDown: (id: string, event: ThreeEvent<PointerEvent>) => void
 }) {
   const ref = useRef<InstancedMesh>(null)
+  const invalidate = useThree((s) => s.invalidate)
   const capacity = capacityFor(items.length)
 
   useLayoutEffect(() => {
@@ -55,7 +56,9 @@ export function PartInstances({
     mesh.instanceMatrix.needsUpdate = true
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
     mesh.computeBoundingSphere()
-  }, [items, part, capacity])
+    // The matrices are written straight to the GPU, past React, so ask for a new frame (the scene renders on demand).
+    invalidate()
+  }, [items, part, capacity, invalidate])
 
   return (
     <instancedMesh
@@ -78,6 +81,7 @@ export function PartInstances({
 /** Rings on the ground that show each plant's mature width; red where plants stand too close. */
 export function GrowthRings({ items, crowded }: { items: PlacedPoint[]; crowded: Set<string> }) {
   const ref = useRef<InstancedMesh>(null)
+  const invalidate = useThree((s) => s.invalidate)
   const plants = useMemo(() => items.filter((i) => i.article.matureWidth !== null), [items])
   const capacity = capacityFor(plants.length)
 
@@ -94,7 +98,8 @@ export function GrowthRings({ items, crowded }: { items: PlacedPoint[]; crowded:
     mesh.count = plants.length
     mesh.instanceMatrix.needsUpdate = true
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
-  }, [plants, crowded, capacity])
+    invalidate()
+  }, [plants, crowded, capacity, invalidate])
 
   return (
     <instancedMesh key={capacity} ref={ref} args={[undefined, undefined, capacity]} raycast={() => null}>

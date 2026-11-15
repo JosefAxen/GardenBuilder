@@ -121,6 +121,7 @@ function SelectionMarker({ point }: { point: PlacedPoint }) {
 
 function Scene() {
   const elements = useSceneStore((s) => s.document.elements)
+  const measuring = useSceneStore((s) => s.measuring)
   const drag = useSceneStore((s) => s.drag)
   const tool = useSceneStore((s) => s.tool)
   const hover = useSceneStore((s) => s.hover)
@@ -291,14 +292,16 @@ function Scene() {
       )}
 
       <OrbitControls makeDefault enabled={drag === null} maxPolarAngle={Math.PI / 2.1} />
-      <PerfMeter />
+      {measuring && <PerfMeter />}
     </>
   )
 }
 
 export function SceneCanvas() {
+  const measuring = useSceneStore((s) => s.measuring)
   return (
-    <Canvas shadows dpr={[1, 2]} camera={{ position: [18, 16, 18], fov: 45 }}>
+    // Draw only when something changes (saves battery on laptops), except while measuring performance.
+    <Canvas shadows dpr={[1, 2]} frameloop={measuring ? 'always' : 'demand'} camera={{ position: [18, 16, 18], fov: 45 }}>
       <color attach="background" args={['#dfe9f2']} />
       <hemisphereLight args={['#eaf3ff', '#6b7a55', 0.8]} />
       <directionalLight

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { Point2, SceneDocument, SceneElement, SurfaceMaterial } from '../api/scene'
-import { demoScene } from './demoScene'
+import type { CatalogArticle } from '../api/catalog'
+import { demoScene, stressElements } from './demoScene'
 import { placementProblem } from './placement'
 
 /**
@@ -82,6 +83,8 @@ type SceneState = {
   notice: string | null
   detail: 'low' | 'high'
   perf: Perf | null
+  /** While on, the scene is drawn every frame so the fps reading means something; otherwise only on change. */
+  measuring: boolean
   execute: (command: SceneCommand) => void
   undo: () => void
   redo: () => void
@@ -96,6 +99,7 @@ type SceneState = {
   setNotice: (notice: string | null) => void
   setDetail: (detail: 'low' | 'high') => void
   setPerf: (perf: Perf) => void
+  setMeasuring: (on: boolean) => void
 }
 
 export const useSceneStore = create<SceneState>((set, get) => ({
@@ -109,6 +113,7 @@ export const useSceneStore = create<SceneState>((set, get) => ({
   notice: null,
   detail: 'low',
   perf: null,
+  measuring: false,
   execute: (command) =>
     set((state) => {
       const document = applyCommand(state.document, command)
@@ -144,4 +149,17 @@ export const useSceneStore = create<SceneState>((set, get) => ({
   setNotice: (notice) => set({ notice }),
   setDetail: (detail) => set({ detail }),
   setPerf: (perf) => set({ perf }),
+  setMeasuring: (measuring) => set({ measuring, perf: null }),
 }))
+
+/**
+ * PROTOTYPE: adds 300 plants from the catalog in one undo step and turns on measuring, for the performance target in
+ * docs/design.md. Does nothing when no plant is in stock (for example before the catalog has loaded).
+ */
+export function addStressTest(articles: CatalogArticle[]) {
+  const plants = articles.filter((a) => a.geometry === 'point' && a.stockStatus === 'in-stock')
+  if (plants.length === 0) return
+  const { document, execute, setMeasuring } = useSceneStore.getState()
+  execute({ type: 'batch', commands: stressElements(300, plants, document.elements.length).map((element) => ({ type: 'add', element })) })
+  setMeasuring(true)
+}

@@ -2,9 +2,8 @@ import { useEffect, useMemo } from 'react'
 import { Link } from 'react-router'
 import { CatalogPanel } from './CatalogPanel'
 import { findArticle, useCatalogStore } from './catalogStore'
-import { stressElements } from './demoScene'
 import { SceneCanvas } from './SceneCanvas'
-import { useSceneStore } from './sceneStore'
+import { addStressTest, useSceneStore } from './sceneStore'
 import { removeSelected, rotateSelected } from './selectionCommands'
 import { findCrowdedPlants } from './spacing'
 import './editor.css'
@@ -40,7 +39,8 @@ function StatusBar() {
   const detail = useSceneStore((s) => s.detail)
   const notice = useSceneStore((s) => s.notice)
   const articles = useCatalogStore((s) => s.articles)
-  const { setDetail } = useSceneStore.getState()
+  const measuring = useSceneStore((s) => s.measuring)
+  const { setDetail, setMeasuring } = useSceneStore.getState()
 
   const crowdedCount = useMemo(() => {
     const plants = elements.flatMap((e) => {
@@ -64,11 +64,15 @@ function StatusBar() {
         </span>
       )}
       <span className="spacer" />
-      {perf && (
+      {/* fps only means something while the scene is drawn every frame. */}
+      {measuring && perf && (
         <span className="perf">
           {perf.fps} fps · {perf.drawCalls} ritanrop · {format.format(perf.triangles)} trianglar
         </span>
       )}
+      <label>
+        <input type="checkbox" checked={measuring} onChange={(e) => setMeasuring(e.target.checked)} /> Mät prestanda
+      </label>
       <label>
         <input type="checkbox" checked={detail === 'high'} onChange={(e) => setDetail(e.target.checked ? 'high' : 'low')} /> Detaljerade modeller
       </label>
@@ -87,12 +91,7 @@ export function EditorPage() {
     void useCatalogStore.getState().load()
   }, [])
 
-  const addStress = () => {
-    const plants = useCatalogStore.getState().articles.filter((a) => a.geometry === 'point' && a.stockStatus === 'in-stock')
-    if (plants.length === 0) return
-    const seed = useSceneStore.getState().document.elements.length
-    execute({ type: 'batch', commands: stressElements(300, plants, seed).map((element) => ({ type: 'add', element })) })
-  }
+  const addStress = () => addStressTest(useCatalogStore.getState().articles)
 
   const clearNew = () => {
     const current = useSceneStore.getState().document
