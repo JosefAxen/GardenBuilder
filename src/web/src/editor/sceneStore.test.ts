@@ -53,6 +53,25 @@ describe('applyCommand returns the same document when nothing changes', () => {
   })
 })
 
+describe('replace on a surface', () => {
+  it('sets its material', () => {
+    const lawn = {
+      kind: 'surface' as const,
+      id: 'lawn',
+      status: 'existing-keep' as const,
+      measurementSource: 'estimated' as const,
+      articleId: null,
+      material: 'grass' as const,
+      points: [{ x: 1, y: 1 }, { x: 4, y: 1 }, { x: 4, y: 4 }],
+    }
+    const withLawn: SceneDocument = { ...scene, elements: [...scene.elements, lawn] }
+
+    const result = applyCommand(withLawn, { type: 'replace', id: 'lawn', articleId: 'bed-article', material: 'bed' })
+
+    expect(result.elements[2]).toMatchObject({ articleId: 'bed-article', material: 'bed' })
+  })
+})
+
 describe('the store', () => {
   beforeEach(() => {
     useSceneStore.setState({ document: scene, past: [], future: [], drag: null, notice: null, selectedId: null })

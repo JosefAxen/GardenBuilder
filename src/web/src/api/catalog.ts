@@ -52,9 +52,12 @@ export type CatalogArticle = {
   light: Light[]
 }
 
-/** Fetches the catalog. Throws when the server does not answer 200. */
-export async function fetchArticles(): Promise<CatalogArticle[]> {
-  const response = await fetch('/api/catalog/articles')
+/**
+ * Fetches the catalog. Throws when the server does not answer 200, or does not answer at all within the time limit:
+ * a hanging server must end in an error the editor can show, not in "loading" forever.
+ */
+export async function fetchArticles({ timeoutMs = 10_000 }: { timeoutMs?: number } = {}): Promise<CatalogArticle[]> {
+  const response = await fetch('/api/catalog/articles', { signal: AbortSignal.timeout(timeoutMs) })
   if (!response.ok) throw new Error(`The catalog could not be fetched: HTTP ${response.status}`)
   return (await response.json()) as CatalogArticle[]
 }

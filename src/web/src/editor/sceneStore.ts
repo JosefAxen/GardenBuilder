@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Point2, SceneDocument, SceneElement } from '../api/scene'
+import type { Point2, SceneDocument, SceneElement, SurfaceMaterial } from '../api/scene'
 import { demoScene } from './demoScene'
 import { placementProblem } from './placement'
 
@@ -11,7 +11,7 @@ export type SceneCommand =
   | { type: 'add'; element: SceneElement }
   | { type: 'move'; id: string; position: Point2; rotation?: number }
   /** Swaps the article but keeps place and rotation, so the customer can quickly try alternatives. */
-  | { type: 'replace'; id: string; articleId: string }
+  | { type: 'replace'; id: string; articleId: string; material?: SurfaceMaterial }
   | { type: 'remove'; id: string }
   /** Several commands that undo and redo as one step. */
   | { type: 'batch'; commands: SceneCommand[] }
@@ -41,10 +41,14 @@ export function applyCommand(document: SceneDocument, command: SceneCommand): Sc
         return unchanged ? e : { ...e, position: command.position, rotation }
       })
     case 'replace':
-      // Only elements that point at an article can be swapped; the plot and buildings have none.
-      return updateElement(document, command.id, (e) =>
-        'articleId' in e && e.articleId !== command.articleId ? { ...e, articleId: command.articleId } : e,
-      )
+      // Only elements that point at an article can be swapped; the plot and buildings have none. A surface also
+      // takes the new article's material, so the scene and the catalog say the same thing.
+      return updateElement(document, command.id, (e) => {
+        if (!('articleId' in e)) return e
+        const material = e.kind === 'surface' && command.material ? command.material : undefined
+        if (e.articleId === command.articleId && (material === undefined || (e.kind === 'surface' && e.material === material))) return e
+        return material ? { ...e, articleId: command.articleId, material } : { ...e, articleId: command.articleId }
+      })
     case 'remove':
       return document.elements.some((e) => e.id === command.id)
         ? { ...document, elements: document.elements.filter((e) => e.id !== command.id) }
