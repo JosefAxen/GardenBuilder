@@ -1,5 +1,6 @@
 using GardenBuilder.Contracts;
 using GardenBuilder.Contracts.Database;
+using GardenBuilder.Modules.Pricing.Features.EstimatePrice;
 using GardenBuilder.Modules.Pricing.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -35,7 +36,7 @@ public static class PricingModule
     public static IEndpointRouteBuilder MapPricingEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/pricing").WithTags("Pricing");
-        _ = group; // Map features here, e.g. group.MapSomething();
+        group.MapEstimatePrice();
 
         return app;
     }
