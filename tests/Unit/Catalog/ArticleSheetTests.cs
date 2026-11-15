@@ -172,11 +172,41 @@ public sealed class ArticleSheetTests
     }
 
     [Fact]
-    public void Rule_errors_carry_the_row()
+    public void Rule_errors_carry_the_row_and_column()
     {
         var result = ArticleSheet.Read(Sheet(Headers, With(ThujaRow(), "Växtzon", null)));
 
-        Assert.Contains(new ImportError(2, "", "Växtzon krävs för växter."), result.Errors);
+        Assert.Contains(new ImportError(2, "Växtzon", "Växtzon krävs för växter."), result.Errors);
+    }
+
+    [Theory]
+    [InlineData("Pris inkl  moms (kr)")]
+    [InlineData("Pris inkl moms (kr)")]
+    public void Headers_tolerate_spaces_inside(string header)
+    {
+        var headers = Headers.Select(h => h == "Pris inkl moms (kr)" ? header : h).ToArray();
+
+        var result = ArticleSheet.Read(Sheet(headers, ThujaRow()));
+
+        Assert.Empty(result.Errors);
+    }
+
+    [Fact]
+    public void A_huge_zone_is_an_error_not_a_crash()
+    {
+        var result = ArticleSheet.Read(Sheet(Headers, With(ThujaRow(), "Växtzon", "10000000000")));
+
+        Assert.Contains(result.Errors, e => e.Row == 2 && e.Column == "Växtzon");
+    }
+
+    [Fact]
+    public void A_file_that_is_not_excel_is_an_error_not_a_crash()
+    {
+        using var notExcel = new MemoryStream("Artikelnummer;Namn\nTU-1;Tuja"u8.ToArray());
+
+        var result = ArticleSheet.Read(notExcel);
+
+        Assert.Contains(result.Errors, e => e.Message == "Filen går inte att läsa som en Excelfil (.xlsx).");
     }
 
     [Fact]

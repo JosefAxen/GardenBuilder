@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Text;
+using System.Text.RegularExpressions;
 using ClosedXML.Excel;
 using GardenBuilder.Modules.Catalog.Domain;
 using GardenBuilder.SharedKernel;
@@ -15,7 +17,7 @@ internal sealed record SheetResult(IReadOnlyList<ArticleData> Articles, IReadOnl
 /// Reads and writes the catalog Excel file (the import template). People type these files by hand, so reading is
 /// forgiving about form (decimal comma, spaces, numbers stored as text, header case) and strict about content.
 /// </summary>
-internal static class ArticleSheet
+internal static partial class ArticleSheet
 {
     private const string ArticleNumber = "Artikelnummer";
     private const string Name = "Namn";
@@ -44,9 +46,42 @@ internal static class ArticleSheet
         MatureHeight, MatureWidth, ClipHeight, Growth, LightColumn,
     ];
 
+    /// <summary>The Excel column each ArticleData field comes from, so a broken rule can point at its column.</summary>
+    private static readonly Dictionary<string, string> ColumnOf = new(StringComparer.Ordinal)
+    {
+        [nameof(ArticleData.ArticleNumber)] = ArticleNumber,
+        [nameof(ArticleData.Name)] = Name,
+        [nameof(ArticleData.Variety)] = Variety,
+        [nameof(ArticleData.Category)] = Category,
+        [nameof(ArticleData.Unit)] = Unit,
+        [nameof(ArticleData.Price)] = Price,
+        [nameof(ArticleData.Scale)] = Scale,
+        [nameof(ArticleData.Color)] = Color,
+        [nameof(ArticleData.AccentColor)] = Accent,
+        [nameof(ArticleData.HardinessZone)] = Zone,
+        [nameof(ArticleData.Height)] = Height,
+        [nameof(ArticleData.Width)] = Width,
+        [nameof(ArticleData.MatureHeight)] = MatureHeight,
+        [nameof(ArticleData.MatureWidth)] = MatureWidth,
+        [nameof(ArticleData.ClipHeight)] = ClipHeight,
+        [nameof(ArticleData.GrowthCmPerYear)] = Growth,
+        [nameof(ArticleData.Light)] = LightColumn,
+    };
+
     public static SheetResult Read(Stream xlsx)
     {
-        using var workbook = new XLWorkbook(xlsx);
+        XLWorkbook workbook;
+        try
+        {
+            workbook = new XLWorkbook(xlsx);
+        }
+        catch (Exception exception) when (exception is not OutOfMemoryException)
+        {
+            // ClosedXML throws different exceptions for files that are not .xlsx (a .csv, an old .xls, a damaged file).
+            return new SheetResult([], [new ImportError(1, string.Empty, "Filen går inte att läsa som en Excelfil (.xlsx).")]);
+        }
+
+        using var disposeWorkbook = workbook;
         var sheet = workbook.Worksheets.First();
 
         var positions = sheet.Row(1).CellsUsed()
@@ -85,8 +120,8 @@ internal static class ArticleSheet
             }
 
             firstRowOfNumber[data.ArticleNumber] = row;
-            var ruleErrors = data.Validate();
-            errors.AddRange(ruleErrors.Select(message => new ImportError(row, string.Empty, message)));
+            var ruleErrors = data.RuleErrors();
+            errors.AddRange(ruleErrors.Select(e => new ImportError(row, ColumnOf.GetValueOrDefault(e.Field, string.Empty), e.Message)));
             if (ruleErrors.Count == 0)
             {
                 articles.Add(data);
@@ -147,7 +182,12 @@ internal static class ArticleSheet
         workbook.SaveAs(xlsx);
     }
 
-    private static string Normalize(string header) => header.Trim().ToLowerInvariant();
+    /// <summary>Headers match regardless of case and of how the spaces were typed (doubled, non-breaking).</summary>
+    private static string Normalize(string header) =>
+        Whitespace().Replace(header.Normalize(NormalizationForm.FormC), " ").Trim().ToLowerInvariant();
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex Whitespace();
 
     private static string StockText(StockStatus status) => status switch
     {
@@ -278,7 +318,8 @@ internal static class ArticleSheet
 
     private static double? ParseDouble(string text) => ParseDecimal(text) is { } value ? (double)value : null;
 
-    private static int? ParseInt(string text) => ParseDecimal(text) is { } value && value == decimal.Truncate(value) ? (int)value : null;
+    private static int? ParseInt(string text) =>
+        ParseDecimal(text) is { } value && value == decimal.Truncate(value) && value is >= int.MinValue and <= int.MaxValue ? (int)value : null;
 
     private static ArticleUnit? ParseUnit(string text) => text.ToLowerInvariant() switch
     {

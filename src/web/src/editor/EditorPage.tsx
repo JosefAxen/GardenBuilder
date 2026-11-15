@@ -6,6 +6,7 @@ import { SceneCanvas } from './SceneCanvas'
 import { addStressTest, useSceneStore } from './sceneStore'
 import { removeSelected, rotateSelected } from './selectionCommands'
 import { findCrowdedPlants } from './spacing'
+import { countMissingArticles } from './catalogChecks'
 import './editor.css'
 
 function useKeyboardShortcuts() {
@@ -39,6 +40,7 @@ function StatusBar() {
   const detail = useSceneStore((s) => s.detail)
   const notice = useSceneStore((s) => s.notice)
   const articles = useCatalogStore((s) => s.articles)
+  const catalogReady = useCatalogStore((s) => s.status === 'ready')
   const measuring = useSceneStore((s) => s.measuring)
   const { setDetail, setMeasuring } = useSceneStore.getState()
 
@@ -52,12 +54,15 @@ function StatusBar() {
   }, [elements, articles])
 
   const placedCount = elements.filter((e) => e.kind === 'point' || e.kind === 'line').length
+  // Only once the catalog has loaded; while loading, every article would look missing.
+  const missingCount = useMemo(() => (catalogReady ? countMissingArticles(elements, articles) : 0), [catalogReady, elements, articles])
   const format = new Intl.NumberFormat('sv-SE')
 
   return (
     <div className="editor-status">
       <span>{placedCount} element</span>
       {crowdedCount > 0 && <span className="warning">{crowdedCount} växter står för tätt</span>}
+      {missingCount > 0 && <span className="warning">{missingCount} element saknas i katalogen och visas inte</span>}
       {notice && (
         <span className="warning" role="status">
           {notice}

@@ -132,6 +132,53 @@ public sealed class ArticleDataTests
     }
 
     [Fact]
+    public void Zone_must_be_empty_for_things_that_are_not_plants()
+    {
+        var pot = Pot() with { HardinessZone = 5 };
+
+        Assert.Contains(new ArticleRuleError(nameof(ArticleData.HardinessZone), "Växtzon ska vara tom för typmodellen pot."), pot.RuleErrors());
+    }
+
+    [Fact]
+    public void Width_must_be_empty_for_a_tree()
+    {
+        Assert.Contains("Bredd ska vara tom för typmodellen conifer.", (Valid() with { Width = 1 }).Validate());
+    }
+
+    [Fact]
+    public void Clip_height_is_only_for_hedges()
+    {
+        Assert.Contains("Klipphöjd ska vara tom för typmodellen conifer.", (Valid() with { ClipHeight = 1 }).Validate());
+    }
+
+    [Fact]
+    public void Light_must_be_empty_for_things_that_are_not_plants()
+    {
+        Assert.Contains("Ljus ska vara tomt för typmodellen pot.", (Pot() with { Light = Light.Sun }).Validate());
+    }
+
+    [Fact]
+    public void Missing_zone_names_its_field()
+    {
+        Assert.Contains(new ArticleRuleError(nameof(ArticleData.HardinessZone), "Växtzon krävs för växter."), (Valid() with { HardinessZone = null }).RuleErrors());
+    }
+
+    private static ArticleData Pot() => Valid() with
+    {
+        Name = "Terrakottakruka 40 cm",
+        Variety = null,
+        Category = "Krukor och möbler",
+        TypeModel = TypeModel.Pot,
+        HardinessZone = null,
+        Height = null,
+        MatureHeight = null,
+        MatureWidth = null,
+        GrowthCmPerYear = null,
+        Light = Light.None,
+        Scale = 1.2,
+    };
+
+    [Fact]
     public void Pot_needs_no_plant_fields()
     {
         var pot = Valid() with

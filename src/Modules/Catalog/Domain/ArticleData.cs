@@ -3,6 +3,9 @@ using GardenBuilder.SharedKernel;
 
 namespace GardenBuilder.Modules.Catalog.Domain;
 
+/// <summary>One broken rule. <see cref="Field"/> is the ArticleData property it is about.</summary>
+internal sealed record ArticleRuleError(string Field, string Message);
+
 /// <summary>
 /// Everything that describes an article, as it comes from the import file. The rules for a valid article live in
 /// <see cref="Validate"/>; the messages are Swedish because they are shown to whoever fixes the Excel file.
@@ -49,113 +52,150 @@ internal sealed partial record ArticleData(
     };
 
     /// <summary>The broken rules, in Swedish. Empty when the article is valid.</summary>
-    public IReadOnlyList<string> Validate()
+    public IReadOnlyList<string> Validate() => [.. RuleErrors().Select(e => e.Message)];
+
+    /// <summary>
+    /// The broken rules, each with the field it is about (a property name of this record), so the import can point at
+    /// the right Excel column. Empty when the article is valid.
+    /// </summary>
+    public IReadOnlyList<ArticleRuleError> RuleErrors()
     {
-        var errors = new List<string>();
+        var errors = new List<ArticleRuleError>();
+        void Add(string field, string message) => errors.Add(new ArticleRuleError(field, message));
+
         var geometry = TypeModels.Geometry(TypeModel);
         var isPlant = TypeModels.IsPlant(TypeModel);
+        var key = TypeModels.Key(TypeModel);
 
         if (string.IsNullOrWhiteSpace(ArticleNumber))
         {
-            errors.Add("Artikelnummer krävs.");
+            Add(nameof(ArticleNumber), "Artikelnummer krävs.");
         }
 
         if (string.IsNullOrWhiteSpace(Name))
         {
-            errors.Add("Namn krävs.");
+            Add(nameof(Name), "Namn krävs.");
         }
 
         if (string.IsNullOrWhiteSpace(Category))
         {
-            errors.Add("Kategori krävs.");
+            Add(nameof(Category), "Kategori krävs.");
         }
 
-        foreach (var (text, max, label) in new[]
+        foreach (var (field, text, max, label) in new[]
         {
-            (ArticleNumber, MaxArticleNumberLength, "Artikelnumret"), (Name, MaxNameLength, "Namnet"),
-            (Variety, MaxVarietyLength, "Sorten"), (Category, MaxCategoryLength, "Kategorin"),
+            (nameof(ArticleNumber), ArticleNumber, MaxArticleNumberLength, "Artikelnumret"),
+            (nameof(Name), Name, MaxNameLength, "Namnet"),
+            (nameof(Variety), Variety, MaxVarietyLength, "Sorten"),
+            (nameof(Category), Category, MaxCategoryLength, "Kategorin"),
         })
         {
             if (text?.Length > max)
             {
-                errors.Add($"{label} får vara högst {max} tecken.");
+                Add(field, $"{label} får vara högst {max} tecken.");
             }
         }
 
         var expectedUnit = TypeModels.Unit(TypeModel);
         if (Unit != expectedUnit)
         {
-            errors.Add($"Enheten {UnitText(Unit)} passar inte typmodellen {TypeModels.Key(TypeModel)}, som säljs per {UnitText(expectedUnit)}.");
+            Add(nameof(Unit), $"Enheten {UnitText(Unit)} passar inte typmodellen {key}, som säljs per {UnitText(expectedUnit)}.");
         }
 
         if (Price.Amount <= 0)
         {
-            errors.Add("Priset måste vara större än 0.");
+            Add(nameof(Price), "Priset måste vara större än 0.");
         }
 
         if (decimal.Round(Price.Amount, 2) != Price.Amount)
         {
-            errors.Add("Priset får ha högst två decimaler.");
+            Add(nameof(Price), "Priset får ha högst två decimaler.");
         }
 
         if (Scale is <= 0 or > MaxScale)
         {
-            errors.Add($"Skalan måste vara större än 0 och högst {MaxScale}.");
+            Add(nameof(Scale), $"Skalan måste vara större än 0 och högst {MaxScale}.");
         }
 
         if (!HexColor().IsMatch(Color))
         {
-            errors.Add("Färgen måste skrivas som #rrggbb.");
+            Add(nameof(Color), "Färgen måste skrivas som #rrggbb.");
         }
 
         if (AccentColor is not null && !HexColor().IsMatch(AccentColor))
         {
-            errors.Add("Accentfärgen måste skrivas som #rrggbb.");
+            Add(nameof(AccentColor), "Accentfärgen måste skrivas som #rrggbb.");
         }
 
         if (HardinessZone is < 1 or > 8)
         {
-            errors.Add("Växtzonen måste vara mellan 1 och 8.");
+            Add(nameof(HardinessZone), "Växtzonen måste vara mellan 1 och 8.");
         }
 
-        foreach (var (value, label) in new[]
+        foreach (var (field, value, label) in new[]
         {
-            (Height, "Höjd"), (Width, "Bredd"), (MatureHeight, "Fullvuxen höjd"),
-            (MatureWidth, "Fullvuxen bredd"), (ClipHeight, "Klipphöjd"), (GrowthCmPerYear, "Tillväxt"),
+            (nameof(Height), Height, "Höjd"), (nameof(Width), Width, "Bredd"),
+            (nameof(MatureHeight), MatureHeight, "Fullvuxen höjd"), (nameof(MatureWidth), MatureWidth, "Fullvuxen bredd"),
+            (nameof(ClipHeight), ClipHeight, "Klipphöjd"), (nameof(GrowthCmPerYear), GrowthCmPerYear, "Tillväxt"),
         })
         {
             if (value is { } number && (!double.IsFinite(number) || number <= 0))
             {
-                errors.Add($"{label} måste vara större än 0.");
+                Add(field, $"{label} måste vara större än 0.");
             }
         }
 
+        // What each type model needs.
         if (isPlant)
         {
             if (HardinessZone is null)
             {
-                errors.Add("Växtzon krävs för växter.");
+                Add(nameof(HardinessZone), "Växtzon krävs för växter.");
             }
 
             if (Light == Light.None)
             {
-                errors.Add("Ljus krävs för växter.");
+                Add(nameof(Light), "Ljus krävs för växter.");
             }
 
             if (geometry == ArticleGeometry.Point && MatureWidth is null)
             {
-                errors.Add("Fullvuxen bredd krävs för träd, buskar och perenner.");
+                Add(nameof(MatureWidth), "Fullvuxen bredd krävs för träd, buskar och perenner.");
             }
         }
 
-        if ((isPlant || TypeModel == TypeModel.Fence) && Height is null)
+        var usesHeight = isPlant || TypeModel == TypeModel.Fence;
+        if (usesHeight && Height is null)
         {
-            errors.Add("Höjd krävs för växter, häckar och staket.");
+            Add(nameof(Height), "Höjd krävs för växter, häckar och staket.");
         }
 
         if (geometry == ArticleGeometry.Line && Width is null)
         {
-            errors.Add("Bredd krävs för häckar och staket.");
+            Add(nameof(Width), "Bredd krävs för häckar och staket.");
+        }
+
+        // What each type model must leave empty, so the file says only what is true for the article.
+        foreach (var (field, isSet, allowed, label) in new[]
+        {
+            (nameof(HardinessZone), HardinessZone is not null, isPlant, "Växtzon"),
+            (nameof(Height), Height is not null, usesHeight, "Höjd"),
+            (nameof(Width), Width is not null, geometry == ArticleGeometry.Line, "Bredd"),
+            (nameof(MatureHeight), MatureHeight is not null, isPlant, "Fullvuxen höjd"),
+            (nameof(MatureWidth), MatureWidth is not null, isPlant, "Fullvuxen bredd"),
+            (nameof(ClipHeight), ClipHeight is not null, TypeModel == TypeModel.Hedge, "Klipphöjd"),
+            (nameof(GrowthCmPerYear), GrowthCmPerYear is not null, isPlant, "Tillväxt"),
+        })
+        {
+            if (isSet && !allowed)
+            {
+                Add(field, $"{label} ska vara tom för typmodellen {key}.");
+            }
+        }
+
+        if (!isPlant && Light != Light.None)
+        {
+            Add(nameof(Light), $"Ljus ska vara tomt för typmodellen {key}.");
         }
 
         return errors;

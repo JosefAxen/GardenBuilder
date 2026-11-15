@@ -33,7 +33,19 @@ if (!File.Exists(path))
     return 2;
 }
 
-using var input = File.OpenRead(path);
+FileStream input;
+try
+{
+    input = File.OpenRead(path);
+}
+catch (IOException)
+{
+    // Most often the file is open in Excel, which locks it.
+    Console.Error.WriteLine($"Filen {Path.GetFullPath(path)} går inte att öppna. Är den öppen i Excel? Stäng den och försök igen.");
+    return 2;
+}
+
+await using var disposeInput = input;
 var result = await import.ImportAsync(input, CancellationToken.None);
 if (!result.Succeeded)
 {
