@@ -4,7 +4,7 @@ import type { SceneElement, SurfaceMaterial } from '../api/scene'
 import { groupForPanel, replaceOptions } from './panelGroups'
 import { findArticle, useCatalogStore } from './catalogStore'
 import { useSceneStore } from './sceneStore'
-import { removeSelected, rotateSelected } from './selectionCommands'
+import { keepSelected, removeSelected, replaceSelected, rotateSelected } from './selectionCommands'
 
 const MATERIAL_NAMES: Record<SurfaceMaterial, string> = {
   grass: 'gräs',
@@ -30,9 +30,20 @@ function optionsFor(element: SceneElement, article: CatalogArticle | undefined, 
 
 function Selection({ element }: { element: SceneElement }) {
   const articles = useCatalogStore((s) => s.articles)
-  const { execute } = useSceneStore.getState()
   const article = findArticle('articleId' in element ? element.articleId : null, articles)
   const options = optionsFor(element, article, articles)
+
+  // An existing element marked for removal can only be kept again: there is nothing to move, turn or swap.
+  if (element.status === 'existing-remove') {
+    return (
+      <section className="editor-selection">
+        <h2>{selectionName(element, article)} (tas bort)</h2>
+        <div className="editor-row">
+          <button onClick={keepSelected}>Behåll</button>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="editor-selection">
@@ -44,26 +55,22 @@ function Selection({ element }: { element: SceneElement }) {
             <button onClick={() => rotateSelected(-1)} title="Snabbtangent: E">⟳ Vrid</button>
           </>
         )}
-        {(element.kind === 'point' || element.kind === 'line') && (
+        {(element.kind === 'point' || element.kind === 'line' || element.kind === 'surface') && (
           <button onClick={removeSelected} title="Snabbtangent: Delete">Ta bort</button>
         )}
       </div>
       {options.length > 0 && (
         <>
           <h3>Byt mot</h3>
-          <p className="editor-hint">Plats och vridning behålls.</p>
+          <p className="editor-hint">
+            {element.status === 'new' ? 'Plats och vridning behålls.' : 'Det befintliga tas bort och det nya hamnar på samma plats.'}
+          </p>
           <ul>
             {options.map((option) => (
               <li key={option.id}>
                 <span className="swatch" style={{ background: option.color }} />
                 <span className="name">{option.name}</span>
-                <button
-                  onClick={() =>
-                    execute({ type: 'replace', id: element.id, articleId: option.id, material: option.material ?? undefined })
-                  }
-                >
-                  Byt
-                </button>
+                <button onClick={() => replaceSelected(option.id, option.material ?? undefined)}>Byt</button>
               </li>
             ))}
           </ul>
