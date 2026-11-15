@@ -38,6 +38,9 @@ public sealed class ArticleSheetTests
                 var cell = sheet.Cell(r + 2, c + 1);
                 switch (rows[r][c])
                 {
+                    case string formula when formula.StartsWith('='):
+                        cell.FormulaA1 = formula[1..];
+                        break;
                     case string text:
                         cell.Value = text;
                         break;
@@ -105,6 +108,25 @@ public sealed class ArticleSheetTests
         var result = ArticleSheet.Read(Sheet(Headers, With(ThujaRow(), "Pris inkl moms (kr)", 1295.5)));
 
         Assert.Equal(Money.InSek(1295.50m), Assert.Single(result.Articles).Price);
+    }
+
+    [Fact]
+    public void Price_calculated_by_a_formula_reads_as_shown_in_excel()
+    {
+        // The formula 19.9*3 evaluates to 59.699999999999996; Excel shows 59,70, and so must the import.
+        var result = ArticleSheet.Read(Sheet(Headers, With(ThujaRow(), "Pris inkl moms (kr)", "=19.9*3")));
+
+        Assert.Empty(result.Errors);
+        Assert.Equal(Money.InSek(59.70m), Assert.Single(result.Articles).Price);
+    }
+
+    [Fact]
+    public void A_file_without_articles_is_an_error()
+    {
+        // Otherwise an import of the wrong (empty) file would discontinue the whole catalog.
+        var result = ArticleSheet.Read(Sheet(Headers, new object?[Headers.Length]));
+
+        Assert.Contains(result.Errors, e => e.Message == "Filen innehåller inga artiklar.");
     }
 
     [Fact]

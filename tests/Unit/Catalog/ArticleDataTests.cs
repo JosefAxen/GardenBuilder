@@ -120,6 +120,18 @@ public sealed class ArticleDataTests
     }
 
     [Fact]
+    public void Name_longer_than_the_database_allows_is_an_error()
+    {
+        Assert.Contains("Namnet får vara högst 200 tecken.", (Valid() with { Name = new string('a', 201) }).Validate());
+    }
+
+    [Fact]
+    public void Article_number_longer_than_the_database_allows_is_an_error()
+    {
+        Assert.Contains("Artikelnumret får vara högst 64 tecken.", (Valid() with { ArticleNumber = new string('1', 65) }).Validate());
+    }
+
+    [Fact]
     public void Pot_needs_no_plant_fields()
     {
         var pot = Valid() with

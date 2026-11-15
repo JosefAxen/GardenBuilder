@@ -93,6 +93,12 @@ internal static class ArticleSheet
             }
         }
 
+        // An empty file would otherwise discontinue the whole catalog.
+        if (errors.Count == 0 && articles.Count == 0)
+        {
+            errors.Add(new ImportError(2, string.Empty, "Filen innehåller inga artiklar."));
+        }
+
         return errors.Count > 0 ? new SheetResult([], errors) : new SheetResult(articles, []);
     }
 
@@ -193,7 +199,8 @@ internal static class ArticleSheet
         private string? Text(string column)
         {
             var value = Cell(column).Value;
-            var text = value.IsNumber ? value.GetNumber().ToString(CultureInfo.InvariantCulture) : value.ToString(CultureInfo.InvariantCulture);
+            // G15 is the precision Excel shows: a formula like 19.9*3 gives 59.699999999999996 as a double but shows 59,70.
+            var text = value.IsNumber ? value.GetNumber().ToString("G15", CultureInfo.InvariantCulture) : value.ToString(CultureInfo.InvariantCulture);
             return string.IsNullOrWhiteSpace(text) ? null : text.Trim();
         }
 

@@ -34,6 +34,13 @@ internal sealed partial record ArticleData(
 {
     public const double MaxScale = 5;
 
+    // The database column sizes (ArticleConfiguration). Checked here so a long text gets a Swedish message with its
+    // row instead of a database error.
+    public const int MaxArticleNumberLength = 64;
+    public const int MaxNameLength = 200;
+    public const int MaxVarietyLength = 200;
+    public const int MaxCategoryLength = 100;
+
     public static string UnitText(ArticleUnit unit) => unit switch
     {
         ArticleUnit.Piece => "st",
@@ -61,6 +68,18 @@ internal sealed partial record ArticleData(
         if (string.IsNullOrWhiteSpace(Category))
         {
             errors.Add("Kategori krävs.");
+        }
+
+        foreach (var (text, max, label) in new[]
+        {
+            (ArticleNumber, MaxArticleNumberLength, "Artikelnumret"), (Name, MaxNameLength, "Namnet"),
+            (Variety, MaxVarietyLength, "Sorten"), (Category, MaxCategoryLength, "Kategorin"),
+        })
+        {
+            if (text?.Length > max)
+            {
+                errors.Add($"{label} får vara högst {max} tecken.");
+            }
         }
 
         var expectedUnit = TypeModels.Unit(TypeModel);
