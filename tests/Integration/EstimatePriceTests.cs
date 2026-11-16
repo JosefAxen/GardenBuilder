@@ -83,6 +83,22 @@ public sealed class EstimatePriceTests(ApiFactory factory) : IClassFixture<ApiFa
     }
 
     [Fact]
+    public async Task Huge_polygon_is_400_without_costly_checks()
+    {
+        // About 20 000 corners still fits in one megabyte; checking every pair of edges would take seconds.
+        const int count = 20_000;
+        var circle = Enumerable.Range(0, count).Select(i => new Point2(5 + (4 * Math.Cos(2 * Math.PI * i / count)), 5 + (4 * Math.Sin(2 * Math.PI * i / count)))).ToList();
+        var scene = Scene(new SurfaceElement(Ids.New(), ElementStatus.ExistingKeep, MeasurementSource.Estimated, null, circle, SurfaceMaterial.Grass));
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+
+        using var response = await PostAsync(SceneJson.Serialize(scene));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("too-many-points", (await ReadAsync(response)).GetProperty("problems")[0].GetProperty("code").GetString());
+        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(2), $"Took {watch.Elapsed}.");
+    }
+
+    [Fact]
     public async Task Body_over_one_megabyte_is_413()
     {
         var padding = new string(' ', (1024 * 1024) + 1);

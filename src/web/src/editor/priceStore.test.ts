@@ -84,6 +84,19 @@ describe('schedulePrice', () => {
     expect(usePriceStore.getState().loading).toBe(false)
   })
 
+  it('ignores an answer that arrives while waiting for the next request', async () => {
+    const { calls } = manualFetch()
+    schedulePrice(scene())
+    await vi.advanceTimersByTimeAsync(500)
+
+    schedulePrice(scene())
+    calls[0].answer(ok(estimate(1000)))
+    await vi.advanceTimersByTimeAsync(100)
+
+    expect(usePriceStore.getState()).toMatchObject({ estimate: null, loading: true })
+    expect(calls[0].init?.signal?.aborted).toBe(true)
+  })
+
   it('keeps the old estimate while loading', async () => {
     const { calls } = manualFetch()
     schedulePrice(scene())

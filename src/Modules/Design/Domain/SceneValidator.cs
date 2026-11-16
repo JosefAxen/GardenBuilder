@@ -20,6 +20,12 @@ internal static class SceneValidator
     /// <summary>No garden is a kilometer from its own origin; larger values are bugs or bad AI output.</summary>
     public const double MaxCoordinate = 1000;
 
+    /// <summary>
+    /// The most corners one surface, building, plot or line may have. A drawn garden needs tens; the limit keeps the
+    /// self-intersection check (every pair of edges) cheap, since anyone can send a scene to the price endpoint.
+    /// </summary>
+    public const int MaxPoints = 1000;
+
     public const double MinPolygonArea = 0.01;
 
     /// <summary>
@@ -118,6 +124,12 @@ internal static class SceneValidator
 
     private static SceneError? CheckPoints(Guid id, IReadOnlyList<Point2> points, int minimum)
     {
+        // First, so no other check ever runs over a huge list of points.
+        if (points.Count > MaxPoints)
+        {
+            return new SceneError("too-many-points", id, $"Element {id} has {points.Count} points; at most {MaxPoints} are allowed.");
+        }
+
         if (!points.All(IsInRange))
         {
             return OutOfRange(id);

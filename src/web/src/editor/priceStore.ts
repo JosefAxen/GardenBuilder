@@ -20,17 +20,20 @@ let controller: AbortController | undefined
 /** Numbers each request, so an answer that arrives after a newer request was sent is thrown away. */
 let latest = 0
 
-/** Fetches the price of the scene half a second after the last call. */
+/**
+ * Fetches the price of the scene half a second after the last call. The moment the scene changes, an answer still on
+ * its way belongs to an old design: its request is aborted and its number is no longer the latest.
+ */
 export function schedulePrice(scene: SceneDocument) {
   clearTimeout(timer)
+  controller?.abort()
+  const request = ++latest
   usePriceStore.setState({ loading: true })
-  timer = setTimeout(() => void fetchPrice(scene), DEBOUNCE_MS)
+  timer = setTimeout(() => void fetchPrice(scene, request), DEBOUNCE_MS)
 }
 
-async function fetchPrice(scene: SceneDocument) {
-  controller?.abort()
+async function fetchPrice(scene: SceneDocument, request: number) {
   controller = new AbortController()
-  const request = ++latest
   try {
     const estimate = await fetchEstimate(scene, { signal: controller.signal })
     if (request === latest) usePriceStore.setState({ estimate, loading: false, error: null })
