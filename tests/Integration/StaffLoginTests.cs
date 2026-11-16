@@ -7,6 +7,7 @@ using GardenBuilder.Modules.Identity.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -394,4 +395,95 @@ public sealed class StaffLoginTests(ApiFactory factory) : IClassFixture<ApiFacto
         await browser.FirstLoginAsync(email, temporary.Password);
         return email;
     }
+
+    [Fact]
+    public async Task Blocked_person_cannot_sign_in_with_a_recovery_code()
+    {
+        // Blocked between the password and the code: the recovery code must not open a new session.
+        var (email, temporary) = await StaffBrowser.CreateStaffAsync(factory, StaffRole.Sales);
+        using var browser = new StaffBrowser(factory);
+        var (_, codes) = await browser.FirstLoginAsync(email, temporary.Password);
+        await browser.PostAsync("logout", new { });
+        Assert.Equal("two-factor", await StaffBrowser.NextAsync(await browser.PostAsync("login", new { email, password = StaffBrowser.NewPassword })));
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            await scope.ServiceProvider.GetRequiredService<IStaffAccounts>().BlockAsync(email, Token);
+        }
+
+        using var response = await browser.PostAsync("two-factor", new { code = codes[0], recovery = true });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("locked-out", await StaffBrowser.CodeAsync(response));
+        Assert.Equal("none", (await browser.MeAsync()).GetProperty("kind").GetString());
+    }
+
+    [Fact]
+    public async Task Unknown_email_takes_a_password_check_like_a_known_one()
+    {
+        // Same work for both answers, so the time it takes does not tell which addresses exist.
+        var hasher = new CountingPasswordHasher();
+        using var counted = factory.WithWebHostBuilder(b => b.ConfigureTestServices(s => s.AddSingleton<IPasswordHasher<StaffUser>>(hasher)));
+        var (email, _) = await StaffBrowser.CreateStaffAsync(counted, StaffRole.Sales);
+        using var browser = new StaffBrowser(counted);
+
+        hasher.Verified = 0;
+        await browser.PostAsync("login", new { email, password = "fel lösenord som är långt" });
+        var known = hasher.Verified;
+
+        hasher.Verified = 0;
+        await browser.PostAsync("login", new { email = $"{Guid.NewGuid():N}@firma.se", password = "fel lösenord som är långt" });
+
+        Assert.Equal(1, known);
+        Assert.Equal(known, hasher.Verified);
+    }
+
+    [Fact]
+    public async Task New_password_must_differ_from_the_temporary_one()
+    {
+        var (email, temporary) = await StaffBrowser.CreateStaffAsync(factory, StaffRole.Sales);
+        using var browser = new StaffBrowser(factory);
+        await browser.PostAsync("login", new { email, password = temporary.Password });
+
+        using var response = await browser.PostAsync("password", new { newPassword = temporary.Password });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("password-unchanged", await StaffBrowser.CodeAsync(response));
+    }
+
+    [Fact]
+    public async Task Failed_password_save_asks_to_start_over()
+    {
+        // Two saves at once: the second loses on the concurrency stamp. That is "start over", not a server error.
+        using var failing = FailingOn(nameof(UserManager<StaffUser>.ResetPasswordAsync));
+        var (email, temporary) = await StaffBrowser.CreateStaffAsync(failing, StaffRole.Sales);
+        using var browser = new StaffBrowser(failing);
+        await browser.PostAsync("login", new { email, password = temporary.Password });
+
+        using var response = await browser.PostAsync("password", new { newPassword = StaffBrowser.NewPassword });
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal("session-expired", await StaffBrowser.CodeAsync(response));
+    }
+
+    [Fact]
+    public async Task Failed_two_factor_save_never_answers_without_recovery_codes()
+    {
+        using var failing = FailingOn(nameof(UserManager<StaffUser>.SetTwoFactorEnabledAsync));
+        var (email, temporary) = await StaffBrowser.CreateStaffAsync(failing, StaffRole.Sales);
+        using var browser = new StaffBrowser(failing);
+        await browser.PostAsync("login", new { email, password = temporary.Password });
+        await browser.PostAsync("password", new { newPassword = StaffBrowser.NewPassword });
+        using var setup = await browser.GetAsync("two-factor/setup");
+        var key = (await setup.Content.ReadFromJsonAsync<JsonElement>(Token)).GetProperty("sharedKey").GetString()!;
+
+        using var response = await browser.PostAsync("two-factor/setup", new { code = Totp.Code(key) });
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal("session-expired", await StaffBrowser.CodeAsync(response));
+        Assert.Equal("none", (await browser.MeAsync()).GetProperty("kind").GetString());
+    }
+
+    private WebApplicationFactory<Program> FailingOn(string method) =>
+        factory.WithWebHostBuilder(b => b.ConfigureTestServices(s =>
+        {
+            s.AddSingleton(new FailingStaffUserManager.FailOn(method));
+            s.AddScoped<UserManager<StaffUser>, FailingStaffUserManager>();
+        }));
 }

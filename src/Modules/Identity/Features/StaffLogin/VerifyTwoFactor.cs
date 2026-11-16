@@ -20,9 +20,16 @@ internal static class VerifyTwoFactor
 
     private static async Task<IResult> HandleAsync(VerifyRequest request, SignInManager<StaffUser> signIn)
     {
-        if (await signIn.GetTwoFactorAuthenticationUserAsync() is null)
+        if (await signIn.GetTwoFactorAuthenticationUserAsync() is not { } user)
         {
             return StaffAuthentication.SessionExpired();
+        }
+
+        // Identity checks the lockout for the app code but not for a recovery code, so a person blocked after their
+        // password could still get in with one. Checked here for both.
+        if (await signIn.UserManager.IsLockedOutAsync(user))
+        {
+            return StaffAuthentication.Error("locked-out");
         }
 
         var code = StaffAuthentication.CleanCode(request.Code, request.Recovery);

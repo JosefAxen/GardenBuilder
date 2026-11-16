@@ -3,6 +3,9 @@ using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text.Json;
 using GardenBuilder.Contracts.Identity;
+using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Identity;
+using GardenBuilder.Modules.Identity.Domain;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -137,4 +140,45 @@ internal sealed class StaffBrowser(WebApplicationFactory<Program> factory) : IDi
 
         return response;
     }
+}
+
+/// <summary>The real password hasher, counting how often a password is checked.</summary>
+internal sealed class CountingPasswordHasher : IPasswordHasher<StaffUser>
+{
+    private readonly PasswordHasher<StaffUser> _real = new();
+
+    public int Verified { get; set; }
+
+    public string HashPassword(StaffUser user, string password) => _real.HashPassword(user, password);
+
+    public PasswordVerificationResult VerifyHashedPassword(StaffUser user, string hashedPassword, string providedPassword)
+    {
+        Verified++;
+        return _real.VerifyHashedPassword(user, hashedPassword, providedPassword);
+    }
+}
+
+/// <summary>The real user manager, except that one method fails the way a lost concurrency race does.</summary>
+internal sealed class FailingStaffUserManager(
+    FailingStaffUserManager.FailOn failOn,
+    IUserStore<StaffUser> store,
+    IOptions<IdentityOptions> options,
+    IPasswordHasher<StaffUser> passwordHasher,
+    IEnumerable<IUserValidator<StaffUser>> userValidators,
+    IEnumerable<IPasswordValidator<StaffUser>> passwordValidators,
+    ILookupNormalizer keyNormalizer,
+    IdentityErrorDescriber errors,
+    IServiceProvider services,
+    ILogger<UserManager<StaffUser>> logger)
+    : UserManager<StaffUser>(store, options, passwordHasher, userValidators, passwordValidators, keyNormalizer, errors, services, logger)
+{
+    public sealed record FailOn(string Method);
+
+    public override Task<IdentityResult> ResetPasswordAsync(StaffUser user, string token, string newPassword) =>
+        failOn.Method == nameof(ResetPasswordAsync) ? Lost() : base.ResetPasswordAsync(user, token, newPassword);
+
+    public override Task<IdentityResult> SetTwoFactorEnabledAsync(StaffUser user, bool enabled) =>
+        failOn.Method == nameof(SetTwoFactorEnabledAsync) ? Lost() : base.SetTwoFactorEnabledAsync(user, enabled);
+
+    private Task<IdentityResult> Lost() => Task.FromResult(IdentityResult.Failed(ErrorDescriber.ConcurrencyFailure()));
 }

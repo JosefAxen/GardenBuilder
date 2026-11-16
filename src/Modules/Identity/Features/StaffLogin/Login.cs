@@ -10,6 +10,11 @@ namespace GardenBuilder.Modules.Identity.Features.StaffLogin;
 /// <summary>Step one: e-mail and password. Never signs anyone in by itself; it says which step comes next.</summary>
 internal static class Login
 {
+    private static readonly StaffUser NoOne = new();
+
+    /// <summary>A hash no password matches, made once, so an unknown e-mail costs the same check as a known one.</summary>
+    private static string? _noOnesHash;
+
     public sealed record LoginRequest(string? Email, string? Password);
 
     /// <param name="Next">"two-factor", "change-password" or "setup-two-factor".</param>
@@ -26,6 +31,7 @@ internal static class Login
         HttpContext http,
         SignInManager<StaffUser> signIn,
         UserManager<StaffUser> users,
+        IPasswordHasher<StaffUser> hasher,
         TimeProvider time)
     {
         // A new login starts from scratch, whatever half-finished login this browser had.
@@ -36,6 +42,9 @@ internal static class Login
         var user = await users.FindByEmailAsync((request.Email ?? string.Empty).Trim());
         if (user is null)
         {
+            // The same work as checking a real password, so the time the answer takes does not tell either.
+            _noOnesHash ??= hasher.HashPassword(NoOne, Guid.NewGuid().ToString());
+            hasher.VerifyHashedPassword(NoOne, _noOnesHash, request.Password ?? string.Empty);
             return StaffAuthentication.Error("invalid-credentials");
         }
 

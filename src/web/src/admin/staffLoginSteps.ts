@@ -21,12 +21,28 @@ const MESSAGES: Record<IdentityErrorCode, string> = {
   'temporary-password-expired': 'Det tillfälliga lösenordet har gått ut. Be en administratör om ett nytt.',
   'invalid-code': 'Koden stämmer inte. Försök igen.',
   'password-too-short': 'Lösenordet måste ha minst 12 tecken.',
+  'password-unchanged': 'Välj ett annat lösenord än det tillfälliga.',
   'session-expired': 'Inloggningen tog för lång tid. Börja om.',
   unavailable: 'Det gick inte att nå servern. Försök igen om en stund.',
 }
 
 export function messageFor(code: IdentityErrorCode): string {
   return MESSAGES[code]
+}
+
+export const LOGOUT_FAILED = 'Det gick inte att logga ut. Försök igen.'
+
+/**
+ * Logs out. False when the server could not be reached: the session may still be valid then, so the person must not
+ * be shown the login as if they were out (on a shared computer the next person would be signed in).
+ */
+export async function trySignOut(logout: () => Promise<void>): Promise<boolean> {
+  try {
+    await logout()
+    return true
+  } catch {
+    return false
+  }
 }
 
 export const ROLE_NAMES = { sales: 'Säljare', admin: 'Administratör' } as const

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { messageFor, screenFor } from './staffLoginSteps'
+import { LOGOUT_FAILED, messageFor, screenFor, trySignOut } from './staffLoginSteps'
 
 describe('screenFor', () => {
   it('maps each next step to its screen', () => {
@@ -18,5 +18,17 @@ describe('messageFor', () => {
     expect(messageFor('password-too-short')).toBe('Lösenordet måste ha minst 12 tecken.')
     expect(messageFor('session-expired')).toBe('Inloggningen tog för lång tid. Börja om.')
     expect(messageFor('unavailable')).toBe('Det gick inte att nå servern. Försök igen om en stund.')
+    expect(messageFor('password-unchanged')).toBe('Välj ett annat lösenord än det tillfälliga.')
+  })
+})
+
+describe('trySignOut', () => {
+  it('is true when the server ended the session', async () => {
+    expect(await trySignOut(() => Promise.resolve())).toBe(true)
+  })
+
+  it('is false when the server could not be reached, so the person is not told they are out', async () => {
+    expect(await trySignOut(() => Promise.reject(new Error('offline')))).toBe(false)
+    expect(LOGOUT_FAILED).toBe('Det gick inte att logga ut. Försök igen.')
   })
 })

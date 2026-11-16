@@ -18,6 +18,7 @@ export type IdentityErrorCode =
   | 'temporary-password-expired'
   | 'invalid-code'
   | 'password-too-short'
+  | 'password-unchanged'
   | 'session-expired'
   | 'unavailable'
 

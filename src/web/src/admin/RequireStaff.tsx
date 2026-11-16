@@ -1,7 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react'
 import { fetchMe, logout, type Me } from '../api/identity'
 import { StaffLogin } from './StaffLogin'
-import { messageFor } from './staffLoginSteps'
+import { messageFor, trySignOut } from './staffLoginSteps'
 
 export type StaffMe = Extract<Me, { kind: 'staff' }>
 
@@ -11,7 +11,7 @@ type State = { status: 'loading' } | { status: 'staff'; me: StaffMe } | { status
  * Shows its content only to signed-in staff, and the login to everyone else. Asks the server every time instead of
  * remembering anything, so a session the server ended (blocked, 12 hours passed) shows the login at once.
  */
-export function RequireStaff({ children }: { children: (me: StaffMe, signOut: () => Promise<void>) => ReactNode }) {
+export function RequireStaff({ children }: { children: (me: StaffMe, signOut: () => Promise<boolean>) => ReactNode }) {
   const [state, setState] = useState<State>({ status: 'loading' })
   // Bumped to ask the server again, for example after a login.
   const [asked, setAsked] = useState(0)
@@ -28,12 +28,11 @@ export function RequireStaff({ children }: { children: (me: StaffMe, signOut: ()
 
   const askAgain = useCallback(() => setAsked((n) => n + 1), [])
 
+  /** True when signed out. On false the admin stays, and says the logout failed. */
   const signOut = useCallback(async () => {
-    try {
-      await logout()
-    } finally {
-      setState({ status: 'login' })
-    }
+    const out = await trySignOut(logout)
+    if (out) setState({ status: 'login' })
+    return out
   }, [])
 
   switch (state.status) {

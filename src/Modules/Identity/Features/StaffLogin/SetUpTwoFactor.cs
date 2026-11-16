@@ -60,8 +60,12 @@ internal static class SetUpTwoFactor
             return StaffAuthentication.Error("invalid-code");
         }
 
-        await users.SetTwoFactorEnabledAsync(user, true);
-        var codes = await users.GenerateNewTwoFactorRecoveryCodesAsync(user, RecoveryCodeCount) ?? [];
+        // A lost save race (two confirms at once) means start over; it must never answer with no recovery codes.
+        if (!(await users.SetTwoFactorEnabledAsync(user, true)).Succeeded
+            || await users.GenerateNewTwoFactorRecoveryCodesAsync(user, RecoveryCodeCount) is not { } codes)
+        {
+            return StaffAuthentication.SessionExpired();
+        }
 
         // Done: the setup session ends and the real session starts, marked as signed in with two factors.
         await http.SignOutAsync(StaffAuthentication.SetupScheme);
