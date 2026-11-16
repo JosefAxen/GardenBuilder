@@ -1,5 +1,7 @@
 using GardenBuilder.Contracts;
 using GardenBuilder.Contracts.Database;
+using GardenBuilder.Contracts.Scenes;
+using GardenBuilder.Modules.Design.Features.CheckScene;
 using GardenBuilder.Modules.Design.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -27,6 +29,7 @@ public static class DesignModule
             .UseSnakeCaseNamingConvention());
         builder.EnrichNpgsqlDbContext<DesignDbContext>();
         builder.Services.AddScoped<IModuleMigrator, DesignMigrator>();
+        builder.Services.AddSingleton<ISceneCheck, SceneCheck>();
 
         return builder;
     }

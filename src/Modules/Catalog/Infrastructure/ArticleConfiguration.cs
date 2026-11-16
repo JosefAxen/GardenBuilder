@@ -20,6 +20,7 @@ internal sealed class ArticleConfiguration : IEntityTypeConfiguration<Article>
         builder.Property(a => a.TypeModel).HasConversion<string>().HasMaxLength(32);
         builder.Property(a => a.Color).HasMaxLength(7);
         builder.Property(a => a.AccentColor).HasMaxLength(7);
+        builder.Property(a => a.LaborHours).HasPrecision(5, 2);
 
         // Stored as the flag bits, e.g. sun and part shade = 3.
         builder.Property(a => a.Light).HasConversion<int>();

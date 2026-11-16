@@ -31,6 +31,7 @@ export function LineView({
   points: Point2[]
   article: CatalogArticle
   selected?: boolean
+  /** Half transparent: the preview while drawing, or an existing line that will be removed. */
   ghost?: boolean
   onPointerDown?: (event: ThreeEvent<PointerEvent>) => void
 }) {
@@ -39,7 +40,8 @@ export function LineView({
   const height = article.height ?? 1
   const width = article.width ?? 0.3
   const emissive = selected ? '#665500' : '#000000'
-  const material = <meshStandardMaterial color={article.color} emissive={emissive} flatShading transparent={ghost} opacity={ghost ? 0.5 : 1} />
+  // Keyed on ghost: three.js does not rebuild a material when its transparency changes.
+  const material = <meshStandardMaterial key={ghost ? 'ghost' : 'solid'} color={article.color} emissive={emissive} flatShading transparent={ghost} opacity={ghost ? 0.5 : 1} />
 
   return (
     <group onPointerDown={onPointerDown}>

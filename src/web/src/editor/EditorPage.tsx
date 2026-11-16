@@ -1,6 +1,8 @@
 import { useEffect, useMemo } from 'react'
 import { Link } from 'react-router'
 import { CatalogPanel } from './CatalogPanel'
+import { PricePanel } from './PricePanel'
+import { schedulePrice } from './priceStore'
 import { findArticle, useCatalogStore } from './catalogStore'
 import { SceneCanvas } from './SceneCanvas'
 import { addStressTest, useSceneStore } from './sceneStore'
@@ -88,6 +90,7 @@ function StatusBar() {
 export function EditorPage() {
   const past = useSceneStore((s) => s.past)
   const future = useSceneStore((s) => s.future)
+  const document = useSceneStore((s) => s.document)
   const { undo, redo, execute } = useSceneStore.getState()
   useKeyboardShortcuts()
 
@@ -95,6 +98,9 @@ export function EditorPage() {
   useEffect(() => {
     void useCatalogStore.getState().load()
   }, [])
+
+  // A new price half a second after the design stops changing, including after undo and redo.
+  useEffect(() => schedulePrice(document), [document])
 
   const addStress = () => addStressTest(useCatalogStore.getState().articles)
 
@@ -119,6 +125,7 @@ export function EditorPage() {
       <CatalogPanel />
       <main className="editor-canvas">
         <SceneCanvas />
+        <PricePanel />
       </main>
       <StatusBar />
     </div>

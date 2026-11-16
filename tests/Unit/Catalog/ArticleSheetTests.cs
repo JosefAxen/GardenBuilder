@@ -9,7 +9,7 @@ public sealed class ArticleSheetTests
 {
     private static readonly string[] Headers =
     [
-        "Artikelnummer", "Namn", "Sort", "Kategori", "Enhet", "Pris inkl moms (kr)", "Lagerstatus", "Typmodell", "Skala",
+        "Artikelnummer", "Namn", "Sort", "Kategori", "Enhet", "Pris inkl moms (kr)", "Arbete (h per enhet)", "Lagerstatus", "Typmodell", "Skala",
         "Färg", "Accentfärg", "Växtzon", "Höjd (m)", "Bredd (m)", "Fullvuxen höjd (m)", "Fullvuxen bredd (m)",
         "Klipphöjd (m)", "Tillväxt (cm/år)", "Ljus",
     ];
@@ -17,7 +17,7 @@ public sealed class ArticleSheetTests
     /// <summary>Tuja Smaragd 80–100 cm as a person would type it into Excel.</summary>
     private static object?[] ThujaRow(string articleNumber = "TU-SM-080") =>
     [
-        articleNumber, "Tuja Smaragd 80–100 cm", "Tuja Smaragd", "Träd", "st", "495", "I lager", "conifer", "1",
+        articleNumber, "Tuja Smaragd 80–100 cm", "Tuja Smaragd", "Träd", "st", "495", "0,5", "I lager", "conifer", "1",
         "#3f7a3a", null, "5", "0,9", null, "4", "1,2", null, "20", "sol, halvskugga",
     ];
 
@@ -100,6 +100,45 @@ public sealed class ArticleSheetTests
 
         Assert.Empty(result.Errors);
         Assert.Equal(Money.InSek(1295.50m), Assert.Single(result.Articles).Price);
+    }
+
+    [Theory]
+    [InlineData("0,5")]
+    [InlineData("0.5")]
+    [InlineData(" 0,50 ")]
+    public void Labor_reads_with_comma_and_point(string text)
+    {
+        var result = ArticleSheet.Read(Sheet(Headers, With(ThujaRow(), "Arbete (h per enhet)", text)));
+
+        Assert.Empty(result.Errors);
+        Assert.Equal(0.5m, Assert.Single(result.Articles).LaborHours);
+    }
+
+    [Fact]
+    public void Labor_stored_as_number_reads_the_same()
+    {
+        var result = ArticleSheet.Read(Sheet(Headers, With(ThujaRow(), "Arbete (h per enhet)", 0.5)));
+
+        Assert.Equal(0.5m, Assert.Single(result.Articles).LaborHours);
+    }
+
+    [Fact]
+    public void Missing_labor_column_is_named()
+    {
+        // An Excel file from before labor hours existed.
+        var headers = Headers.Where(h => h != "Arbete (h per enhet)").ToArray();
+
+        var result = ArticleSheet.Read(Sheet(headers));
+
+        Assert.Contains(new ImportError(1, "Arbete (h per enhet)", "Kolumnen Arbete (h per enhet) saknas."), result.Errors);
+    }
+
+    [Fact]
+    public void Empty_labor_cell_is_an_error()
+    {
+        var result = ArticleSheet.Read(Sheet(Headers, With(ThujaRow(), "Arbete (h per enhet)", null)));
+
+        Assert.Contains(new ImportError(2, "Arbete (h per enhet)", "Arbete (h per enhet) saknas."), result.Errors);
     }
 
     [Fact]

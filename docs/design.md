@@ -142,9 +142,9 @@ Backend är en applikation med sju moduler. Varje modul äger sina data och nås
 | Modul | Ansvar | Centrala entiteter |
 | --- | --- | --- |
 | Trädgård | Kundens tomt, foton och nuläge | Trädgård, Foto, Tomt, Nulägestolkning |
-| Katalog | Företagets sortiment och 3D-modeller | Artikel, Kategori, Typmodell, Lagerstatus |
+| Katalog | Företagets sortiment, arbetstider och 3D-modeller | Artikel (med pris och arbetsnorm), Kategori, Typmodell, Lagerstatus |
 | Design | Scener och deras versioner | Design, Arbetskopia, Designversion |
-| Prissättning | Prislistor, regler och beräkning | Prislista, Arbetsnorm, Prisregel, Prisuppskattning |
+| Prissättning | Prisregler och beräkning | Prisinställningar, Borttagningsnorm, Prisuppskattning |
 | Offertärenden | Förfrågningar, ärendestatus och offerter | Offertförfrågan, Ärendehändelse, Offert |
 | AI | Jobb, promptar, leverantörer och kostnader | AI-jobb, Promptversion, Kostnadspost |
 | Identitet | Kunder, personal, roller och samtycken | Användare, Roll, Samtycke |
@@ -269,10 +269,11 @@ Priset är alltid ett spann, och spannets bredd styrs av hur måtten har kommit 
 Uppskattningen är en summa av rader som räknas fram ur scenens mängder.
 
 - **Material:** artikelpris gånger mängd.
-- **Arbete:** arbetsnorm per enhet gånger timpris.
-- **Borttagning:** arbete för befintliga element som tas bort.
+- **Arbete:** arbetsnorm per enhet gånger timpris. Arbetsnormen står på artikeln i katalogen.
+- **Borttagning:** arbete för befintliga element som tas bort, med en timnorm per sorts sak (till exempel lövträd
+  eller gräsmatta).
 - **Fasta poster:** etablering, transport och bortforsling.
-- **Moms:** läggs på sist och visas för sig.
+- **Moms:** alla priser är inklusive moms, och momsen visas som "varav moms".
 
 **Spann och säkerhetsnivå**
 
@@ -290,7 +291,8 @@ Spannet läggs på rader som beror på yta eller längd. Styckvaror som träd oc
 
 - Beräkningen är rena funktioner i modulen Prissättning: mängder, prislista och regler in, uppskattning ut.
 - Servern räknar alltid. Klienten visar bara resultatet.
-- Varje uppskattning sparar de priser som gällde, så att den kan visas igen oförändrad.
+- När designer sparas (delprojekt 4) sparar varje uppskattning de priser som gällde, så att den kan visas igen
+  oförändrad.
 - En offertförfrågan fryser designversion och prisbild. Senare prisändringar i katalogen påverkar inte ärendet.
 - Avrundning sker en gång, på totalsumman.
 - Kunden ser alltid att priset är ungefärligt och att den bindande offerten kommer från säljaren.
