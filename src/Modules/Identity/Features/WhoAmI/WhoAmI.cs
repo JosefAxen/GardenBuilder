@@ -1,8 +1,11 @@
 using System.Text.Json.Serialization;
 using GardenBuilder.Contracts.Identity;
+using GardenBuilder.Modules.Identity.Features.StaffLogin;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Routing;
 
 namespace GardenBuilder.Modules.Identity.Features.WhoAmI;
@@ -23,6 +26,15 @@ internal static class WhoAmI
         return group;
     }
 
-    private static async Task<Ok<MeResponse>> HandleAsync(ICurrentCustomer customer, CancellationToken cancellationToken) =>
-        TypedResults.Ok(await customer.FindAsync(cancellationToken) is null ? new MeResponse("none") : new MeResponse("customer"));
+    private static async Task<Ok<MeResponse>> HandleAsync(HttpContext http, ICurrentCustomer customer, CancellationToken cancellationToken)
+    {
+        // Only the full staff cookie counts: a right password without two-factor is still nobody.
+        var staff = await http.AuthenticateAsync(IdentityConstants.ApplicationScheme);
+        if (staff.Succeeded)
+        {
+            return TypedResults.Ok(new MeResponse("staff", staff.Principal.FindFirst(StaffClaims.Name)?.Value, StaffAuthentication.RoleKey(staff.Principal)));
+        }
+
+        return TypedResults.Ok(await customer.FindAsync(cancellationToken) is null ? new MeResponse("none") : new MeResponse("customer"));
+    }
 }

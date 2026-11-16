@@ -4,6 +4,7 @@ using GardenBuilder.Contracts.Identity;
 using GardenBuilder.Modules.Identity.Domain;
 using GardenBuilder.Modules.Identity.Features.CurrentCustomer;
 using GardenBuilder.Modules.Identity.Features.StaffAccounts;
+using GardenBuilder.Modules.Identity.Features.StaffLogin;
 using GardenBuilder.Modules.Identity.Features.WhoAmI;
 using GardenBuilder.Modules.Identity.Infrastructure;
 using Microsoft.AspNetCore.Builder;
@@ -30,6 +31,12 @@ public static class IdentityModule
 
     public const string CustomerCookieName = "gb-customer";
 
+    /// <summary>Signed-in staff (Säljare or Administratör) who have passed two-factor.</summary>
+    public const string StaffPolicy = "Staff";
+
+    /// <summary>Signed-in Administratör.</summary>
+    public const string AdminPolicy = "Admin";
+
     /// <summary>How long a customer is remembered without a visit (docs/design.md: designs are deleted after 90 days of inactivity).</summary>
     public static readonly TimeSpan CustomerCookieLifetime = TimeSpan.FromDays(90);
 
@@ -50,7 +57,8 @@ public static class IdentityModule
         builder.Services.TryAddSingleton(TimeProvider.System);
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddAuthorization();
-        builder.Services.AddAuthentication().AddCookie(CustomerScheme, options =>
+        var authentication = builder.Services.AddAuthentication();
+        authentication.AddCookie(CustomerScheme, options =>
         {
             options.Cookie.Name = CustomerCookieName;
             options.Cookie.HttpOnly = true;
@@ -84,8 +92,11 @@ public static class IdentityModule
                 options.User.RequireUniqueEmail = true;
             })
             .AddRoles<StaffRoleRecord>()
+            .AddClaimsPrincipalFactory<StaffClaimsFactory>()
             .AddEntityFrameworkStores<IdentityDbContext>()
+            .AddSignInManager<StaffSignInManager>()
             .AddDefaultTokenProviders();
+        builder.Services.AddStaffAuthentication(authentication);
         builder.Services.AddScoped<IStaffAccounts, StaffAccounts>();
 
         return builder;
@@ -95,6 +106,12 @@ public static class IdentityModule
     {
         var group = app.MapGroup("/api/identity").WithTags("Identity");
         group.MapWhoAmI();
+        group.MapGroup("/staff")
+            .MapLogin()
+            .MapChangePassword()
+            .MapSetUpTwoFactor()
+            .MapVerifyTwoFactor()
+            .MapLogout();
 
         return app;
     }
