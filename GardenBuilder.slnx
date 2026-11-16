@@ -60,4 +60,7 @@
   <Folder Name="/tests/Unit/">
     <Project Path="tests/Unit/GardenBuilder.UnitTests.csproj" />
   </Folder>
+  <Folder Name="/tools/StaffAdmin/">
+    <Project Path="tools/StaffAdmin/GardenBuilder.StaffAdmin.csproj" />
+  </Folder>
 </Solution>
