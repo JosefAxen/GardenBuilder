@@ -35,6 +35,10 @@ if (app.Environment.IsDevelopment())
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
+// Who is calling: the customer or staff cookie (Identity module). Before the endpoints, after the static files.
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapDefaultEndpoints();
 
 app.MapIdentityEndpoints()

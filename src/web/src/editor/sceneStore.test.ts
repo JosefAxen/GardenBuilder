@@ -147,3 +147,38 @@ describe('the store', () => {
     expect(state.drag).toBeNull()
   })
 })
+
+describe('existing elements', () => {
+  const oldTree = { ...tree, id: 'old-tree', status: 'existing-keep' as const }
+  const withOld: SceneDocument = { ...scene, elements: [...scene.elements, oldTree] }
+
+  it('removes a new element', () => {
+    const result = applyCommand(withOld, { type: 'remove', id: 'tree' })
+
+    expect(result.elements.map((e) => e.id)).toEqual(['plot', 'old-tree'])
+  })
+
+  it('marks an existing element as removed instead of deleting it', () => {
+    const result = applyCommand(withOld, { type: 'remove', id: 'old-tree' })
+
+    expect(result.elements).toHaveLength(3)
+    expect(result.elements[2]).toMatchObject({ id: 'old-tree', status: 'existing-remove' })
+    expect(applyCommand(result, { type: 'remove', id: 'old-tree' })).toBe(result)
+  })
+
+  it('keep restores a removed element', () => {
+    const removed = applyCommand(withOld, { type: 'remove', id: 'old-tree' })
+
+    const result = applyCommand(removed, { type: 'keep', id: 'old-tree' })
+
+    expect(result.elements[2]).toMatchObject({ id: 'old-tree', status: 'existing-keep' })
+    expect(applyCommand(result, { type: 'keep', id: 'old-tree' })).toBe(result)
+  })
+
+  it('does not move or replace a removed element', () => {
+    const removed = applyCommand(withOld, { type: 'remove', id: 'old-tree' })
+
+    expect(applyCommand(removed, { type: 'move', id: 'old-tree', position: { x: 5, y: 5 } })).toBe(removed)
+    expect(applyCommand(removed, { type: 'replace', id: 'old-tree', articleId: 'pear' })).toBe(removed)
+  })
+})

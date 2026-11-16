@@ -39,6 +39,34 @@ public sealed class SceneValidatorTests
         Assert.Empty(SceneValidator.Validate(ValidScene()));
     }
 
+    /// <summary>A regular polygon on a circle of radius 5 m: valid in every way except, above the limit, its size.</summary>
+    private static Point2[] Circle(int count) =>
+        [.. Enumerable.Range(0, count).Select(i => new Point2(5 * Math.Cos(2 * Math.PI * i / count), 5 * Math.Sin(2 * Math.PI * i / count)))];
+
+    [Fact]
+    public void Polygon_at_the_point_limit_is_valid()
+    {
+        Assert.Empty(SceneValidator.Validate(ValidScene(Lawn with { Points = Circle(SceneValidator.MaxPoints) })));
+    }
+
+    [Fact]
+    public void Polygon_over_the_point_limit_is_rejected_before_the_costly_checks()
+    {
+        var error = SingleError(ValidScene(Lawn with { Points = Circle(SceneValidator.MaxPoints + 1) }));
+
+        Assert.Equal(("too-many-points", Lawn.Id), (error.Code, error.ElementId));
+    }
+
+    [Fact]
+    public void Line_over_the_point_limit_is_rejected()
+    {
+        var points = Enumerable.Range(0, SceneValidator.MaxPoints + 1).Select(i => new Point2(-9 + (i * 0.01), -9.5)).ToArray();
+
+        var error = SingleError(ValidScene(Hedge with { Points = points }));
+
+        Assert.Equal(("too-many-points", Hedge.Id), (error.Code, error.ElementId));
+    }
+
     [Fact]
     public void Unknown_format_version_is_an_error()
     {

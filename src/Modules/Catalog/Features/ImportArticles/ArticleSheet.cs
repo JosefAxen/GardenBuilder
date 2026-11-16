@@ -25,6 +25,7 @@ internal static partial class ArticleSheet
     private const string Category = "Kategori";
     private const string Unit = "Enhet";
     private const string Price = "Pris inkl moms (kr)";
+    private const string Labor = "Arbete (h per enhet)";
     private const string Stock = "Lagerstatus";
     private const string Model = "Typmodell";
     private const string Scale = "Skala";
@@ -42,9 +43,12 @@ internal static partial class ArticleSheet
     /// <summary>The columns in the order the template writes them.</summary>
     public static readonly IReadOnlyList<string> Columns =
     [
-        ArticleNumber, Name, Variety, Category, Unit, Price, Stock, Model, Scale, Color, Accent, Zone, Height, Width,
+        ArticleNumber, Name, Variety, Category, Unit, Price, Labor, Stock, Model, Scale, Color, Accent, Zone, Height, Width,
         MatureHeight, MatureWidth, ClipHeight, Growth, LightColumn,
     ];
+
+    private static readonly int PriceColumn = IndexOf(Price);
+    private static readonly int LaborColumn = IndexOf(Labor);
 
     /// <summary>The Excel column each ArticleData field comes from, so a broken rule can point at its column.</summary>
     private static readonly Dictionary<string, string> ColumnOf = new(StringComparer.Ordinal)
@@ -55,6 +59,7 @@ internal static partial class ArticleSheet
         [nameof(ArticleData.Category)] = Category,
         [nameof(ArticleData.Unit)] = Unit,
         [nameof(ArticleData.Price)] = Price,
+        [nameof(ArticleData.LaborHours)] = Labor,
         [nameof(ArticleData.Scale)] = Scale,
         [nameof(ArticleData.Color)] = Color,
         [nameof(ArticleData.AccentColor)] = Accent,
@@ -153,6 +158,7 @@ internal static partial class ArticleSheet
             object?[] values =
             [
                 a.ArticleNumber, a.Name, a.Variety, a.Category, ArticleData.UnitText(a.Unit), (double)a.Price.Amount,
+                (double)a.LaborHours,
                 StockText(a.StockStatus), TypeModels.Key(a.TypeModel), a.Scale, a.Color, a.AccentColor, a.HardinessZone,
                 a.Height, a.Width, a.MatureHeight, a.MatureWidth, a.ClipHeight, a.GrowthCmPerYear, LightText(a.Light),
             ];
@@ -174,13 +180,17 @@ internal static partial class ArticleSheet
             }
 
             sheet.Cell(row, Columns.Count).Style.NumberFormat.Format = "@";
-            sheet.Cell(row, 6).Style.NumberFormat.Format = "0.00";
+            sheet.Cell(row, PriceColumn).Style.NumberFormat.Format = "0.00";
+            sheet.Cell(row, LaborColumn).Style.NumberFormat.Format = "0.00";
             row++;
         }
 
         sheet.Columns().AdjustToContents();
         workbook.SaveAs(xlsx);
     }
+
+    /// <summary>The 1-based Excel column number of a header in the template.</summary>
+    private static int IndexOf(string column) => Columns.ToList().IndexOf(column) + 1;
 
     /// <summary>Headers match regardless of case and of how the spaces were typed (doubled, non-breaking).</summary>
     private static string Normalize(string header) =>
@@ -229,7 +239,8 @@ internal static partial class ArticleSheet
             MatureWidth: Optional(MatureWidth, ParseDouble),
             ClipHeight: Optional(ClipHeight, ParseDouble),
             GrowthCmPerYear: Optional(Growth, ParseDouble),
-            Light: ReadLight());
+            Light: ReadLight(),
+            LaborHours: Required(Labor, ParseDecimal, "Skriv arbetstiden i timmar, t.ex. 0,5."));
 
         private int RowNumber => row.RowNumber();
 

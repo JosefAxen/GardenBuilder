@@ -70,6 +70,11 @@ namespace GardenBuilder.Modules.Catalog.Infrastructure.Migrations
                         .HasColumnType("double precision")
                         .HasColumnName("height");
 
+                    b.Property<decimal>("LaborHours")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("labor_hours");
+
                     b.Property<int>("Light")
                         .HasColumnType("integer")
                         .HasColumnName("light");

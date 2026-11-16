@@ -25,7 +25,8 @@ public sealed class ArticleDataTests
         MatureWidth: 1.2,
         ClipHeight: null,
         GrowthCmPerYear: 20,
-        Light: Light.Sun | Light.PartShade);
+        Light: Light.Sun | Light.PartShade,
+        LaborHours: 0.5m);
 
     private static readonly ArticleData Hedge = Valid() with
     {
@@ -49,6 +50,26 @@ public sealed class ArticleDataTests
     public void Valid_hedge_has_no_errors()
     {
         Assert.Empty(Hedge.Validate());
+    }
+
+    [Theory]
+    [InlineData(-0.5)]
+    [InlineData(100.5)]
+    public void Labor_hours_outside_0_to_100_is_an_error(double hours)
+    {
+        Assert.Contains("Arbetstiden måste vara mellan 0 och 100 timmar.", (Valid() with { LaborHours = (decimal)hours }).Validate());
+    }
+
+    [Fact]
+    public void Labor_hours_with_three_decimals_is_an_error()
+    {
+        Assert.Contains("Arbetstiden får ha högst två decimaler.", (Valid() with { LaborHours = 0.125m }).Validate());
+    }
+
+    [Fact]
+    public void Zero_labor_hours_is_allowed()
+    {
+        Assert.Empty((Valid() with { LaborHours = 0m }).Validate());
     }
 
     [Fact]

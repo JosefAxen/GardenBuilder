@@ -14,5 +14,6 @@
     <ProjectReference Include="..\Worker\GardenBuilder.Worker.csproj" />
     <ProjectReference Include="..\Migrator\GardenBuilder.Migrator.csproj" />
     <ProjectReference Include="..\..\tools\CatalogImport\GardenBuilder.CatalogImport.csproj" />
+    <ProjectReference Include="..\..\tools\StaffAdmin\GardenBuilder.StaffAdmin.csproj" />
   </ItemGroup>
 </Project>
