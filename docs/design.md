@@ -58,7 +58,8 @@ Kunden går igenom sex steg, och varje steg har en manuell reservväg så att in
 
 **Kundens flöde**
 
-1. **Starta.** Kunden laddar upp ett till sex foton, anger adress och bekräftar sin e-post med en engångskod.
+1. **Starta.** Kunden laddar upp ett till sex foton och anger adress. (Senare: kunden bekräftar sin e-post med en
+   engångskod, när e-posttjänsten är vald.)
    - Tomtens form och skala hämtas från kartdata om det går. Annars ritar kunden tomt och hus och anger två mått.
 2. **Nuläge.** AI:n tolkar fotona och bygger en stiliserad 3D-scen. Kunden rättar det som blev fel.
    - Reservväg: en tom tomt med huset utplacerat, där kunden själv lägger in det som finns.
@@ -147,7 +148,7 @@ Backend är en applikation med sju moduler. Varje modul äger sina data och nås
 | Prissättning | Prislistor, regler och beräkning | Prislista, Arbetsnorm, Prisregel, Prisuppskattning |
 | Offertärenden | Förfrågningar, ärendestatus och offerter | Offertförfrågan, Ärendehändelse, Offert |
 | AI | Jobb, promptar, leverantörer och kostnader | AI-jobb, Promptversion, Kostnadspost |
-| Identitet | Kunder, personal, roller och samtycken | Användare, Roll, Samtycke |
+| Identitet | Kunder, personal, roller och samtycken | Kund, Personal, Roll, Samtycke |
 
 Kedjan mellan dem är: en kund har trädgårdar, en trädgård har designer, en design har versioner, och en offertförfrågan låser en version med en prisbild.
 
@@ -374,8 +375,10 @@ Foton av hem och adresser är personuppgifter, så åtkomst, lagringstid och rad
 
 **Inloggning och åtkomst**
 
-- Kunder loggar in utan lösenord, med engångskod via e-post.
-- Personal loggar in med lösenord och tvåfaktor. Rollerna är Säljare och Administratör.
+- Kunder är anonyma och känns igen på en säker kaka i 90 dagar. Engångskod via e-post kommer när e-posttjänsten är
+  vald.
+- Personal loggar in med lösenord och tvåfaktor. Rollerna är Säljare och Administratör. Konton skapas med ett
+  kommando, och det tillfälliga lösenordet gäller i 24 timmar.
 - Sessioner ligger i säkra kakor. Inga inloggningsuppgifter sparas i webbläsarens lagring.
 - Varje hanterare kontrollerar att resursen tillhör den inloggade kunden. Regeln har egna tester.
 - Delningslänkar är skrivskyddade, omöjliga att gissa och har utgångsdatum.
