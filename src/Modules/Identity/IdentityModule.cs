@@ -1,11 +1,14 @@
 using GardenBuilder.Contracts;
 using GardenBuilder.Contracts.Database;
 using GardenBuilder.Contracts.Identity;
+using GardenBuilder.Modules.Identity.Domain;
 using GardenBuilder.Modules.Identity.Features.CurrentCustomer;
+using GardenBuilder.Modules.Identity.Features.StaffAccounts;
 using GardenBuilder.Modules.Identity.Features.WhoAmI;
 using GardenBuilder.Modules.Identity.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
@@ -65,6 +68,25 @@ public static class IdentityModule
             };
         });
         builder.Services.AddScoped<ICurrentCustomer, CurrentCustomer>();
+
+        // Staff: ASP.NET Core Identity with the rules from the identity spec.
+        builder.Services.AddIdentityCore<StaffUser>(options =>
+            {
+                options.Password.RequiredLength = 12;
+                options.Password.RequireDigit = false;
+                options.Password.RequireLowercase = false;
+                options.Password.RequireUppercase = false;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequiredUniqueChars = 1;
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+                options.Lockout.AllowedForNewUsers = true;
+                options.User.RequireUniqueEmail = true;
+            })
+            .AddRoles<StaffRoleRecord>()
+            .AddEntityFrameworkStores<IdentityDbContext>()
+            .AddDefaultTokenProviders();
+        builder.Services.AddScoped<IStaffAccounts, StaffAccounts>();
 
         return builder;
     }

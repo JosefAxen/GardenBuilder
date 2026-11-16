@@ -1,9 +1,15 @@
+using GardenBuilder.Modules.Identity.Domain;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace GardenBuilder.Modules.Identity.Infrastructure;
 
-internal sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> options) : DbContext(options), IDataProtectionKeyContext
+/// <summary>
+/// The identity schema: customers, staff (ASP.NET Core Identity's tables) and the cookie keys. The base class has the
+/// same short name as this class, so it is written out in full.
+/// </summary>
+internal sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> options)
+    : Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityDbContext<StaffUser, StaffRoleRecord, Guid>(options), IDataProtectionKeyContext
 {
     /// <summary>
     /// The keys that encrypt the login cookies. Stored here so cookies stay valid after a restart and across instances;
@@ -11,9 +17,11 @@ internal sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> opti
     /// </summary>
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder builder)
     {
-        modelBuilder.HasDefaultSchema(IdentityModule.Schema);
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(IdentityDbContext).Assembly);
+        base.OnModelCreating(builder);
+        builder.HasDefaultSchema(IdentityModule.Schema);
+        StaffConfiguration.Configure(builder);
+        builder.ApplyConfigurationsFromAssembly(typeof(IdentityDbContext).Assembly);
     }
 }
