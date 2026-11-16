@@ -31,19 +31,30 @@ function FlatPolygon({
   color,
   elevation,
   selected,
+  removed,
   onPointerDown,
 }: {
   points: Point2[]
   color: string
   elevation: number
   selected?: boolean
+  /** An existing surface that will be removed: drawn faded, like removed plants. */
+  removed?: boolean
   onPointerDown?: (event: ThreeEvent<PointerEvent>) => void
 }) {
   const shape = useMemo(() => toShape(points), [points])
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, elevation, 0]} receiveShadow onPointerDown={onPointerDown}>
       <shapeGeometry args={[shape]} />
-      <meshStandardMaterial color={color} emissive={selected ? '#665500' : '#000000'} />
+      {/* A new material when the surface is removed or kept: three.js does not rebuild one when transparency changes. */}
+      <meshStandardMaterial
+        key={removed ? 'removed' : 'kept'}
+        color={color}
+        emissive={selected ? '#665500' : '#000000'}
+        transparent={removed}
+        opacity={removed ? 0.35 : 1}
+        depthWrite={!removed}
+      />
     </mesh>
   )
 }
@@ -80,6 +91,7 @@ function StaticElement({ element, index }: { element: SceneElement; index: numbe
           color={findArticle(element.articleId)?.color ?? SURFACE_COLORS[element.material]}
           elevation={0.01 + index * 0.002}
           selected={selected}
+          removed={element.status === 'existing-remove'}
           onPointerDown={selectSurface}
         />
       )
@@ -185,7 +197,8 @@ function Scene() {
     select(id)
     const point = placed.find((p) => p.id === id)
     const hit = event.ray.intersectPlane(GROUND, new Vector3())
-    if (!point || !hit) return
+    // A removed element can be selected (to keep it again) but not moved.
+    if (!point || point.removed || !hit) return
     const ground = fromGround(hit)
     setDrag({ id, position: point.position, offset: { x: ground.x - point.position.x, y: ground.y - point.position.y }, moved: false })
   }
@@ -265,6 +278,7 @@ function Scene() {
             points={element.points}
             article={article}
             selected={element.id === selectedId}
+            ghost={element.status === 'existing-remove'}
             onPointerDown={(event) => {
               if (useSceneStore.getState().tool.mode !== 'select') return
               event.stopPropagation()

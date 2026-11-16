@@ -63,21 +63,40 @@ internal static class ExampleCatalog
         Thing("YT-RA-001", "Rabatt, planteringsjord", "Ytor", ArticleUnit.SquareMeter, TypeModel.SurfaceBed, 149m, "#6b4f3a"),
     ];
 
+    /// <summary>Made-up planting time: bigger trees and shrubs take longer; perennials are quick.</summary>
+    private static decimal PlantingHours(TypeModel model, double height) => model == TypeModel.Perennial
+        ? 0.1m
+        : decimal.Round(0.2m + (0.6m * (decimal)height), 2);
+
+    /// <summary>Made-up hours per piece, meter or square meter for everything that is not a plant.</summary>
+    private static decimal ThingHours(TypeModel model) => model switch
+    {
+        TypeModel.Pot => 0.1m,
+        TypeModel.Furniture => 0.3m,
+        TypeModel.Fence => 0.8m,
+        TypeModel.SurfaceGrass => 0.15m,
+        TypeModel.SurfacePaving => 0.6m,
+        TypeModel.SurfaceGravel => 0.25m,
+        TypeModel.SurfaceDecking => 1.0m,
+        TypeModel.SurfaceBed => 0.3m,
+        _ => throw new ArgumentOutOfRangeException(nameof(model), model, "Plants get their hours from PlantingHours."),
+    };
+
     private static ArticleData Plant(
         string number, string name, string variety, string category, TypeModel model, decimal price, int zone, double height,
         double matureHeight, double matureWidth, double growth, Light light, string color, string? accent = null) =>
         new(number, name, variety, category, ArticleUnit.Piece, Money.InSek(price), StockStatus.InStock, model, 1, color, accent,
-            zone, height, null, matureHeight, matureWidth, null, growth, light);
+            zone, height, null, matureHeight, matureWidth, null, growth, light, PlantingHours(model, height));
 
     private static ArticleData Hedge(
         string number, string name, string variety, decimal price, int zone, double height, double width, double clipHeight,
         double growth, string color) =>
         new(number, name, variety, "Häckar och staket", ArticleUnit.Meter, Money.InSek(price), StockStatus.InStock, TypeModel.Hedge, 1,
-            color, null, zone, height, width, null, null, clipHeight, growth, SunToPartShade);
+            color, null, zone, height, width, null, null, clipHeight, growth, SunToPartShade, LaborHours: 0.5m);
 
     private static ArticleData Thing(
         string number, string name, string category, ArticleUnit unit, TypeModel model, decimal price, string color,
         string? accent = null, double scale = 1, double? height = null, double? width = null) =>
         new(number, name, null, category, unit, Money.InSek(price), StockStatus.InStock, model, scale, color, accent,
-            null, height, width, null, null, null, null, Light.None);
+            null, height, width, null, null, null, null, Light.None, ThingHours(model));
 }

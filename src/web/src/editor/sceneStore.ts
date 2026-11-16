@@ -13,7 +13,10 @@ export type SceneCommand =
   | { type: 'move'; id: string; position: Point2; rotation?: number }
   /** Swaps the article but keeps place and rotation, so the customer can quickly try alternatives. */
   | { type: 'replace'; id: string; articleId: string; material?: SurfaceMaterial }
+  /** Deletes a new element. An existing one stays in the scene, marked 'existing-remove', so it can be priced and kept again. */
   | { type: 'remove'; id: string }
+  /** Takes back the removal of an existing element. */
+  | { type: 'keep'; id: string }
   /** Several commands that undo and redo as one step. */
   | { type: 'batch'; commands: SceneCommand[] }
 
@@ -36,7 +39,7 @@ export function applyCommand(document: SceneDocument, command: SceneCommand): Sc
       return { ...document, elements: [...document.elements, command.element] }
     case 'move':
       return updateElement(document, command.id, (e) => {
-        if (e.kind !== 'point') return e
+        if (e.kind !== 'point' || e.status === 'existing-remove') return e
         const rotation = command.rotation ?? e.rotation
         const unchanged = e.position.x === command.position.x && e.position.y === command.position.y && e.rotation === rotation
         return unchanged ? e : { ...e, position: command.position, rotation }
@@ -45,15 +48,19 @@ export function applyCommand(document: SceneDocument, command: SceneCommand): Sc
       // Only elements that point at an article can be swapped; the plot and buildings have none. A surface also
       // takes the new article's material, so the scene and the catalog say the same thing.
       return updateElement(document, command.id, (e) => {
-        if (!('articleId' in e)) return e
+        if (!('articleId' in e) || e.status === 'existing-remove') return e
         const material = e.kind === 'surface' && command.material ? command.material : undefined
         if (e.articleId === command.articleId && (material === undefined || (e.kind === 'surface' && e.material === material))) return e
         return material ? { ...e, articleId: command.articleId, material } : { ...e, articleId: command.articleId }
       })
-    case 'remove':
-      return document.elements.some((e) => e.id === command.id)
-        ? { ...document, elements: document.elements.filter((e) => e.id !== command.id) }
-        : document
+    case 'remove': {
+      const element = document.elements.find((e) => e.id === command.id)
+      if (!element) return document
+      if (element.status === 'new') return { ...document, elements: document.elements.filter((e) => e.id !== command.id) }
+      return updateElement(document, command.id, (e) => (e.status === 'existing-keep' ? { ...e, status: 'existing-remove' } : e))
+    }
+    case 'keep':
+      return updateElement(document, command.id, (e) => (e.status === 'existing-remove' ? { ...e, status: 'existing-keep' } : e))
     case 'batch':
       return command.commands.reduce(applyCommand, document)
   }

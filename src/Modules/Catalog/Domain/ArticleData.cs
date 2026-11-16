@@ -14,6 +14,7 @@ internal sealed record ArticleRuleError(string Field, string Message);
 /// <param name="Height">Plants and hedges: planting height (as delivered) in meters. Fences: fence height.</param>
 /// <param name="Width">Hedges and fences: the line's width in meters.</param>
 /// <param name="ClipHeight">Hedges: the height the hedge is kept at. Information only.</param>
+/// <param name="LaborHours">Hours of work to plant or lay one unit (piece, meter or square meter). Pricing uses it.</param>
 internal sealed partial record ArticleData(
     string ArticleNumber,
     string Name,
@@ -33,9 +34,12 @@ internal sealed partial record ArticleData(
     double? MatureWidth,
     double? ClipHeight,
     double? GrowthCmPerYear,
-    Light Light)
+    Light Light,
+    decimal LaborHours)
 {
     public const double MaxScale = 5;
+
+    public const decimal MaxLaborHours = 100;
 
     // The database column sizes (ArticleConfiguration). Checked here so a long text gets a Swedish message with its
     // row instead of a database error.
@@ -110,6 +114,16 @@ internal sealed partial record ArticleData(
         if (decimal.Round(Price.Amount, 2) != Price.Amount)
         {
             Add(nameof(Price), "Priset får ha högst två decimaler.");
+        }
+
+        if (LaborHours is < 0 or > MaxLaborHours)
+        {
+            Add(nameof(LaborHours), $"Arbetstiden måste vara mellan 0 och {MaxLaborHours} timmar.");
+        }
+
+        if (decimal.Round(LaborHours, 2) != LaborHours)
+        {
+            Add(nameof(LaborHours), "Arbetstiden får ha högst två decimaler.");
         }
 
         if (Scale is <= 0 or > MaxScale)
