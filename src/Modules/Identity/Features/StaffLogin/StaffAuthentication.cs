@@ -94,9 +94,18 @@ internal static class StaffAuthentication
             : null;
     }
 
-    /// <summary>Starts or refreshes the setup session. Call it again after anything that changes the security stamp.</summary>
+    /// <summary>
+    /// Starts or refreshes the setup session. Call it again after anything that changes the security stamp. Someone who
+    /// has not set up two-factor gets their app key here, before the session records the stamp: the setup page then only
+    /// reads the key, so asking for it twice at once cannot make the other request look expired.
+    /// </summary>
     public static async Task StartSetupAsync(HttpContext http, UserManager<StaffUser> users, StaffUser user)
     {
+        if (!user.TwoFactorEnabled && string.IsNullOrEmpty(await users.GetAuthenticatorKeyAsync(user)))
+        {
+            await users.ResetAuthenticatorKeyAsync(user);
+        }
+
         var identity = new ClaimsIdentity(
             [new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), new Claim(StaffClaims.SecurityStamp, await users.GetSecurityStampAsync(user) ?? string.Empty)],
             SetupScheme);

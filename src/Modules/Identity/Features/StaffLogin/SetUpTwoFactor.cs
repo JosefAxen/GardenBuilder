@@ -36,14 +36,10 @@ internal static class SetUpTwoFactor
             return StaffAuthentication.SessionExpired();
         }
 
-        var key = await users.GetAuthenticatorKeyAsync(user);
-        if (string.IsNullOrEmpty(key))
+        // Only reads: the key was made when the setup session started (see StaffAuthentication.StartSetupAsync).
+        if (await users.GetAuthenticatorKeyAsync(user) is not { Length: > 0 } key)
         {
-            await users.ResetAuthenticatorKeyAsync(user);
-            key = (await users.GetAuthenticatorKeyAsync(user))!;
-
-            // A new key changes the security stamp; the setup session follows it.
-            await StaffAuthentication.StartSetupAsync(http, users, user);
+            return StaffAuthentication.SessionExpired();
         }
 
         var issuer = Uri.EscapeDataString(Issuer);

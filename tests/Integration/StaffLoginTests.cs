@@ -1,4 +1,6 @@
 using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 using GardenBuilder.Contracts.Identity;
 using GardenBuilder.Modules.Identity;
 using GardenBuilder.Modules.Identity.Domain;
@@ -189,6 +191,49 @@ public sealed class StaffLoginTests(ApiFactory factory) : IClassFixture<ApiFacto
         using var response = await browser.PostAsync("login", new { email, password = temporary.Password });
 
         Assert.Equal("invalid-credentials", await StaffBrowser.CodeAsync(response));
+    }
+
+    [Fact]
+    public async Task Setup_page_asked_twice_with_the_same_cookie_shows_the_same_key()
+    {
+        // The web asks for the QR code twice at once (React does in development, and a slow network can too): both
+        // requests carry the same cookie. The second must not see the setup session as expired.
+        var (email, temporary) = await StaffBrowser.CreateStaffAsync(factory, StaffRole.Sales);
+        using var client = IdentityTestHelpers.HttpsClient(factory, handleCookies: false);
+
+        using var login = await SendAsync(client, HttpMethod.Post, "login", null, new { email, password = temporary.Password });
+        using var password = await SendAsync(client, HttpMethod.Post, "password", SetupCookie(login), new { newPassword = StaffBrowser.NewPassword });
+        var cookie = SetupCookie(password);
+
+        using var first = await SendAsync(client, HttpMethod.Get, "two-factor/setup", cookie);
+        using var second = await SendAsync(client, HttpMethod.Get, "two-factor/setup", cookie);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+        var key = (await first.Content.ReadFromJsonAsync<JsonElement>(Token)).GetProperty("sharedKey").GetString()!;
+        Assert.Equal(key, (await second.Content.ReadFromJsonAsync<JsonElement>(Token)).GetProperty("sharedKey").GetString());
+
+        using var confirmed = await SendAsync(client, HttpMethod.Post, "two-factor/setup", cookie, new { code = Totp.Code(key) });
+        Assert.Equal(HttpStatusCode.OK, confirmed.StatusCode);
+    }
+
+    /// <summary>The setup cookie a response set last (a login first clears any old one, then sets the new one).</summary>
+    private static string SetupCookie(HttpResponseMessage response) =>
+        response.Headers.GetValues("Set-Cookie").Last(c => c.StartsWith("gb-staff-setup=", StringComparison.Ordinal)).Split(';')[0];
+
+    private static async Task<HttpResponseMessage> SendAsync(HttpClient client, HttpMethod method, string path, string? cookie, object? body = null)
+    {
+        using var request = new HttpRequestMessage(method, new Uri("/api/identity/staff/" + path, UriKind.Relative));
+        if (cookie is not null)
+        {
+            request.Headers.Add("Cookie", cookie);
+        }
+
+        if (body is not null)
+        {
+            request.Content = JsonContent.Create(body);
+        }
+
+        return await client.SendAsync(request, Token);
     }
 
     [Fact]
