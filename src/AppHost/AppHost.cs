@@ -1,3 +1,5 @@
+using GardenBuilder.AppHost;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 // Resource names must match GardenBuilder.Contracts.ResourceNames.
@@ -19,6 +21,9 @@ builder.AddProject<Projects.GardenBuilder_CatalogImport>("catalog-import")
     .WithReference(database).WaitForCompletion(migrator)
     .WithArgs("import", exampleCatalog)
     .WithExplicitStart();
+
+// Creates and manages staff accounts: buttons on the staff-admin resource (StaffAdminResource.cs).
+builder.AddStaffAdmin(database, migrator);
 
 var api = builder.AddProject<Projects.GardenBuilder_Api>("api")
     .WithReference(database).WaitFor(database)

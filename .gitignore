@@ -490,3 +490,6 @@ test-results/
 .env
 .env.*
 !.env.example
+
+# Temporary staff passwords written by tools/StaffAdmin. Hand them over, then delete them.
+.secrets/
