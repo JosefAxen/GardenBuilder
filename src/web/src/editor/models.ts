@@ -36,8 +36,11 @@ export const NOMINAL_HEIGHT = {
   furniture: 0.95,
 } as const
 
-/** The type models drawn as a model at a point; the others are lines and surfaces generated from their shape. */
+/** The families drawn as a generated model at a point; the others are lines and surfaces generated from their shape. */
 export type PointModelKey = keyof typeof NOMINAL_HEIGHT
+
+/** True when the family has a generated model, keyed by family until the GLB forms are drawn. */
+export const isPointModel = (family: string): family is PointModelKey => family in NOMINAL_HEIGHT
 
 const BARK = '#7a5a3a'
 const hasAccent = (a: CatalogArticle) => a.accentColor !== null

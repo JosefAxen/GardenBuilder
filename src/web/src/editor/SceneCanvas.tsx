@@ -6,9 +6,8 @@ import { newId } from '../api/ids'
 import type { BuildingElement, Point2, SceneElement, SurfaceMaterial } from '../api/scene'
 import { findArticle, useCatalogStore } from './catalogStore'
 import { LineView } from './LineView'
-import { buildModels, type ModelPart, type PointModelKey } from './models'
+import { buildModels, isPointModel, type ModelPart, type PointModelKey } from './models'
 import { placementProblem } from './placement'
-import { isPointModel } from './sizing'
 import { GrowthRings, PartInstances, type PlacedPoint } from './PointInstances'
 import { useSceneStore } from './sceneStore'
 import { findCrowdedPlants } from './spacing'
@@ -152,7 +151,7 @@ function Scene() {
         if (e.kind !== 'point') return []
         const article = findArticle(e.articleId, articles)
         // Elements whose article is not in the catalog (not loaded, or discontinued) are skipped, not drawn wrong.
-        if (article?.geometry !== 'point' || !isPointModel(article.typeModel)) return []
+        if (article?.geometry !== 'point' || !isPointModel(article.family)) return []
         const position = drag?.id === e.id ? drag.position : e.position
         return [{ id: e.id, position, rotation: e.rotation, article, removed: e.status === 'existing-remove' }]
       }),
@@ -170,7 +169,7 @@ function Scene() {
         modelParts.map((part) => ({
           key: `${kind}-${part.key}`,
           part,
-          items: placed.filter((p) => p.article.typeModel === kind && (part.when?.(p.article) ?? true)),
+          items: placed.filter((p) => p.article.family === kind && (part.when?.(p.article) ?? true)),
         })),
       ),
     [models, placed],
@@ -296,7 +295,7 @@ function Scene() {
 
       {ghost && <GrowthRings items={[ghost]} crowded={new Set()} />}
       {ghost &&
-        models[ghost.article.typeModel as PointModelKey].map((part) =>
+        models[ghost.article.family as PointModelKey].map((part) =>
           part.when?.(ghost.article) === false ? null : (
             <PartInstances key={`ghost-${part.key}`} part={part} items={[ghost]} onPointerDown={() => {}} />
           ),

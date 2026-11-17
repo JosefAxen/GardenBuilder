@@ -4,7 +4,7 @@ import { Color, type InstancedMesh, Matrix4, Quaternion, Vector3 } from 'three'
 import type { Point2 } from '../api/scene'
 import type { CatalogArticle } from '../api/catalog'
 import { renderScale } from './sizing'
-import type { ModelPart } from './models'
+import { NOMINAL_HEIGHT, type ModelPart, type PointModelKey } from './models'
 
 /** A point element joined with its article, ready to draw. */
 export type PlacedPoint = { id: string; position: Point2; rotation: number; article: CatalogArticle; removed: boolean }
@@ -44,7 +44,7 @@ export function PartInstances({
       // Scene (x east, y north) to three.js (x, z = -north).
       position.set(item.position.x, 0, -item.position.y)
       quaternion.setFromAxisAngle(UP, item.rotation)
-      scale.setScalar(renderScale(item.article))
+      scale.setScalar(renderScale(item.article, NOMINAL_HEIGHT[item.article.family as PointModelKey]))
       mesh.setMatrixAt(i, matrix.compose(position, quaternion, scale))
       const source = part.color === 'primary' ? item.article.color : part.color === 'accent' ? item.article.accentColor : part.color
       color.set(source ?? '#ffffff')
