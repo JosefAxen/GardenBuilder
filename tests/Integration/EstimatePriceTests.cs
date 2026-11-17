@@ -115,7 +115,7 @@ public sealed class EstimatePriceTests(ApiFactory factory) : IClassFixture<ApiFa
     {
         var thuja = Article.Create(new ArticleData(
             "TU-SM-080", "Tuja Smaragd 80–100 cm", "Tuja Smaragd", "Träd", ArticleUnit.Piece, Money.InSek(395m),
-            StockStatus.InStock, TypeModel.Conifer, 1, "#3f7a3a", null, HardinessZone: 5, Height: 0.9, Width: null,
+            StockStatus.InStock, TypeModel.ConiferColumn, 1, "#3f7a3a", null, HardinessZone: 5, Height: 0.9, Width: null,
             MatureHeight: 4, MatureWidth: 1.2, ClipHeight: null, GrowthCmPerYear: 20, Light.Sun, LaborHours: 0.5m));
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();

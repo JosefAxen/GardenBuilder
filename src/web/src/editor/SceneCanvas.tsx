@@ -6,10 +6,11 @@ import { newId } from '../api/ids'
 import type { BuildingElement, Point2, SceneElement, SurfaceMaterial } from '../api/scene'
 import { findArticle, useCatalogStore } from './catalogStore'
 import { LineView } from './LineView'
-import { buildModels, type ModelPart, type PointModelKey } from './models'
+import { FormInstances } from './GlbInstances'
+import { buildModels } from './models'
+import { isPointForm, type PointFormKey } from './modelLibrary'
 import { placementProblem } from './placement'
-import { isPointModel } from './sizing'
-import { GrowthRings, PartInstances, type PlacedPoint } from './PointInstances'
+import { GrowthRings, type PlacedPoint } from './PointInstances'
 import { useSceneStore } from './sceneStore'
 import { findCrowdedPlants } from './spacing'
 
@@ -17,6 +18,7 @@ import { findCrowdedPlants } from './spacing'
 const toShape = (points: Point2[]) => new Shape(points.map((p) => new Vector2(p.x, p.y)))
 const fromGround = (point: Vector3): Point2 => ({ x: point.x, y: -point.z })
 const GROUND = new Plane(new Vector3(0, 1, 0), 0)
+const ignore = () => {}
 
 const SURFACE_COLORS: Record<SurfaceMaterial, string> = {
   grass: '#7fb069',
@@ -152,7 +154,7 @@ function Scene() {
         if (e.kind !== 'point') return []
         const article = findArticle(e.articleId, articles)
         // Elements whose article is not in the catalog (not loaded, or discontinued) are skipped, not drawn wrong.
-        if (article?.geometry !== 'point' || !isPointModel(article.typeModel)) return []
+        if (article?.geometry !== 'point' || !isPointForm(article.typeModel)) return []
         const position = drag?.id === e.id ? drag.position : e.position
         return [{ id: e.id, position, rotation: e.rotation, article, removed: e.status === 'existing-remove' }]
       }),
@@ -164,17 +166,14 @@ function Scene() {
     [placed],
   )
 
-  const parts = useMemo(
-    () =>
-      (Object.entries(models) as [PointModelKey, ModelPart[]][]).flatMap(([kind, modelParts]) =>
-        modelParts.map((part) => ({
-          key: `${kind}-${part.key}`,
-          part,
-          items: placed.filter((p) => p.article.typeModel === kind && (part.when?.(p.article) ?? true)),
-        })),
-      ),
-    [models, placed],
-  )
+  const byForm = useMemo(() => {
+    const groups = new Map<PointFormKey, PlacedPoint[]>()
+    for (const p of placed) {
+      const form = p.article.typeModel as PointFormKey
+      groups.set(form, [...(groups.get(form) ?? []), p])
+    }
+    return [...groups]
+  }, [placed])
 
   // The drop is one 'move' command, so a whole drag undoes in one step.
   // A release anywhere drops the element. If the pointer is lost instead (the window loses focus, or the browser
@@ -288,19 +287,16 @@ function Scene() {
         )
       })}
 
-      {parts.map(({ key, part, items }) => (
-        <PartInstances key={key} part={part} items={items} onPointerDown={startDrag} />
+      {byForm.map(([form, items]) => (
+        <FormInstances key={form} form={form} items={items} models={models} detail={detail} onPointerDown={startDrag} />
       ))}
       <GrowthRings items={placed} crowded={crowded} />
       {selectedPoint && <SelectionMarker point={selectedPoint} />}
 
       {ghost && <GrowthRings items={[ghost]} crowded={new Set()} />}
-      {ghost &&
-        models[ghost.article.typeModel as PointModelKey].map((part) =>
-          part.when?.(ghost.article) === false ? null : (
-            <PartInstances key={`ghost-${part.key}`} part={part} items={[ghost]} onPointerDown={() => {}} />
-          ),
-        )}
+      {ghost && isPointForm(ghost.article.typeModel) && (
+        <FormInstances form={ghost.article.typeModel} items={[ghost]} models={models} detail={detail} onPointerDown={ignore} />
+      )}
       {tool.mode === 'line' && tool.start && hover && placeArticle?.geometry === 'line' && (
         <LineView points={[tool.start, hover]} article={placeArticle} ghost />
       )}

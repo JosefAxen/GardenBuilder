@@ -1,0 +1,67 @@
+{
+  "tree-large": {
+    "height": 1,
+    "width": 0.45,
+    "triangles": 3505
+  },
+  "tree-fruit": {
+    "height": 1,
+    "width": 1.033,
+    "triangles": 6265
+  },
+  "tree-small": {
+    "height": 1,
+    "width": 0.602,
+    "triangles": 3182
+  },
+  "pine": {
+    "height": 1,
+    "width": 0.676,
+    "triangles": 3947
+  },
+  "spruce": {
+    "height": 1,
+    "width": 0.736,
+    "triangles": 1646
+  },
+  "conifer-column": {
+    "height": 1,
+    "width": 0.522,
+    "triangles": 900
+  },
+  "shrub-round": {
+    "height": 1,
+    "width": 1.242,
+    "triangles": 900
+  },
+  "shrub-flowering": {
+    "height": 1,
+    "width": 1.242,
+    "triangles": 1368
+  },
+  "perennial-tall": {
+    "height": 1,
+    "width": 0.716,
+    "triangles": 1690
+  },
+  "perennial-low": {
+    "height": 1,
+    "width": 0.774,
+    "triangles": 755
+  },
+  "foliage-plant": {
+    "height": 1,
+    "width": 0.832,
+    "triangles": 360
+  },
+  "ornamental-grass": {
+    "height": 1,
+    "width": 0.953,
+    "triangles": 622
+  },
+  "rock": {
+    "height": 0.6,
+    "width": 0.856,
+    "triangles": 342
+  }
+}

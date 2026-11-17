@@ -120,7 +120,7 @@ export const useSceneStore = create<SceneState>((set, get) => ({
   drag: null,
   hover: null,
   notice: null,
-  detail: 'low',
+  detail: 'high',
   perf: null,
   measuring: false,
   execute: (command) =>

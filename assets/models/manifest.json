@@ -1,0 +1,17 @@
+[
+  { "key": "tree-large", "family": "deciduous-tree", "source": "CommonTree_3", "nominalHeight": 1, "maxTriangles": 7000, "license": "CC0-1.0", "sourceUrl": "https://quaternius.com/packs/stylizednaturemegakit.html" },
+  { "key": "tree-fruit", "family": "deciduous-tree", "source": "CommonTree_1", "widthFactor": 1.64, "nominalHeight": 1, "maxTriangles": 7000, "license": "CC0-1.0", "sourceUrl": "https://quaternius.com/packs/stylizednaturemegakit.html" },
+  { "key": "tree-small", "family": "deciduous-tree", "source": "CommonTree_5", "nominalHeight": 1, "maxTriangles": 7000, "license": "CC0-1.0", "sourceUrl": "https://quaternius.com/packs/stylizednaturemegakit.html" },
+  { "key": "pine", "family": "conifer", "source": "Pine_1", "nominalHeight": 1, "maxTriangles": 7000, "license": "CC0-1.0", "sourceUrl": "https://quaternius.com/packs/stylizednaturemegakit.html" },
+  { "key": "spruce", "family": "conifer", "source": "Pine_5", "nominalHeight": 1, "maxTriangles": 7000, "license": "CC0-1.0", "sourceUrl": "https://quaternius.com/packs/stylizednaturemegakit.html" },
+  { "key": "conifer-column", "family": "conifer", "source": "Bush_Common", "leafTexture": "Leaves_NormalTree_C.png", "widthFactor": 0.42, "nominalHeight": 1, "maxTriangles": 2000, "license": "CC0-1.0", "sourceUrl": "https://quaternius.com/packs/stylizednaturemegakit.html" },
+  { "key": "shrub-round", "family": "shrub", "source": "Bush_Common", "leafTexture": "Leaves_NormalTree_C.png", "nominalHeight": 1, "maxTriangles": 2000, "license": "CC0-1.0", "sourceUrl": "https://quaternius.com/packs/stylizednaturemegakit.html" },
+  { "key": "shrub-flowering", "family": "shrub", "source": "Bush_Common_Flowers", "nominalHeight": 1, "maxTriangles": 2000, "license": "CC0-1.0", "sourceUrl": "https://quaternius.com/packs/stylizednaturemegakit.html" },
+  { "key": "perennial-tall", "family": "perennial", "source": "Flower_4_Group", "nominalHeight": 1, "maxTriangles": 2000, "license": "CC0-1.0", "sourceUrl": "https://quaternius.com/packs/stylizednaturemegakit.html" },
+  { "key": "perennial-low", "family": "perennial", "source": "Flower_3_Group", "nominalHeight": 1, "maxTriangles": 2000, "license": "CC0-1.0", "sourceUrl": "https://quaternius.com/packs/stylizednaturemegakit.html" },
+  { "key": "foliage-plant", "family": "perennial", "source": "Plant_1_Big", "nominalHeight": 1, "maxTriangles": 2000, "license": "CC0-1.0", "sourceUrl": "https://quaternius.com/packs/stylizednaturemegakit.html" },
+  { "key": "ornamental-grass", "family": "perennial", "source": "Grass_Wispy_Tall", "nominalHeight": 1, "maxTriangles": 2000, "license": "CC0-1.0", "sourceUrl": "https://quaternius.com/packs/stylizednaturemegakit.html" },
+  { "key": "rock", "family": "furniture", "source": "Rock_Medium_1", "nominalHeight": 0.6, "maxTriangles": 2000, "license": "CC0-1.0", "sourceUrl": "https://quaternius.com/packs/stylizednaturemegakit.html" },
+  { "key": "pot", "family": "pot", "source": null, "nominalHeight": 1, "maxTriangles": 2000, "license": "own", "sourceUrl": null },
+  { "key": "furniture", "family": "furniture", "source": null, "nominalHeight": 0.95, "maxTriangles": 2000, "license": "own", "sourceUrl": null }
+]

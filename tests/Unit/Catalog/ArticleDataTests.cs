@@ -14,7 +14,7 @@ public sealed class ArticleDataTests
         Unit: ArticleUnit.Piece,
         Price: Money.InSek(495m),
         StockStatus: StockStatus.InStock,
-        TypeModel: TypeModel.Conifer,
+        TypeModel: TypeModel.ConiferColumn,
         Scale: 1,
         Color: "#3f7a3a",
         AccentColor: null,
@@ -100,7 +100,7 @@ public sealed class ArticleDataTests
     public void Unit_must_match_type_model()
     {
         Assert.Contains(
-            "Enheten m passar inte typmodellen conifer, som säljs per st.",
+            "Enheten m passar inte typmodellen conifer-column, som säljs per st.",
             (Valid() with { Unit = ArticleUnit.Meter }).Validate());
     }
 
@@ -163,13 +163,13 @@ public sealed class ArticleDataTests
     [Fact]
     public void Width_must_be_empty_for_a_tree()
     {
-        Assert.Contains("Bredd ska vara tom för typmodellen conifer.", (Valid() with { Width = 1 }).Validate());
+        Assert.Contains("Bredd ska vara tom för typmodellen conifer-column.", (Valid() with { Width = 1 }).Validate());
     }
 
     [Fact]
     public void Clip_height_is_only_for_hedges()
     {
-        Assert.Contains("Klipphöjd ska vara tom för typmodellen conifer.", (Valid() with { ClipHeight = 1 }).Validate());
+        Assert.Contains("Klipphöjd ska vara tom för typmodellen conifer-column.", (Valid() with { ClipHeight = 1 }).Validate());
     }
 
     [Fact]

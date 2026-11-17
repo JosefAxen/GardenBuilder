@@ -10,7 +10,8 @@
     "test": "vitest run",
     "preview": "vite preview",
     "gen:scene": "dotnet run --project ../../tools/SchemaExport -- src/api/scene.schema.json && npm run gen:scene:ts",
-    "gen:scene:ts": "json2ts -i src/api/scene.schema.json -o src/api/scene.generated.ts --bannerComment \"/* Generated from scene.schema.json by npm run gen:scene. Do not edit. */\""
+    "gen:scene:ts": "json2ts -i src/api/scene.schema.json -o src/api/scene.generated.ts --bannerComment \"/* Generated from scene.schema.json by npm run gen:scene. Do not edit. */\"",
+    "build:models": "node scripts/build-models.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",
@@ -23,6 +24,9 @@
     "zustand": "^5.1.0"
   },
   "devDependencies": {
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/extensions": "^4.5.1",
+    "@gltf-transform/functions": "^4.5.1",
     "@types/node": "^24.19.2",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.3.0",
@@ -31,6 +35,7 @@
     "@vitejs/plugin-react": "^6.1.2",
     "json-schema-to-typescript": "^15.0.4",
     "oxlint": "^1.90.0",
+    "sharp": "^0.35.5",
     "typescript": "~7.0.2",
     "vite": "^8.3.6",
     "vitest": "^5.1.0"

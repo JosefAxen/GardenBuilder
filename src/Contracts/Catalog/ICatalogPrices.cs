@@ -6,9 +6,10 @@ namespace GardenBuilder.Contracts.Catalog;
 /// <param name="Unit">"piece", "meter" or "square-meter".</param>
 /// <param name="Price">Price per unit in SEK including VAT.</param>
 /// <param name="LaborHours">Hours of work per unit.</param>
-/// <param name="TypeModel">The type model key, e.g. "deciduous-tree".</param>
+/// <param name="TypeModel">The form key, e.g. "conifer-column". Only for display: prices never depend on it.</param>
+/// <param name="Family">What the form stands for, e.g. "conifer". Pricing uses this.</param>
 public sealed record ArticlePriceFacts(
-    Guid Id, string Name, string Unit, Money Price, decimal LaborHours, string TypeModel, bool Discontinued);
+    Guid Id, string Name, string Unit, Money Price, decimal LaborHours, string TypeModel, string Family, bool Discontinued);
 
 /// <summary>Prices and labor hours from the catalog, for the pricing module.</summary>
 public interface ICatalogPrices

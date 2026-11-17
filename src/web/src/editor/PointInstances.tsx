@@ -1,10 +1,9 @@
 import { type ThreeEvent, useThree } from '@react-three/fiber'
 import { useLayoutEffect, useMemo, useRef } from 'react'
-import { Color, type InstancedMesh, Matrix4, Quaternion, Vector3 } from 'three'
+import { type BufferGeometry, Color, type InstancedMesh, type Material, Matrix4, Quaternion, Vector3 } from 'three'
 import type { Point2 } from '../api/scene'
 import type { CatalogArticle } from '../api/catalog'
 import { renderScale } from './sizing'
-import type { ModelPart } from './models'
 
 /** A point element joined with its article, ready to draw. */
 export type PlacedPoint = { id: string; position: Point2; rotation: number; article: CatalogArticle; removed: boolean }
@@ -21,15 +20,27 @@ const REMOVED = new Color('#b0b0b0')
 const capacityFor = (count: number) => Math.max(16, 2 ** Math.ceil(Math.log2(Math.max(1, count))))
 
 /**
- * Draws one part of one model kind for every element that uses it, in a single draw call.
- * The matrices are rewritten from the store whenever the elements change.
+ * Draws one part of one form for every element that uses it, in a single draw call: a generated shape, or one material
+ * of a GLB form. The matrices are rewritten from the store whenever the elements change.
  */
 export function PartInstances({
-  part,
+  geometry,
+  material,
+  colorOf,
+  nominalHeight,
+  receiveShadow = true,
   items,
   onPointerDown,
 }: {
-  part: ModelPart
+  geometry: BufferGeometry
+  /** The GLB part's material; generated shapes get a flat-shaded standard material. */
+  material?: Material
+  /** The colour the part is multiplied with for this article: its own colour, a tint, or white for pack colours. */
+  colorOf: (article: CatalogArticle) => string | null
+  /** The model's height in meters at scale 1. */
+  nominalHeight: number
+  /** Off for leaf and flower cards: they would shade themselves almost black. */
+  receiveShadow?: boolean
   items: PlacedPoint[]
   onPointerDown: (id: string, event: ThreeEvent<PointerEvent>) => void
 }) {
@@ -44,10 +55,9 @@ export function PartInstances({
       // Scene (x east, y north) to three.js (x, z = -north).
       position.set(item.position.x, 0, -item.position.y)
       quaternion.setFromAxisAngle(UP, item.rotation)
-      scale.setScalar(renderScale(item.article))
+      scale.setScalar(renderScale(item.article, nominalHeight))
       mesh.setMatrixAt(i, matrix.compose(position, quaternion, scale))
-      const source = part.color === 'primary' ? item.article.color : part.color === 'accent' ? item.article.accentColor : part.color
-      color.set(source ?? '#ffffff')
+      color.set(colorOf(item.article) ?? '#ffffff')
       // Existing elements that will be removed are drawn faded, so the customer sees what goes away.
       if (item.removed) color.lerp(REMOVED, 0.7)
       mesh.setColorAt(i, color)
@@ -58,22 +68,22 @@ export function PartInstances({
     mesh.computeBoundingSphere()
     // The matrices are written straight to the GPU, past React, so ask for a new frame (the scene renders on demand).
     invalidate()
-  }, [items, part, capacity, invalidate])
+  }, [items, colorOf, nominalHeight, capacity, invalidate])
 
   return (
     <instancedMesh
       key={capacity}
       ref={ref}
-      args={[part.geometry, undefined, capacity]}
+      args={[geometry, material, capacity]}
       castShadow
-      receiveShadow
+      receiveShadow={receiveShadow}
       onPointerDown={(event) => {
         if (event.instanceId === undefined) return
         const item = items[event.instanceId]
         if (item) onPointerDown(item.id, event)
       }}
     >
-      <meshStandardMaterial flatShading roughness={0.9} />
+      {!material && <meshStandardMaterial flatShading roughness={0.9} />}
     </instancedMesh>
   )
 }

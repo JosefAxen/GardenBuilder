@@ -1,11 +1,20 @@
 import type { SurfaceMaterial } from './scene'
 
-/** The type model keys, the same list as TypeModels in the Catalog module. */
+/** The form keys, the same list as TypeModels in the Catalog module and assets/models/manifest.json. */
 export type TypeModelKey =
-  | 'deciduous-tree'
-  | 'conifer'
-  | 'shrub'
-  | 'perennial'
+  | 'tree-large'
+  | 'tree-fruit'
+  | 'tree-small'
+  | 'pine'
+  | 'spruce'
+  | 'conifer-column'
+  | 'shrub-round'
+  | 'shrub-flowering'
+  | 'perennial-tall'
+  | 'perennial-low'
+  | 'foliage-plant'
+  | 'ornamental-grass'
+  | 'rock'
   | 'pot'
   | 'furniture'
   | 'hedge'
@@ -34,7 +43,10 @@ export type CatalogArticle = {
   price: number
   currency: string
   stockStatus: 'in-stock' | 'out-of-stock'
+  /** The form the article is drawn with. Only how it looks: the article is what the element is. */
   typeModel: TypeModelKey
+  /** What the form stands for, e.g. 'conifer' for 'conifer-column'. Plants are the families of trees, shrubs and perennials. */
+  family: string
   geometry: 'point' | 'line' | 'surface'
   material: SurfaceMaterial | null
   scale: number

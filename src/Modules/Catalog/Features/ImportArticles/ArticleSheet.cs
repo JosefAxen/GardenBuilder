@@ -228,7 +228,7 @@ internal static partial class ArticleSheet
             Unit: Required(Unit, ParseUnit, "Använd st, m eller m²."),
             Price: Money.InSek(Required(Price, ParseDecimal, "Skriv priset som ett tal, t.ex. 495 eller 1 295,50.")),
             StockStatus: Required(Stock, ParseStock, "Använd I lager, Slut eller Utgått."),
-            TypeModel: Required(Model, ParseTypeModel, "Se listan över typmodeller i designen."),
+            TypeModel: Required(Model, ParseTypeModel, TypeModelHint),
             Scale: Optional(Scale, ParseDouble) ?? 1,
             Color: Text(Color) ?? string.Empty,
             AccentColor: Text(Accent),
@@ -347,6 +347,9 @@ internal static partial class ArticleSheet
         "utgått" => StockStatus.Discontinued,
         _ => null,
     };
+
+    /// <summary>Names every key, so a row with an old key ("conifer") shows what to write instead.</summary>
+    private static readonly string TypeModelHint = $"Använd en av: {string.Join(", ", TypeModels.Keys)}.";
 
     private static TypeModel? ParseTypeModel(string text) => TypeModels.TryParse(text.ToLowerInvariant(), out var model) ? model : null;
 }

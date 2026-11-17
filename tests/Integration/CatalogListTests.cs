@@ -12,7 +12,7 @@ public sealed class CatalogListTests(ApiFactory factory) : IClassFixture<ApiFact
 {
     private static ArticleData Thuja() => new(
         "TU-SM-080", "Tuja Smaragd 80–100 cm", "Tuja Smaragd", "Träd", ArticleUnit.Piece, Money.InSek(495m),
-        StockStatus.InStock, TypeModel.Conifer, 1, "#3f7a3a", null, HardinessZone: 5, Height: 0.9, Width: null,
+        StockStatus.InStock, TypeModel.ConiferColumn, 1, "#3f7a3a", null, HardinessZone: 5, Height: 0.9, Width: null,
         MatureHeight: 4, MatureWidth: 1.2, ClipHeight: null, GrowthCmPerYear: 20, Light.Sun | Light.PartShade, LaborHours: 0.5m);
 
     [Fact]
@@ -43,7 +43,8 @@ public sealed class CatalogListTests(ApiFactory factory) : IClassFixture<ApiFact
 
         Assert.Equal(2, articles.GetArrayLength());
         var thuja = articles.EnumerateArray().Single(a => a.GetProperty("articleNumber").GetString() == "TU-SM-080");
-        Assert.Equal("conifer", thuja.GetProperty("typeModel").GetString());
+        Assert.Equal("conifer-column", thuja.GetProperty("typeModel").GetString());
+        Assert.Equal("conifer", thuja.GetProperty("family").GetString());
         Assert.Equal("point", thuja.GetProperty("geometry").GetString());
         Assert.Equal("Tuja Smaragd", thuja.GetProperty("variety").GetString());
         Assert.Equal(0.9, thuja.GetProperty("height").GetDouble());
