@@ -1,7 +1,10 @@
 using GardenBuilder.Contracts;
 using GardenBuilder.Contracts.Database;
+using GardenBuilder.Contracts.Designs;
 using GardenBuilder.Contracts.Scenes;
 using GardenBuilder.Modules.Design.Features.CheckScene;
+using GardenBuilder.Modules.Design.Features.Versions;
+using GardenBuilder.Modules.Design.Features.WorkingCopy;
 using GardenBuilder.Modules.Design.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -10,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 
 namespace GardenBuilder.Modules.Design;
@@ -30,6 +34,9 @@ public static class DesignModule
         builder.EnrichNpgsqlDbContext<DesignDbContext>();
         builder.Services.AddScoped<IModuleMigrator, DesignMigrator>();
         builder.Services.AddSingleton<ISceneCheck, SceneCheck>();
+        builder.Services.TryAddSingleton(TimeProvider.System);
+        builder.Services.AddScoped<WorkingCopyStore>();
+        builder.Services.AddScoped<IDesignVersions, DesignVersions>();
 
         return builder;
     }
@@ -37,7 +44,7 @@ public static class DesignModule
     public static IEndpointRouteBuilder MapDesignEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/designs").WithTags("Design");
-        _ = group; // Map features here, e.g. group.MapSomething();
+        group.MapWorkingCopy();
 
         return app;
     }

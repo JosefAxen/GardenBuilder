@@ -1,5 +1,7 @@
 using GardenBuilder.Contracts;
 using GardenBuilder.Contracts.Database;
+using GardenBuilder.Contracts.Gardens;
+using GardenBuilder.Modules.Garden.Features.CreateGarden;
 using GardenBuilder.Modules.Garden.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -8,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 
 namespace GardenBuilder.Modules.Garden;
@@ -27,6 +30,8 @@ public static class GardenModule
             .UseSnakeCaseNamingConvention());
         builder.EnrichNpgsqlDbContext<GardenDbContext>();
         builder.Services.AddScoped<IModuleMigrator, GardenMigrator>();
+        builder.Services.TryAddSingleton(TimeProvider.System);
+        builder.Services.AddScoped<IGardens, Gardens>();
 
         return builder;
     }

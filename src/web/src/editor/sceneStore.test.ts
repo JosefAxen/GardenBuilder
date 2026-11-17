@@ -182,3 +182,27 @@ describe('existing elements', () => {
     expect(applyCommand(removed, { type: 'replace', id: 'old-tree', articleId: 'pear' })).toBe(removed)
   })
 })
+
+describe('load', () => {
+  beforeEach(() => {
+    useSceneStore.setState({ document: scene, past: [], future: [], drag: null, notice: null, selectedId: null })
+  })
+
+  it('empties undo and redo, so undo afterwards changes nothing', () => {
+    const { execute, undo } = useSceneStore.getState()
+    execute({ type: 'remove', id: 'tree' })
+    execute({ type: 'add', element: { ...tree, id: 'second' } })
+    undo()
+    const loaded: SceneDocument = { formatVersion: 1, elements: [] }
+
+    useSceneStore.getState().load(loaded)
+    useSceneStore.getState().undo()
+    useSceneStore.getState().redo()
+
+    const state = useSceneStore.getState()
+    expect(state.document).toBe(loaded)
+    expect(state.past).toHaveLength(0)
+    expect(state.future).toHaveLength(0)
+    expect(state.selectedId).toBeNull()
+  })
+})

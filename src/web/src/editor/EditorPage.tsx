@@ -9,6 +9,8 @@ import { addStressTest, useSceneStore } from './sceneStore'
 import { removeSelected, rotateSelected } from './selectionCommands'
 import { findCrowdedPlants } from './spacing'
 import { countMissingArticles } from './catalogChecks'
+import { DesignLoading, SaveConflict, SaveStatus } from './SaveStatus'
+import { useSavedDesign } from './useSavedDesign'
 import './editor.css'
 
 function useKeyboardShortcuts() {
@@ -71,6 +73,7 @@ function StatusBar() {
         </span>
       )}
       <span className="spacer" />
+      <SaveStatus />
       {/* fps only means something while the scene is drawn every frame. */}
       {measuring && perf && (
         <span className="perf">
@@ -93,6 +96,8 @@ export function EditorPage() {
   const document = useSceneStore((s) => s.document)
   const { undo, redo, execute } = useSceneStore.getState()
   useKeyboardShortcuts()
+  const load = useSavedDesign()
+  const ready = load === 'ready'
 
   // Fetch the catalog once when the editor opens.
   useEffect(() => {
@@ -117,15 +122,17 @@ export function EditorPage() {
       <header className="editor-header">
         <Link to="/">Drömträdgård</Link>
         <span className="spacer" />
-        <button onClick={addStress}>Lägg till 300 växter</button>
-        <button onClick={clearNew}>Rensa nya växter</button>
-        <button onClick={undo} disabled={past.length === 0} title="Snabbtangent: Ctrl+Z">Ångra</button>
-        <button onClick={redo} disabled={future.length === 0} title="Snabbtangent: Ctrl+Y">Gör om</button>
+        <button onClick={addStress} disabled={!ready}>Lägg till 300 växter</button>
+        <button onClick={clearNew} disabled={!ready}>Rensa nya växter</button>
+        <button onClick={undo} disabled={!ready || past.length === 0} title="Snabbtangent: Ctrl+Z">Ångra</button>
+        <button onClick={redo} disabled={!ready || future.length === 0} title="Snabbtangent: Ctrl+Y">Gör om</button>
       </header>
       <CatalogPanel />
       <main className="editor-canvas">
         <SceneCanvas />
         <PricePanel />
+        <SaveConflict />
+        <DesignLoading load={load} />
       </main>
       <StatusBar />
     </div>

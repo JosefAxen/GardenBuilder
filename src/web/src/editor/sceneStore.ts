@@ -93,6 +93,8 @@ type SceneState = {
   /** While on, the scene is drawn every frame so the fps reading means something; otherwise only on change. */
   measuring: boolean
   execute: (command: SceneCommand) => void
+  /** Shows a saved design. Not a command and not an undo step: undo can never take back the loading itself. */
+  load: (document: SceneDocument) => void
   undo: () => void
   redo: () => void
   select: (id: string | null) => void
@@ -127,6 +129,7 @@ export const useSceneStore = create<SceneState>((set, get) => ({
       if (document === state.document) return state
       return { document, past: [...state.past, state.document], future: [], notice: null }
     }),
+  load: (document) => set({ document, past: [], future: [], selectedId: null, drag: null, notice: null }),
   undo: () =>
     set((state) => {
       const previous = state.past.at(-1)

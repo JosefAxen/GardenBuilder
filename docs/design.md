@@ -164,7 +164,11 @@ En artikel har artikelnummer, namn, kategori, enhet, pris, lagerstatus och typmo
 
 **Regler för data**
 
-- En design har en arbetskopia som sparas löpande och skyddas med optimistisk låsning.
+- En design har en arbetskopia som sparas löpande och skyddas med optimistisk låsning. Arbetskopian har ett
+  revisionsnummer som börjar på 1 och ökar med varje sparning. Servern skickar det som `ETag`, och klienten skickar
+  tillbaka det som `If-Match`. Stämmer det inte svarar servern 412 med serverns revision. Saknas det svarar den 428.
+- En kund ser och sparar bara sina egna designer. En annan kunds design svarar 404, precis som en design som inte finns.
+- Kundens första ändring skapar trädgården och designen. Ett besök utan ändringar sparar ingenting.
 - En designversion ändras aldrig. Den skapas när kunden väljer ett AI-förslag, skickar en förfrågan eller när säljaren sparar en revision.
 - En offertförfrågan pekar på en bestämd designversion och en fryst prisbild.
 - Pengar lagras som decimaltal med valuta, aldrig som flyttal. Mått lagras i meter.
@@ -199,7 +203,11 @@ Scenen sparar dessutom kameravinklar och varifrån varje mått kommer: uppskatta
 - Stilen är stiliserad: förenklade former och rena färger, inte fotorealism.
 - Omkring 40 typmodeller vid lansering, i formatet GLB. Biblioteket växer efter hand.
 - Grunden är [Quaternius Stylized Nature MegaKit](https://quaternius.com/packs/stylizednaturemegakit.html) (CC0) med träd, buskar och blommor.
-- Ett trädgårdspaket kompletterar med klippt häck, ros, rabatt och staket, till exempel [det här på CGTrader](https://www.cgtrader.com/3d-models/exterior/landscape/low-poly-and-realistic-garden-plants-and-props) för 14,99 dollar. Licensen kontrolleras för webbanvändning före köp.
+- Tills appen är klar används bara gratispaketet. Det som saknas där (till exempel ros och rabatt) får en enkel
+  modell i kod eller en närliggande modell ur gratispaketet.
+- Ett betalt trädgårdspaket kan komplettera med klippt häck, ros, rabatt och staket när appen är klar och det visar
+  sig att kunder vill använda den, till exempel [det här på CGTrader](https://www.cgtrader.com/3d-models/exterior/landscape/low-poly-and-realistic-garden-plants-and-props)
+  för 14,99 dollar. Licensen kontrolleras för webbanvändning före köp.
 - Ytor, häckar, staket, hus och enkla buskar genereras i kod ur scendokumentet och behöver inga modellfiler.
 - Bara licenser som tillåter kommersiell användning i en webbapp. Källa och licens sparas för varje modell.
 - Varje typmodell har nominell storlek, markfäste och ett tak för antal trianglar.
@@ -211,7 +219,12 @@ Scenen sparar dessutom kameravinklar och varifrån varje mått kommer: uppskatta
 
 - Scendokumentet ligger i ett tillståndslager, och React Three Fiber ritar scenen ur det. Inget tillstånd lever enbart i three.js-objekt.
 - Varje ändring är ett kommando: lägg till, flytta, byt ut eller ta bort. Det ger ångra och gör om.
-- Arbetskopian sparas en sekund efter senaste ändring.
+- Editorn öppnar kundens senaste design. Tills den är hämtad går det inte att ändra något.
+- Arbetskopian sparas en sekund efter senaste ändring. Statusraden visar "Sparar…", "Sparad" eller "Inte sparad,
+  försöker igen…". Utan svar försöker editorn igen efter 2, 4, 8 … sekunder, högst var 60:e sekund.
+- Har designen sparats i en annan flik visar editorn "Designen har ändrats i en annan flik." med valen "Hämta den
+  senaste" och "Behåll min". Inget sparas förrän kunden har valt.
+- Lämnar kunden sidan med osparade ändringar varnar webbläsaren, och editorn skickar det som inte är sparat.
 - Priset hämtas från servern en halv sekund efter senaste ändring.
 - "Byt ut" behåller plats och rotation, så att kunden snabbt kan prova alternativ.
 - Växter visar sin fullvuxna bredd som en ring på marken. Editorn varnar när de står för tätt.
@@ -292,8 +305,8 @@ Spannet läggs på rader som beror på yta eller längd. Styckvaror som träd oc
 
 - Beräkningen är rena funktioner i modulen Prissättning: mängder, prislista och regler in, uppskattning ut.
 - Servern räknar alltid. Klienten visar bara resultatet.
-- När designer sparas (delprojekt 4) sparar varje uppskattning de priser som gällde, så att den kan visas igen
-  oförändrad.
+- En uppskattning som ska sparas (med offertförfrågan, delprojekt 11) sparar de priser som gällde, så att den kan
+  visas igen oförändrad. Arbetskopian sparar bara scenen; dess pris räknas om när den visas.
 - En offertförfrågan fryser designversion och prisbild. Senare prisändringar i katalogen påverkar inte ärendet.
 - Avrundning sker en gång, på totalsumman.
 - Kunden ser alltid att priset är ungefärligt och att den bindande offerten kommer från säljaren.
