@@ -205,4 +205,8 @@ describe('load', () => {
     expect(state.future).toHaveLength(0)
     expect(state.selectedId).toBeNull()
   })
+
+  it('draws the detailed models by default', () => {
+    expect(useSceneStore.getInitialState().detail).toBe('high')
+  })
 })

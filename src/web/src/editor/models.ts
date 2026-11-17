@@ -34,13 +34,11 @@ export const NOMINAL_HEIGHT = {
   perennial: 0.6,
   pot: 1.0,
   furniture: 0.95,
+  rock: 0.6,
 } as const
 
-/** The families drawn as a generated model at a point; the others are lines and surfaces generated from their shape. */
+/** The generated shapes: the fallback for each form (modelLibrary.ts), and pots and furniture, which have no GLB. */
 export type PointModelKey = keyof typeof NOMINAL_HEIGHT
-
-/** True when the family has a generated model, keyed by family until the GLB forms are drawn. */
-export const isPointModel = (family: string): family is PointModelKey => family in NOMINAL_HEIGHT
 
 const BARK = '#7a5a3a'
 const hasAccent = (a: CatalogArticle) => a.accentColor !== null
@@ -91,6 +89,7 @@ export function buildModels(detail: 'low' | 'high'): Record<PointModelKey, Model
       { key: 'pot', color: 'primary', geometry: at(new CylinderGeometry(0.3, 0.22, 0.5, radial + 4), 0, 0.25) },
       { key: 'plant', color: 'accent', when: hasAccent, geometry: at(new IcosahedronGeometry(0.32, ico > 0 ? 2 : 0), 0, 0.68) },
     ],
+    rock: [{ key: 'stone', color: '#8f8c86', geometry: at(new DodecahedronGeometry(0.42, ico > 0 ? 1 : 0), 0, 0.3, 0, 0.7) }],
     furniture: [
       {
         key: 'wood',
