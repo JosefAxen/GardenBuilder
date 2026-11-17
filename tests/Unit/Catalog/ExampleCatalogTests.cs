@@ -15,9 +15,30 @@ public sealed class ExampleCatalogTests
     [Fact]
     public void Example_has_thujas_in_several_sizes()
     {
-        Assert.True(ExampleCatalog.Articles.Count(a => a.Variety == "Tuja Smaragd" && a.TypeModel == TypeModel.Conifer) >= 3);
-        Assert.True(ExampleCatalog.Articles.Count(a => a.Variety == "Tuja Brabant" && a.TypeModel == TypeModel.Conifer) >= 2);
+        Assert.True(ExampleCatalog.Articles.Count(a => a.Variety == "Tuja Smaragd" && a.TypeModel == TypeModel.ConiferColumn) >= 3);
+        Assert.True(ExampleCatalog.Articles.Count(a => a.Variety == "Tuja Brabant" && a.TypeModel == TypeModel.ConiferColumn) >= 2);
         Assert.True(ExampleCatalog.Articles.Count(a => a.TypeModel == TypeModel.Hedge && a.Variety?.Contains("Tuja", StringComparison.Ordinal) == true) >= 2);
+    }
+
+    [Theory]
+    [InlineData("BA-SM-120", "ConiferColumn")]
+    [InlineData("TR-AP-150", "TreeFruit")]
+    [InlineData("TR-BJ-200", "TreeLarge")]
+    [InlineData("TR-LO-060", "TreeSmall")]
+    [InlineData("BA-GR-100", "Spruce")]
+    [InlineData("BA-TA-030", "ShrubRound")]
+    [InlineData("BU-BX-030", "ShrubRound")]
+    [InlineData("BU-HO-040", "ShrubFlowering")]
+    [InlineData("BU-SY-060", "ShrubFlowering")]
+    [InlineData("BU-RH-040", "ShrubFlowering")]
+    [InlineData("BU-SP-030", "ShrubFlowering")]
+    [InlineData("PE-FU-001", "FoliagePlant")]
+    [InlineData("PE-LA-001", "PerennialTall")]
+    [InlineData("KR-TE-040", "Pot")]
+    [InlineData("MO-BA-150", "Furniture")]
+    public void Forms_match_the_design(string articleNumber, string form)
+    {
+        Assert.Equal(Enum.Parse<TypeModel>(form), ExampleCatalog.Articles.Single(a => a.ArticleNumber == articleNumber).TypeModel);
     }
 
     [Fact]

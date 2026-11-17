@@ -130,7 +130,7 @@ internal static class PriceCalculator
     }
 
     /// <summary>
-    /// Surfaces by their material. Points and lines by their article's type model; without one, a point counts as a
+    /// Surfaces by their material. Points and lines by their article's family; without one, a point counts as a
     /// deciduous tree (the most work, so the price is never silently too low) and a line as a hedge.
     /// </summary>
     private static RemovalClass ClassOf(SceneElement element, ArticlePriceFacts? article) => element switch
@@ -143,8 +143,8 @@ internal static class PriceCalculator
             SurfaceMaterial.Decking => RemovalClass.Decking,
             _ => RemovalClass.Bed,
         },
-        LineElement => article?.TypeModel == "fence" ? RemovalClass.Fence : RemovalClass.Hedge,
-        _ => article?.TypeModel switch
+        LineElement => article?.Family == "fence" ? RemovalClass.Fence : RemovalClass.Hedge,
+        _ => article?.Family switch
         {
             null or "deciduous-tree" => RemovalClass.DeciduousTree,
             "conifer" => RemovalClass.Conifer,

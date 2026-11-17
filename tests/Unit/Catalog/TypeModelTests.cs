@@ -6,7 +6,8 @@ namespace GardenBuilder.UnitTests.Catalog;
 public sealed class TypeModelTests
 {
     [Theory]
-    [InlineData("deciduous-tree", "DeciduousTree")]
+    [InlineData("tree-large", "TreeLarge")]
+    [InlineData("conifer-column", "ConiferColumn")]
     [InlineData("surface-bed", "SurfaceBed")]
     [InlineData("hedge", "Hedge")]
     public void Key_round_trips(string key, string modelName)
@@ -47,5 +48,51 @@ public sealed class TypeModelTests
             Assert.True(TypeModels.TryParse(TypeModels.Key(model), out var parsed));
             Assert.Equal(model, parsed);
         }
+    }
+
+    [Theory]
+    [InlineData("tree-large", "deciduous-tree")]
+    [InlineData("tree-fruit", "deciduous-tree")]
+    [InlineData("tree-small", "deciduous-tree")]
+    [InlineData("pine", "conifer")]
+    [InlineData("spruce", "conifer")]
+    [InlineData("conifer-column", "conifer")]
+    [InlineData("shrub-round", "shrub")]
+    [InlineData("shrub-flowering", "shrub")]
+    [InlineData("perennial-tall", "perennial")]
+    [InlineData("perennial-low", "perennial")]
+    [InlineData("foliage-plant", "perennial")]
+    [InlineData("ornamental-grass", "perennial")]
+    [InlineData("rock", "furniture")]
+    [InlineData("furniture", "furniture")]
+    [InlineData("pot", "pot")]
+    [InlineData("hedge", "hedge")]
+    [InlineData("fence", "fence")]
+    [InlineData("surface-grass", "surface-grass")]
+    public void Every_form_has_its_family(string key, string family)
+    {
+        Assert.True(TypeModels.TryParse(key, out var model));
+        Assert.Equal(family, TypeModels.Family(model));
+    }
+
+    [Theory]
+    [InlineData("deciduous-tree")]
+    [InlineData("conifer")]
+    [InlineData("shrub")]
+    [InlineData("perennial")]
+    public void Old_keys_no_longer_parse(string key)
+    {
+        Assert.False(TypeModels.TryParse(key, out _));
+    }
+
+    [Theory]
+    [InlineData("Rock", false)]
+    [InlineData("Pot", false)]
+    [InlineData("ConiferColumn", true)]
+    [InlineData("FoliagePlant", true)]
+    [InlineData("OrnamentalGrass", true)]
+    public void IsPlant_follows_the_family(string model, bool isPlant)
+    {
+        Assert.Equal(isPlant, TypeModels.IsPlant(Enum.Parse<TypeModel>(model)));
     }
 }

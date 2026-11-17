@@ -11,7 +11,7 @@ public sealed class CatalogPricesTests(ApiFactory factory) : IClassFixture<ApiFa
 {
     private static ArticleData Thuja() => new(
         "TU-SM-080", "Tuja Smaragd 80–100 cm", "Tuja Smaragd", "Träd", ArticleUnit.Piece, Money.InSek(495m),
-        StockStatus.InStock, TypeModel.Conifer, 1, "#3f7a3a", null, HardinessZone: 5, Height: 0.9, Width: null,
+        StockStatus.InStock, TypeModel.ConiferColumn, 1, "#3f7a3a", null, HardinessZone: 5, Height: 0.9, Width: null,
         MatureHeight: 4, MatureWidth: 1.2, ClipHeight: null, GrowthCmPerYear: 20, Light.Sun | Light.PartShade, LaborHours: 0.74m);
 
     [Fact]
@@ -43,7 +43,7 @@ public sealed class CatalogPricesTests(ApiFactory factory) : IClassFixture<ApiFa
 
         Assert.Equal(3, facts.Count);
         var thujaFacts = facts.Single(f => f.Id == thuja.Id);
-        Assert.Equal(new ArticlePriceFacts(thuja.Id, "Tuja Smaragd 80–100 cm", "piece", Money.InSek(495m), 0.74m, "conifer", Discontinued: false), thujaFacts);
+        Assert.Equal(new ArticlePriceFacts(thuja.Id, "Tuja Smaragd 80–100 cm", "piece", Money.InSek(495m), 0.74m, "conifer-column", "conifer", Discontinued: false), thujaFacts);
         Assert.Equal("meter", facts.Single(f => f.Id == hedge.Id).Unit);
         Assert.True(facts.Single(f => f.Id == pot.Id).Discontinued);
     }

@@ -8,10 +8,10 @@ namespace GardenBuilder.UnitTests.Pricing;
 public sealed class PriceCalculatorTests
 {
     private static readonly ArticlePriceFacts Thuja = new(
-        Ids.New(), "Tuja Smaragd 80–100 cm", "piece", Money.InSek(395m), 0.5m, "conifer", Discontinued: false);
+        Ids.New(), "Tuja Smaragd 80–100 cm", "piece", Money.InSek(395m), 0.5m, "conifer-column", "conifer", Discontinued: false);
 
     private static readonly ArticlePriceFacts Paving = new(
-        Ids.New(), "Betongplattor 40 × 40 cm", "square-meter", Money.InSek(395m), 0.6m, "surface-paving", Discontinued: false);
+        Ids.New(), "Betongplattor 40 × 40 cm", "square-meter", Money.InSek(395m), 0.6m, "surface-paving", "surface-paving", Discontinued: false);
 
     /// <summary>A 10 × 5 m rectangle: 50 m².</summary>
     private static readonly Point2[] Rectangle = [new(0, 0), new(10, 0), new(10, 5), new(0, 5)];
@@ -108,6 +108,19 @@ public sealed class PriceCalculatorTests
         var removal = Line(estimate, LineKind.Removal);
         Assert.Equal("Borttagning: barrträd", removal.Label);
         Assert.Equal(Sek(1300, 1300), removal.Amount);
+    }
+
+    [Theory]
+    [InlineData("conifer-column", "conifer", "Borttagning: barrträd")]
+    [InlineData("tree-fruit", "deciduous-tree", "Borttagning: lövträd")]
+    [InlineData("shrub-flowering", "shrub", "Borttagning: buske")]
+    public void Removal_class_comes_from_the_family(string form, string family, string label)
+    {
+        var article = Thuja with { Id = Ids.New(), TypeModel = form, Family = family };
+
+        var estimate = Estimate([article], Plot(), Point(article.Id, ElementStatus.ExistingRemove));
+
+        Assert.Equal(label, Line(estimate, LineKind.Removal).Label);
     }
 
     [Fact]

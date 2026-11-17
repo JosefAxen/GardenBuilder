@@ -25,7 +25,7 @@ internal sealed class CatalogPrices(CatalogDbContext db) : ICatalogPrices
             .ToListAsync(cancellationToken);
 
         return [.. articles.Select(a => new ArticlePriceFacts(
-            a.Id, a.Name, ArticleUnits.Key(a.Unit), a.Price, a.LaborHours, TypeModels.Key(a.TypeModel),
+            a.Id, a.Name, ArticleUnits.Key(a.Unit), a.Price, a.LaborHours, TypeModels.Key(a.TypeModel), TypeModels.Family(a.TypeModel),
             a.StockStatus == StockStatus.Discontinued))];
     }
 }

@@ -17,7 +17,7 @@ public sealed class ArticleSheetTests
     /// <summary>Tuja Smaragd 80–100 cm as a person would type it into Excel.</summary>
     private static object?[] ThujaRow(string articleNumber = "TU-SM-080") =>
     [
-        articleNumber, "Tuja Smaragd 80–100 cm", "Tuja Smaragd", "Träd", "st", "495", "0,5", "I lager", "conifer", "1",
+        articleNumber, "Tuja Smaragd 80–100 cm", "Tuja Smaragd", "Träd", "st", "495", "0,5", "I lager", "conifer-column", "1",
         "#3f7a3a", null, "5", "0,9", null, "4", "1,2", null, "20", "sol, halvskugga",
     ];
 
@@ -84,7 +84,7 @@ public sealed class ArticleSheetTests
 
         Assert.Empty(result.Errors);
         var thuja = Assert.Single(result.Articles);
-        Assert.Equal(TypeModel.Conifer, thuja.TypeModel);
+        Assert.Equal(TypeModel.ConiferColumn, thuja.TypeModel);
         Assert.Equal(0.9, thuja.Height);
         Assert.Equal(1.2, thuja.MatureWidth);
         Assert.Null(thuja.AccentColor);
@@ -208,6 +208,17 @@ public sealed class ArticleSheetTests
         Assert.Equal(4, error.Row);
         Assert.Equal("Pris inkl moms (kr)", error.Column);
         Assert.Empty(result.Articles);
+    }
+
+    [Fact]
+    public void Old_type_model_lists_the_new_keys()
+    {
+        var result = ArticleSheet.Read(Sheet(Headers, With(ThujaRow(), "Typmodell", "conifer")));
+
+        var error = Assert.Single(result.Errors);
+        Assert.Equal("Typmodell", error.Column);
+        Assert.Contains("conifer-column", error.Message, StringComparison.Ordinal);
+        Assert.Contains("spruce", error.Message, StringComparison.Ordinal);
     }
 
     [Fact]
