@@ -1,5 +1,6 @@
 using GardenBuilder.Contracts;
 using GardenBuilder.Contracts.Database;
+using GardenBuilder.Modules.Ai.Features.Queue;
 using GardenBuilder.Modules.Ai.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -8,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 
 namespace GardenBuilder.Modules.Ai;
@@ -27,6 +29,8 @@ public static class AiModule
             .UseSnakeCaseNamingConvention());
         builder.EnrichNpgsqlDbContext<AiDbContext>();
         builder.Services.AddScoped<IModuleMigrator, AiMigrator>();
+        builder.Services.TryAddSingleton(TimeProvider.System);
+        builder.Services.AddScoped<JobQueue>();
 
         return builder;
     }
