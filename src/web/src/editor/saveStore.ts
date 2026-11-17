@@ -77,8 +77,9 @@ export function scheduleSave(document: SceneDocument) {
   shownDocument = document
   const { status } = get()
 
-  if (document === savedDocument) {
-    // Back to what the server has, for example after undo: nothing to send.
+  if (document === savedDocument && !saving) {
+    // Back to what the server has, for example after undo: nothing to send. During a save the server is about to
+    // have something else, so then it is a change like any other.
     waiting = null
     if (status === 'pending' || status === 'invalid' || status === 'retrying') {
       clearTimeout(timer)
@@ -89,8 +90,13 @@ export function scheduleSave(document: SceneDocument) {
   }
 
   waiting = document
-  // In a conflict the customer must choose first; while retrying, the next attempt takes the newest document.
-  if (status === 'conflict' || status === 'retrying') return
+  // In a conflict the customer must choose first. While retrying, the next attempt takes the newest document, or,
+  // when an attempt is on its way, a save follows it if it succeeds.
+  if (status === 'conflict') return
+  if (status === 'retrying') {
+    if (saving) saveWhenDone = true
+    return
+  }
   if (!saving) set({ status: 'pending' })
   clearTimeout(timer)
   timer = setTimeout(() => void flush(), DEBOUNCE_MS)
@@ -108,7 +114,8 @@ async function flush(keepalive = false) {
   waiting = null
   saving = true
   const run = generation
-  set({ status: 'saving' })
+  // A retry keeps saying that the design is not saved until a save gets through.
+  if (get().status !== 'retrying') set({ status: 'saving' })
 
   try {
     const { designId, revision } = get()

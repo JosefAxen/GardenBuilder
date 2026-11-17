@@ -148,6 +148,62 @@ describe('saveStore', () => {
     expect(hasUnsavedChanges()).toBe(false)
   })
 
+  it('a retry on its way still shows retrying', async () => {
+    const { calls } = manualFetch()
+    startSaving({ id: 'd1', revision: 1, scene: doc() }, doc())
+    scheduleSave(doc(1))
+    await vi.advanceTimersByTimeAsync(1_000)
+    calls[0].answer(new Response(null, { status: 503 }))
+    await settle()
+
+    await vi.advanceTimersByTimeAsync(2_000)
+    expect(calls).toHaveLength(2)
+    expect(useSaveStore.getState().status).toBe('retrying')
+
+    calls[1].answer(saved(2))
+    await settle()
+    expect(useSaveStore.getState().status).toBe('saved')
+  })
+
+  it('a change while a retry is on its way is saved after it', async () => {
+    const { calls } = manualFetch()
+    startSaving({ id: 'd1', revision: 1, scene: doc() }, doc())
+    scheduleSave(doc(1))
+    await vi.advanceTimersByTimeAsync(1_000)
+    calls[0].answer(new Response(null, { status: 503 }))
+    await settle()
+    await vi.advanceTimersByTimeAsync(2_000)
+
+    scheduleSave(doc(2))
+    calls[1].answer(saved(2))
+    await settle()
+    await vi.advanceTimersByTimeAsync(1_000)
+
+    expect(calls).toHaveLength(3)
+    expect(ifMatch(calls[2])).toBe('"2"')
+    expect(JSON.parse(calls[2].init?.body as string).n).toBe(2)
+  })
+
+  it('undo back to the saved design during a save sends it again', async () => {
+    const { calls } = manualFetch()
+    const shown = doc()
+    startSaving({ id: 'd1', revision: 1, scene: shown }, shown)
+    scheduleSave(doc(1))
+    await vi.advanceTimersByTimeAsync(1_000)
+
+    scheduleSave(shown)
+    calls[0].answer(saved(2))
+    await settle()
+    await vi.advanceTimersByTimeAsync(1_000)
+
+    expect(calls).toHaveLength(2)
+    expect(JSON.parse(calls[1].init?.body as string).n).toBe(0)
+    calls[1].answer(saved(3))
+    await settle()
+    expect(useSaveStore.getState().status).toBe('saved')
+    expect(hasUnsavedChanges()).toBe(false)
+  })
+
   it('undo back to the saved design while retrying ends the retries', async () => {
     const { calls } = manualFetch()
     const shown = doc()
