@@ -21,8 +21,9 @@ public sealed class ClaudeTextModelTests
     }
 
     [Fact]
-    public void The_default_model_is_claude_opus_5_5()
+    public void The_default_model_is_claude_haiku_5_5()
     {
-        Assert.Equal("claude-opus-5-5", new ClaudeTextModel(Options.Create(new AnthropicOptions())).Model);
+        // Josef's choice 2026-11-17: Haiku until each step's model is chosen by measuring (sub-project 8).
+        Assert.Equal("claude-haiku-5-5", new ClaudeTextModel(Options.Create(new AnthropicOptions())).Model);
     }
 }

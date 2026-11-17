@@ -87,7 +87,8 @@ kunden det och kan försöka igen. design.md uppdateras.
 - Ett gränssnitt i AI-modulen för textsvar: frågan in, svaret och förbrukningen (tokens in och ut, modell, tid) ut.
   Fototolkningens bildtolkning och drömbildens rendering får egna gränssnitt i delprojekt 8 och 10.
 - Claude-implementationen använder Anthropics officiella NuGet-paket `Anthropic` och modellen i inställningen
-  `Anthropic:Model` (standard `claude-opus-5-5`).
+  `Anthropic:Model` (standard `claude-haiku-5-5`, Josefs val 2026-11-17: testjobbet behöver ingen större modell, och
+  varje AI-stegs modell väljs genom mätning i delprojekt 8).
 - Nyckeln läses från inställningen `Anthropic:ApiKey` i Worker. Lokalt kommer den från user secrets, i drift från
   Key Vault (delprojekt 14). Saknas den misslyckas jobbet direkt med "Ingen API-nyckel för Claude är inställd." och
   Worker loggar en varning när den startar.
@@ -103,7 +104,8 @@ Tabellen `ai.calls`, en rad per anrop till en leverantör, också misslyckade:
 
 Kostnaden räknas ut i koden: tokens gånger pris per miljon tokens i dollar, gånger en växelkurs. Priser per modell och
 kursen ligger i inställningar (`Ai:Prices`, `Ai:UsdToSek`), så de kan ändras utan ny kod. *Mitt beslut:* priset för
-`claude-opus-5-5` är 4 dollar per miljon tokens in och 20 ut, och kursen 10,50 kronor per dollar tills någon ändrar den.
+`claude-opus-5-5` är 4 dollar per miljon tokens in och 20 ut, för `claude-haiku-5-5` 0,10 och 0,50, och kursen 10,50
+kronor per dollar tills någon ändrar den.
 
 **En modell utan pris** i `Ai:Prices` får aldrig anropas, eftersom kostnaden då skulle räknas som noll och dagsbudgeten
 sluta gälla. Jobbet misslyckas direkt utan nytt försök, och Worker varnar när den startar om den inställda modellen

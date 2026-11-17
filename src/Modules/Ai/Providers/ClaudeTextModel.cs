@@ -12,7 +12,7 @@ internal sealed class AnthropicOptions
 
     public string? ApiKey { get; set; }
 
-    public string Model { get; set; } = "claude-opus-5-5";
+    public string Model { get; set; } = "claude-haiku-5-5";
 }
 
 /// <summary>Claude through Anthropic's official C# SDK. The queue retries, so the SDK's own retries are off.</summary>
