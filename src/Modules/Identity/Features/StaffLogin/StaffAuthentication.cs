@@ -32,6 +32,7 @@ internal static class StaffAuthentication
 
     public static void AddStaffAuthentication(this IServiceCollection services, AuthenticationBuilder authentication)
     {
+        services.AddSingleton<StaffTwoFactorShortcut>();
         services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.FromMinutes(1));
 
         authentication.AddIdentityCookies(cookies =>
@@ -112,7 +113,10 @@ internal static class StaffAuthentication
         await http.SignInAsync(SetupScheme, new ClaimsPrincipal(identity));
     }
 
-    /// <summary>"two-factor", "change-password" or "setup-two-factor": where the person goes after a right password.</summary>
+    /// <summary>
+    /// "two-factor", "change-password" or "setup-two-factor": where the person goes after a right password. "signed-in"
+    /// is given by the steps themselves when the development shortcut signed the person in.
+    /// </summary>
     public static string NextStep(StaffUser user) => user.MustChangePassword ? "change-password" : user.TwoFactorEnabled ? "two-factor" : "setup-two-factor";
 
     public static BadRequest<ErrorResponse> Error(string code) => TypedResults.BadRequest(new ErrorResponse(code));
@@ -185,15 +189,32 @@ internal sealed class StaffSignInManager(
     IOptions<IdentityOptions> optionsAccessor,
     ILogger<SignInManager<StaffUser>> logger,
     IAuthenticationSchemeProvider schemes,
-    IUserConfirmation<StaffUser> confirmation)
+    IUserConfirmation<StaffUser> confirmation,
+    StaffTwoFactorShortcut shortcut)
     : SignInManager<StaffUser>(userManager, contextAccessor, claimsFactory, optionsAccessor, logger, schemes, confirmation)
 {
     public static readonly SignInResult NeedsSetup = new NeedsSetupResult();
 
-    protected override Task<SignInResult> SignInOrTwoFactorAsync(StaffUser user, bool isPersistent, string? loginProvider = null, bool bypassTwoFactor = false) =>
-        user.MustChangePassword || !user.TwoFactorEnabled
-            ? Task.FromResult(NeedsSetup)
-            : base.SignInOrTwoFactorAsync(user, isPersistent, loginProvider, bypassTwoFactor);
+    /// <summary>
+    /// A temporary password must always be changed first. After that, two-factor is asked for or set up, except with the
+    /// local development shortcut, which signs the person in with the password alone.
+    /// </summary>
+    protected override Task<SignInResult> SignInOrTwoFactorAsync(StaffUser user, bool isPersistent, string? loginProvider = null, bool bypassTwoFactor = false)
+    {
+        if (user.MustChangePassword)
+        {
+            return Task.FromResult(NeedsSetup);
+        }
+
+        if (shortcut.Skip)
+        {
+            return base.SignInOrTwoFactorAsync(user, isPersistent, loginProvider, bypassTwoFactor: true);
+        }
+
+        return user.TwoFactorEnabled
+            ? base.SignInOrTwoFactorAsync(user, isPersistent, loginProvider, bypassTwoFactor)
+            : Task.FromResult(NeedsSetup);
+    }
 
     private sealed class NeedsSetupResult : SignInResult
     {

@@ -8,7 +8,8 @@ export type StaffRole = 'sales' | 'admin'
 export type Me = { kind: 'none' } | { kind: 'customer' } | { kind: 'staff'; name: string; role: StaffRole }
 
 /** Where a staff member goes after a right password or a new one. */
-export type NextStep = 'two-factor' | 'change-password' | 'setup-two-factor'
+/** 'signed-in' comes only from the local development shortcut (StaffTwoFactorShortcut in the Identity module). */
+export type NextStep = 'two-factor' | 'change-password' | 'setup-two-factor' | 'signed-in'
 
 export type TwoFactorSetup = { sharedKey: string; authenticatorUri: string }
 

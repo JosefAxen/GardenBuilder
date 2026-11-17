@@ -1,4 +1,5 @@
 using GardenBuilder.Modules.Identity.Domain;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -17,7 +18,8 @@ internal static class ChangePassword
         return group;
     }
 
-    private static async Task<IResult> HandleAsync(PasswordRequest request, HttpContext http, UserManager<StaffUser> users)
+    private static async Task<IResult> HandleAsync(
+        PasswordRequest request, HttpContext http, UserManager<StaffUser> users, SignInManager<StaffUser> signIn, StaffTwoFactorShortcut shortcut)
     {
         if (await StaffAuthentication.SetupUserAsync(http, users) is not { } user)
         {
@@ -48,6 +50,14 @@ internal static class ChangePassword
                     : result.Errors.Any(e => e.Code == nameof(IdentityErrorDescriber.ConcurrencyFailure))
                         ? StaffAuthentication.SessionExpired()
                         : throw new InvalidOperationException($"The new password was refused: {string.Join(", ", result.Errors.Select(e => e.Code))}.");
+            }
+
+            if (shortcut.Skip)
+            {
+                // The local development shortcut: no two-factor, so the new password is the last step.
+                await http.SignOutAsync(StaffAuthentication.SetupScheme);
+                await signIn.SignInAsync(user, isPersistent: false);
+                return TypedResults.Ok(new Login.NextResponse("signed-in"));
             }
 
             // The new password changed the security stamp; the setup session follows it.
