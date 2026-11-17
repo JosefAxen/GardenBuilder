@@ -88,6 +88,9 @@ Fält på `Article` i Catalog-modulen (befintliga i fetstil):
 
 ### Typmodeller (fast lista tills delprojekt 6)
 
+*Ändrat i delprojekt 6:* punkternas typmodeller är nu former, och de gamla nycklarna nedan är deras familjer. Se
+[designen för modellbiblioteket](2026-11-17-model-library-design.md) för listan över former.
+
 | Nyckel | Geometri i scenen | Enhet | Växt |
 | --- | --- | --- | --- |
 | `deciduous-tree` | punkt | st | ja |

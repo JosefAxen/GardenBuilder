@@ -201,7 +201,11 @@ Scenen sparar dessutom kameravinklar och varifrån varje mått kommer: uppskatta
 **Modellbibliotek**
 
 - Stilen är stiliserad: förenklade former och rena färger, inte fotorealism.
-- Omkring 40 typmodeller vid lansering, i formatet GLB. Biblioteket växer efter hand.
+- 15 former vid lansering (13 i GLB ur gratispaketet, kruka och bänk i kod), till exempel `tree-fruit` och
+  `conifer-column`. Biblioteket växer efter hand. Se [designen för modellbiblioteket](superpowers/specs/2026-11-17-model-library-design.md).
+- Formen är bara hur artikeln ritas. Artikeln är sanningen, och scenen sparar aldrig formen.
+- Varje form hör till en familj (`deciduous-tree`, `conifer`, `shrub`, `perennial`, `pot`, `furniture`). Prissättningen
+  och reglerna för växter läser familjen, så en ny form ändrar aldrig ett pris.
 - Grunden är [Quaternius Stylized Nature MegaKit](https://quaternius.com/packs/stylizednaturemegakit.html) (CC0) med träd, buskar och blommor.
 - Tills appen är klar används bara gratispaketet. Det som saknas där (till exempel ros och rabatt) får en enkel
   modell i kod eller en närliggande modell ur gratispaketet.
@@ -211,8 +215,11 @@ Scenen sparar dessutom kameravinklar och varifrån varje mått kommer: uppskatta
 - Ytor, häckar, staket, hus och enkla buskar genereras i kod ur scendokumentet och behöver inga modellfiler.
 - Bara licenser som tillåter kommersiell användning i en webbapp. Källa och licens sparas för varje modell.
 - Varje typmodell har nominell storlek, markfäste och ett tak för antal trianglar.
-- En artikel kopplas till en typmodell med skala och färgton.
-- Filerna får innehållsbaserade namn och lång cachetid.
+- En artikel kopplas till en form med skala och färger. Löv och barr har paketets färger, utom när artikelns färg
+  tydligt inte är grön; då tonas de. Blommor tonas alltid med artikelns accentfärg.
+- Modellfilerna följer med webbappen och får innehållsbaserade namn och lång cachetid. De görs av
+  `npm --prefix src/web run build:models` ur källfilerna i `assets/models/`.
+- Tills en modell har laddats, eller om den inte går att ladda, ritas en enkel form i kod.
 - Upprepade växter, till exempel en rad buskar, ritas med instansiering.
 
 **Editorns tillstånd**
@@ -501,7 +508,7 @@ De två största riskerna är fototolkningens kvalitet och tiden, och båda hant
 | Språkmodellen ger ogiltiga designer | Inga förslag eller fula förslag | Zoner, planteringsmoduler och layoutmotor. Validering med omförsök. |
 | Drömbilden avviker från designen | Kunden förväntar sig något annat än offerten | Bilden styrs av 3D-renderingen och märks som inspirationsbild. |
 | En månad räcker inte | Lanseringen försenas | Prototyper vecka 1, grindar varje vecka och en bestämd strykningsordning. |
-| Modellbiblioteket försenas | Editorn ser tom eller enformig ut | Quaternius och trädgårdspaketet hämtas vecka 1. Ytor, häckar och hus genereras i kod. |
+| Modellbiblioteket försenas | Editorn ser tom eller enformig ut | Quaternius gratispaket används. Ytor, häckar och hus genereras i kod. |
 | Prisdata saknas eller är ofullständig | Priset blir fel eller går inte att visa | Importmall till företaget vecka 1, med en namngiven ansvarig. |
 | AI-kostnaden skenar | Oväntad faktura | Kvoter, dagsbudget, larm och avstängning per steg. |
 | Ansökan hos Lantmäteriet drar ut | Ingen automatisk tomtform | Kunden ritar tomten. Kartdata kopplas på när tillståndet finns. |
