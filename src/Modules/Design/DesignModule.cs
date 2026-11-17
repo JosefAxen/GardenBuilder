@@ -44,7 +44,7 @@ public static class DesignModule
     public static IEndpointRouteBuilder MapDesignEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/designs").WithTags("Design");
-        _ = group; // Map features here, e.g. group.MapSomething();
+        group.MapWorkingCopy();
 
         return app;
     }
