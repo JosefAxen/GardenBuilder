@@ -86,3 +86,62 @@
   color: #5b6b57;
   flex: 1;
 }
+
+.ai-panel {
+  max-width: 520px;
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid #c8d1c0;
+  border-radius: 8px;
+}
+
+.ai-panel h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+}
+
+.ai-budget {
+  font-weight: 600;
+}
+
+.ai-test dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 0.75rem;
+}
+
+.ai-test dt {
+  font-weight: 600;
+}
+
+.ai-test dd {
+  margin: 0;
+}
+
+.ai-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.ai-settings label {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.ai-settings input[type='number'] {
+  width: 7rem;
+  font: inherit;
+  padding: 0.3rem 0.4rem;
+}
+
+.ai-settings .ai-switch {
+  justify-content: flex-start;
+}
+
+.ai-settings button {
+  align-self: flex-start;
+}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
+import { AiPanel } from './AiPanel'
 import type { StaffMe } from './RequireStaff'
 import { LOGOUT_FAILED, ROLE_NAMES } from './staffLoginSteps'
 import './admin.css'
@@ -27,6 +28,7 @@ export function AdminPage({ me, onLogout }: { me: StaffMe; onLogout: () => Promi
         </p>
       )}
       <p>Ärendelista, katalog och inställningar kommer här.</p>
+      {me.role === 'admin' && <AiPanel />}
       <Link to="/">Till startsidan</Link>
     </main>
   )
