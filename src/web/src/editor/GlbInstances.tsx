@@ -4,7 +4,7 @@ import { Component, type ReactNode, Suspense, useMemo } from 'react'
 import { CanvasTexture, type Material, type Mesh, type MeshStandardMaterial, ShaderChunk, type Texture } from 'three'
 import type { CatalogArticle } from '../api/catalog'
 import { greyPixels } from './modelColors'
-import { GLB_URLS, fallbackFor, fallbackNominalHeight, nominalHeightOf, partsFor, type PointFormKey } from './modelLibrary'
+import { GLB_URLS, fallbackFor, fallbackNominalHeight, itemsFor, nominalHeightOf, partsFor, type PointFormKey } from './modelLibrary'
 import type { ModelPart, PointModelKey } from './models'
 import { PartInstances, type PlacedPoint } from './PointInstances'
 
@@ -72,7 +72,7 @@ function GlbInstances({ form, items, onPointerDown, url }: Props & { url: string
       const source = mesh.material as MeshStandardMaterial
       const material = source.clone()
       // The instance colour multiplies the texture, so a tinted part needs a grey texture to take the tint's colour.
-      if ((part.role === 'leaves-tinted' || part.role === 'flowers') && source.map) material.map = greyTexture(source.map)
+      if (part.role !== 'leaves' && part.role !== 'fixed' && source.map) material.map = greyTexture(source.map)
       if (part.role !== 'fixed') keepCardNormals(material)
       return { part, geometry: mesh.geometry, material }
     })
@@ -87,7 +87,7 @@ function GlbInstances({ form, items, onPointerDown, url }: Props & { url: string
       colorOf={part.tint}
       nominalHeight={nominalHeight}
       receiveShadow={part.role === 'fixed'}
-      items={items.filter((i) => part.when(i.article))}
+      items={itemsFor(part, items)}
       onPointerDown={onPointerDown}
     />
   ))

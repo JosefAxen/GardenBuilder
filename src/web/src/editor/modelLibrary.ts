@@ -2,6 +2,7 @@ import type { CatalogArticle, TypeModelKey } from '../api/catalog'
 import { leafTintNeeded } from './modelColors'
 import library from './models/library.generated.json'
 import { NOMINAL_HEIGHT, type ModelPart, type PointModelKey } from './models'
+import type { PlacedPoint } from './PointInstances'
 
 /**
  * The forms drawn at a point, and how to draw them (docs/superpowers/specs/2026-11-17-model-library-design.md).
@@ -79,7 +80,7 @@ export const fallbackFor = (key: PointFormKey, models: Record<PointModelKey, Mod
 
 export const fallbackNominalHeight = (key: PointFormKey) => NOMINAL_HEIGHT[FALLBACK[key]]
 
-export type GlbRole = 'leaves' | 'leaves-tinted' | 'flowers' | 'fixed'
+export type GlbRole = 'leaves' | 'leaves-tinted' | 'flowers' | 'fixed' | 'removed'
 
 /** One material of a GLB form, drawn for the articles `when` accepts, multiplied by `tint`. */
 export type GlbPart = {
@@ -91,23 +92,40 @@ export type GlbPart = {
 }
 
 const WHITE = '#ffffff'
+/** Existing elements that will be removed are drawn grey, as the generated shapes are. */
+const REMOVED = '#b0b0b0'
 const always = () => true
 
 /**
  * The parts of a GLB form, by its material names. Leaves become two parts, so pack-coloured and tinted articles can
- * each share one InstancedMesh: the tinted part uses a grey copy of the texture.
+ * each share one InstancedMesh: the tinted part uses a grey copy of the texture. Every material also gets a grey
+ * part for elements that will be removed, since a pack-coloured texture cannot be faded by its instance colour.
  */
 export function partsFor(materials: string[]): GlbPart[] {
   return materials.flatMap((material): GlbPart[] => {
-    if (/flower/i.test(material)) {
-      return [{ key: material, material, role: 'flowers', when: (a) => a.accentColor !== null, tint: (a) => a.accentColor ?? WHITE }]
+    const isFlower = /flower/i.test(material)
+    const removed: GlbPart = {
+      key: `${material}-removed`,
+      material,
+      role: 'removed',
+      when: isFlower ? (a) => a.accentColor !== null : always,
+      tint: () => REMOVED,
+    }
+    if (isFlower) {
+      return [{ key: material, material, role: 'flowers', when: (a) => a.accentColor !== null, tint: (a) => a.accentColor ?? WHITE }, removed]
     }
     if (/leaf|leaves|grass/i.test(material)) {
       return [
         { key: material, material, role: 'leaves', when: (a) => !leafTintNeeded(a.color), tint: () => WHITE },
         { key: `${material}-tinted`, material, role: 'leaves-tinted', when: (a) => leafTintNeeded(a.color), tint: (a) => a.color },
+        removed,
       ]
     }
-    return [{ key: material, material, role: 'fixed', when: always, tint: () => WHITE }]
+    return [{ key: material, material, role: 'fixed', when: always, tint: () => WHITE }, removed]
   })
+}
+
+/** The elements one part draws: removed elements only in the removed parts, the others by the part's rule. */
+export function itemsFor(part: GlbPart, items: readonly PlacedPoint[]): PlacedPoint[] {
+  return items.filter((i) => (part.role === 'removed') === i.removed && part.when(i.article))
 }
