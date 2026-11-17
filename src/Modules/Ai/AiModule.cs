@@ -2,7 +2,9 @@ using GardenBuilder.Contracts;
 using GardenBuilder.Contracts.Database;
 using GardenBuilder.Modules.Ai.Domain;
 using GardenBuilder.Modules.Ai.Features.Costs;
+using GardenBuilder.Contracts.Ai;
 using GardenBuilder.Modules.Ai.Features.Queue;
+using GardenBuilder.Modules.Ai.Features.Run;
 using GardenBuilder.Modules.Ai.Features.Settings;
 using GardenBuilder.Modules.Ai.Infrastructure;
 using Microsoft.AspNetCore.Builder;
@@ -36,6 +38,9 @@ public static class AiModule
         builder.Services.AddScoped<JobQueue>();
         builder.Services.AddScoped<CostLog>();
         builder.Services.AddScoped<AiSettingsStore>();
+        builder.Services.AddScoped<AiGuards>();
+        builder.Services.AddScoped<AiJobs>();
+        builder.Services.AddScoped<IAiJobs>(services => services.GetRequiredService<AiJobs>());
         builder.Services.Configure<AiPricingOptions>(builder.Configuration.GetSection(AiPricingOptions.Section));
 
         return builder;
