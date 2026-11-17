@@ -3,8 +3,8 @@ import type { IdentityErrorCode, NextStep } from '../api/identity'
 /** The screens of the staff login, in the order a first login goes through them. */
 export type Screen = 'login' | 'password' | 'setup' | 'recovery' | 'code'
 
-/** The screen for the step the server says comes next. */
-export function screenFor(next: NextStep): Screen {
+/** The screen for the step the server says comes next; 'done' when the person is already signed in. */
+export function screenFor(next: NextStep): Screen | 'done' {
   switch (next) {
     case 'two-factor':
       return 'code'
@@ -12,6 +12,8 @@ export function screenFor(next: NextStep): Screen {
       return 'password'
     case 'setup-two-factor':
       return 'setup'
+    case 'signed-in':
+      return 'done'
   }
 }
 

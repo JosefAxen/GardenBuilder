@@ -6,6 +6,7 @@ import {
   getTwoFactorSetup,
   IdentityError,
   login,
+  type NextStep,
   type TwoFactorSetup,
   verifyTwoFactor,
 } from '../api/identity'
@@ -18,6 +19,12 @@ import './admin.css'
  */
 export function StaffLogin({ onSignedIn }: { onSignedIn: () => void }) {
   const [screen, setScreen] = useState<Screen>('login')
+  /** Shows the next step's screen, or leaves the login when the server already signed the person in. */
+  const go = (next: NextStep) => {
+    const nextScreen = screenFor(next)
+    if (nextScreen === 'done') onSignedIn()
+    else setScreen(nextScreen)
+  }
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([])
@@ -46,12 +53,12 @@ export function StaffLogin({ onSignedIn }: { onSignedIn: () => void }) {
 
   return (
     <main className="staff-login">
-      {screen === 'login' && <LoginForm busy={busy} onSubmit={(email, password) => run(async () => setScreen(screenFor(await login(email, password))))} />}
+      {screen === 'login' && <LoginForm busy={busy} onSubmit={(email, password) => run(async () => go(await login(email, password)))} />}
       {screen === 'password' && (
         <PasswordForm
           busy={busy}
           onMismatch={() => setError('Lösenorden är inte lika.')}
-          onSubmit={(password) => run(async () => setScreen(screenFor(await changePassword(password))))}
+          onSubmit={(password) => run(async () => go(await changePassword(password)))}
         />
       )}
       {screen === 'setup' && (

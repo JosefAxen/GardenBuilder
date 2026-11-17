@@ -1,5 +1,12 @@
 using GardenBuilder.Contracts;
 using GardenBuilder.Contracts.Database;
+using GardenBuilder.Modules.Ai.Domain;
+using GardenBuilder.Modules.Ai.Features.Costs;
+using GardenBuilder.Contracts.Ai;
+using GardenBuilder.Modules.Ai.Features.Admin;
+using GardenBuilder.Modules.Ai.Features.Queue;
+using GardenBuilder.Modules.Ai.Features.Run;
+using GardenBuilder.Modules.Ai.Features.Settings;
 using GardenBuilder.Modules.Ai.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -8,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 
 namespace GardenBuilder.Modules.Ai;
@@ -27,14 +35,21 @@ public static class AiModule
             .UseSnakeCaseNamingConvention());
         builder.EnrichNpgsqlDbContext<AiDbContext>();
         builder.Services.AddScoped<IModuleMigrator, AiMigrator>();
+        builder.Services.TryAddSingleton(TimeProvider.System);
+        builder.Services.AddScoped<JobQueue>();
+        builder.Services.AddScoped<CostLog>();
+        builder.Services.AddScoped<AiSettingsStore>();
+        builder.Services.AddScoped<AiGuards>();
+        builder.Services.AddScoped<AiJobs>();
+        builder.Services.AddScoped<IAiJobs>(services => services.GetRequiredService<AiJobs>());
+        builder.Services.Configure<AiPricingOptions>(builder.Configuration.GetSection(AiPricingOptions.Section));
 
         return builder;
     }
 
     public static IEndpointRouteBuilder MapAiEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/ai").WithTags("Ai");
-        _ = group; // Map features here, e.g. group.MapSomething();
+        app.MapGroup("/api/ai").WithTags("Ai").MapAiAdmin();
 
         return app;
     }

@@ -7,6 +7,10 @@ describe('screenFor', () => {
     expect(screenFor('change-password')).toBe('password')
     expect(screenFor('setup-two-factor')).toBe('setup')
   })
+
+  it('is done when the local development shortcut signed the person in', () => {
+    expect(screenFor('signed-in')).toBe('done')
+  })
 })
 
 describe('messageFor', () => {

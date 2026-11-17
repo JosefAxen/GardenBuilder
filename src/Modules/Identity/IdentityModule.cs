@@ -32,10 +32,10 @@ public static class IdentityModule
     public const string CustomerCookieName = "gb-customer";
 
     /// <summary>Signed-in staff (Säljare or Administratör) who have passed two-factor.</summary>
-    public const string StaffPolicy = "Staff";
+    public const string StaffPolicy = StaffPolicies.Staff;
 
     /// <summary>Signed-in Administratör.</summary>
-    public const string AdminPolicy = "Admin";
+    public const string AdminPolicy = StaffPolicies.Admin;
 
     /// <summary>How long a customer is remembered without a visit (docs/design.md: designs are deleted after 90 days of inactivity).</summary>
     public static readonly TimeSpan CustomerCookieLifetime = TimeSpan.FromDays(90);

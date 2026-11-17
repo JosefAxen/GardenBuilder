@@ -17,7 +17,7 @@ internal static class Login
 
     public sealed record LoginRequest(string? Email, string? Password);
 
-    /// <param name="Next">"two-factor", "change-password" or "setup-two-factor".</param>
+    /// <param name="Next">"two-factor", "change-password", "setup-two-factor", or "signed-in" with the local development shortcut.</param>
     public sealed record NextResponse(string Next);
 
     public static RouteGroupBuilder MapLogin(this RouteGroupBuilder group)
@@ -64,6 +64,12 @@ internal static class Login
 
             await StaffAuthentication.StartSetupAsync(http, users, user);
             return TypedResults.Ok(new NextResponse(StaffAuthentication.NextStep(user)));
+        }
+
+        if (result.Succeeded)
+        {
+            // Only the local development shortcut (StaffTwoFactorShortcut) signs in on the password alone.
+            return TypedResults.Ok(new NextResponse("signed-in"));
         }
 
         return result.RequiresTwoFactor

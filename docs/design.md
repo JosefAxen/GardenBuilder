@@ -276,10 +276,15 @@ Språkmodeller är svaga på exakta koordinater. Därför bestämmer modellen va
 
 **Jobbkön**
 
-- API:et sparar jobbet i samma transaktion som övriga ändringar.
+- Jobbet sparas i en egen transaktion, eftersom varje modul har sin egen databaskoppling. Därför måste varje sorts jobb
+  gå att köra om, och om ett jobb inte sparas ser kunden det och kan försöka igen.
 - Arbetsprocessen hämtar nästa jobb med radlås (`FOR UPDATE SKIP LOCKED`) och sätter ett lås med tidsgräns.
 - Ett jobb vars lås går ut blir tillgängligt igen, så jobb måste gå att köra om utan dubbla effekter.
-- Efter tre misslyckanden markeras jobbet som misslyckat och kunden får reservvägen.
+- Efter tre misslyckanden markeras jobbet som misslyckat och kunden får reservvägen. Försök två och tre väntar 10
+  respektive 60 sekunder, och ett lås gäller i 5 minuter.
+- Före varje anrop kontrolleras att steget är påslaget, att modellen har ett pris och att dagsbudgeten inte är nådd.
+  Varje anrop loggas med promptversion, modell, tid, tokens och kostnad i kronor, även misslyckade anrop.
+- Se [designen för jobbkön](superpowers/specs/2026-11-17-ai-jobs-design.md).
 
 ## Prissättning och offertflöde
 
@@ -414,7 +419,8 @@ Foton av hem och adresser är personuppgifter, så åtkomst, lagringstid och rad
 **Skydd mot missbruk**
 
 - Anrop begränsas per IP-adress och per användare.
-- AI-jobb kräver bekräftad e-post och räknas mot en kvot.
+- AI-jobb räknas mot en kvot. Kravet på bekräftad e-post väntar tills e-posttjänsten är vald; under tiden skyddar
+  kvoterna och dagsbudgeten.
 - Säkerhetshuvuden, innehållspolicy och skydd mot förfalskade anrop gäller hela API:et.
 - Beroenden och avbilder skannas automatiskt.
 
@@ -448,7 +454,8 @@ AI-leverantörerna ersätts med inspelade svar i alla automatiska tester, så at
 - Spårning följer ett anrop från API:et genom jobbet till AI-leverantören.
 - En tratt visar hur många kunder som når varje steg i flödet.
 - Larm går vid hög andel misslyckade jobb, jobb som väntat över två minuter och serverfel.
-- Larm går också när AI-kostnaden når 80 procent av dagsbudgeten.
+- Larm går också när AI-kostnaden når 80 procent av dagsbudgeten. Tills larmen finns (delprojekt 14) skrivs en varning
+  i loggen.
 
 **Kostnadstak för AI**
 
