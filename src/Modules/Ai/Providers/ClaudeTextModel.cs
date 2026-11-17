@@ -19,6 +19,7 @@ internal sealed class AnthropicOptions
 internal sealed class ClaudeTextModel(IOptions<AnthropicOptions> options) : ITextModel, IDisposable
 {
     public const string NoKey = "Ingen API-nyckel för Claude är inställd.";
+    public static readonly TimeSpan CallTimeout = TimeSpan.FromMinutes(2);
 
     private readonly AnthropicOptions _options = options.Value;
     private AnthropicClient? _client;
@@ -34,7 +35,8 @@ internal sealed class ClaudeTextModel(IOptions<AnthropicOptions> options) : ITex
             throw new AiProviderException(NoKey, retryable: false);
         }
 
-        _client ??= new AnthropicClient { ApiKey = _options.ApiKey, MaxRetries = 0 };
+        // Well inside the queue's five-minute lease, so a slow call ends before another Worker may take the job.
+        _client ??= new AnthropicClient { ApiKey = _options.ApiKey, MaxRetries = 0, Timeout = CallTimeout };
         MessageCreateParamsSystem? system = request.System is { } instructions ? (MessageCreateParamsSystem)instructions : null;
         Message message;
         try

@@ -157,6 +157,22 @@ public sealed class AiJobRunnerTests(ApiFactory factory) : IClassFixture<ApiFact
     }
 
     [Fact]
+    public async Task A_timed_out_call_is_logged_and_retried_without_stopping_the_runner()
+    {
+        _model.Timeouts.Enqueue(new TaskCanceledException("The request timed out.", new TimeoutException()));
+        var id = await EnqueueAsync(AiJobKinds.ConnectionTest);
+
+        Assert.True(await RunAsync());
+
+        var job = await JobAsync(id);
+        Assert.Equal(AiJobStatus.Queued, job?.Status);
+        Assert.Equal("Claude svarade inte i tid.", job?.Failure);
+        var call = Assert.Single(await CallsAsync());
+        Assert.Equal("error", call.Outcome);
+        Assert.Equal(nameof(TaskCanceledException), call.ErrorType);
+    }
+
+    [Fact]
     public async Task The_reached_budget_fails_waiting_jobs_without_a_call()
     {
         var id = await EnqueueAsync(AiJobKinds.ConnectionTest);
@@ -262,11 +278,19 @@ public sealed class AiJobRunnerTests(ApiFactory factory) : IClassFixture<ApiFact
 
         public ConcurrentQueue<AiProviderException> Errors { get; } = new();
 
+        /// <summary>What the SDK throws when a call times out: a cancellation the caller did not ask for.</summary>
+        public ConcurrentQueue<TaskCanceledException> Timeouts { get; } = new();
+
         public ConcurrentQueue<TextRequest> Requests { get; } = new();
 
         public Task<TextResponse> CompleteAsync(TextRequest request, CancellationToken cancellationToken)
         {
             Requests.Enqueue(request);
+            if (Timeouts.TryDequeue(out var timeout))
+            {
+                throw timeout;
+            }
+
             if (Errors.TryDequeue(out var error))
             {
                 throw error;

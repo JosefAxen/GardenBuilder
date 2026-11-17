@@ -102,14 +102,14 @@ public sealed class AiJobQueueTests(ApiFactory factory) : IClassFixture<ApiFacto
     {
         var id = await AddAsync();
         await ClaimAsync();
-        await InScope(q => q.FailAsync(id, "Tillfälligt fel.", retry: true, Ct));
+        await InScope(async q => await q.FailAsync(id, (await q.FindAsync(id, Ct))!.Attempts, "Tillfälligt fel.", retry: true, Ct));
 
         _clock.Advance(TimeSpan.FromSeconds(9));
         Assert.Null(await ClaimAsync());
         _clock.Advance(TimeSpan.FromSeconds(1));
         Assert.Equal(id, (await ClaimAsync())?.Id);
 
-        await InScope(q => q.FailAsync(id, "Tillfälligt fel.", retry: true, Ct));
+        await InScope(async q => await q.FailAsync(id, (await q.FindAsync(id, Ct))!.Attempts, "Tillfälligt fel.", retry: true, Ct));
         _clock.Advance(TimeSpan.FromSeconds(59));
         Assert.Null(await ClaimAsync());
         _clock.Advance(TimeSpan.FromSeconds(1));
@@ -123,7 +123,7 @@ public sealed class AiJobQueueTests(ApiFactory factory) : IClassFixture<ApiFacto
         for (var attempt = 1; attempt <= 3; attempt++)
         {
             Assert.Equal(id, (await ClaimAsync())?.Id);
-            await InScope(q => q.FailAsync(id, "Svaret gick inte att läsa.", retry: true, Ct));
+            await InScope(async q => await q.FailAsync(id, (await q.FindAsync(id, Ct))!.Attempts, "Svaret gick inte att läsa.", retry: true, Ct));
             _clock.Advance(TimeSpan.FromMinutes(2));
         }
 
@@ -141,7 +141,7 @@ public sealed class AiJobQueueTests(ApiFactory factory) : IClassFixture<ApiFacto
         var id = await AddAsync();
         await ClaimAsync();
 
-        await InScope(q => q.FailAsync(id, "Ingen API-nyckel för Claude är inställd.", retry: false, Ct));
+        await InScope(async q => await q.FailAsync(id, (await q.FindAsync(id, Ct))!.Attempts, "Ingen API-nyckel för Claude är inställd.", retry: false, Ct));
 
         Assert.Equal(AiJobStatus.Failed, (await FindAsync(id))?.Status);
     }
@@ -163,12 +163,31 @@ public sealed class AiJobQueueTests(ApiFactory factory) : IClassFixture<ApiFacto
     }
 
     [Fact]
+    public async Task A_worker_whose_lease_ran_out_cannot_overwrite_the_next_attempt()
+    {
+        var id = await AddAsync();
+        var first = await ClaimAsync();
+        _clock.Advance(TimeSpan.FromMinutes(5) + TimeSpan.FromSeconds(1));
+        var second = await ClaimAsync();
+        await InScope(q => q.SucceedAsync(id, second!.Attempts, JsonSerializer.SerializeToElement(new { answer = "Andra försöket." }), Ct));
+
+        // The first Worker comes back late, from attempt 1.
+        await InScope(q => q.FailAsync(id, first!.Attempts, "Sent fel.", retry: true, Ct));
+        await InScope(q => q.SucceedAsync(id, first!.Attempts, JsonSerializer.SerializeToElement(new { answer = "Första försöket." }), Ct));
+
+        var job = await FindAsync(id);
+        Assert.Equal(AiJobStatus.Succeeded, job?.Status);
+        Assert.Equal("Andra försöket.", job?.Result?.GetProperty("answer").GetString());
+        Assert.Null(job?.Failure);
+    }
+
+    [Fact]
     public async Task Succeed_stores_the_result()
     {
         var id = await AddAsync();
         await ClaimAsync();
 
-        await InScope(q => q.SucceedAsync(id, JsonSerializer.SerializeToElement(new { answer = "En trädgård är en plats för växter." }), Ct));
+        await InScope(q => q.SucceedAsync(id, 1, JsonSerializer.SerializeToElement(new { answer = "En trädgård är en plats för växter." }), Ct));
 
         var job = await FindAsync(id);
         Assert.Equal(AiJobStatus.Succeeded, job?.Status);

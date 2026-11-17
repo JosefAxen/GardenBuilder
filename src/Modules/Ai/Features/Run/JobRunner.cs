@@ -35,7 +35,7 @@ internal sealed partial class JobRunner(
         var handler = handlers.FirstOrDefault(h => h.Kind == job.Kind);
         if (handler is null)
         {
-            await queue.FailAsync(job.Id, UnknownKind, retry: false, cancellationToken);
+            await queue.FailAsync(job.Id, job.Attempts, UnknownKind, retry: false, cancellationToken);
             return true;
         }
 
@@ -43,21 +43,21 @@ internal sealed partial class JobRunner(
         try
         {
             var result = await handler.RunAsync(job, calls, cancellationToken);
-            await queue.SucceedAsync(job.Id, result, cancellationToken);
+            await queue.SucceedAsync(job.Id, job.Attempts, result, cancellationToken);
         }
         catch (AiJobStoppedException e)
         {
-            await queue.FailAsync(job.Id, e.Message, retry: false, cancellationToken);
+            await queue.FailAsync(job.Id, job.Attempts, e.Message, retry: false, cancellationToken);
         }
         catch (AiProviderException e)
         {
             LogAttemptFailed(logger, job.Id, job.Attempts, e.Message);
-            await queue.FailAsync(job.Id, e.Message, e.Retryable, cancellationToken);
+            await queue.FailAsync(job.Id, job.Attempts, e.Message, e.Retryable, cancellationToken);
         }
-        catch (Exception e) when (e is not OperationCanceledException)
+        catch (Exception e) when (!cancellationToken.IsCancellationRequested)
         {
             LogUnexpected(logger, e, job.Id);
-            await queue.FailAsync(job.Id, Unexpected, retry: true, cancellationToken);
+            await queue.FailAsync(job.Id, job.Attempts, Unexpected, retry: true, cancellationToken);
         }
 
         return true;

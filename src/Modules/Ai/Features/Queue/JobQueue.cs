@@ -71,7 +71,11 @@ internal sealed class JobQueue(AiDbContext db, TimeProvider time)
         return ids[0];
     }
 
-    public async Task SucceedAsync(Guid id, JsonElement result, CancellationToken cancellationToken)
+    /// <summary>
+    /// Stores the result of <paramref name="attempt"/>. A Worker whose lease ran out while another took the job changes
+    /// nothing: only the attempt that holds the job may finish it.
+    /// </summary>
+    public async Task SucceedAsync(Guid id, int attempt, JsonElement result, CancellationToken cancellationToken)
     {
         var now = time.GetUtcNow();
         var json = result.GetRawText();
@@ -79,33 +83,36 @@ internal sealed class JobQueue(AiDbContext db, TimeProvider time)
             $"""
             UPDATE ai.jobs SET status = 'succeeded', result = CAST({json} AS jsonb), failure = NULL, locked_until = NULL,
                 completed_at = {now}
-            WHERE id = {id}
+            WHERE id = {id} AND status = 'running' AND attempts = {attempt}
             """,
             cancellationToken);
     }
 
     /// <summary>
     /// Records a failed attempt. With <paramref name="retry"/> and attempts left, the job waits 10 or 60 seconds and is
-    /// queued again; otherwise it fails for good with <paramref name="failure"/>.
+    /// queued again; otherwise it fails for good with <paramref name="failure"/>. Like <see cref="SucceedAsync"/>, only
+    /// the attempt that holds the job may change it.
     /// </summary>
-    public async Task FailAsync(Guid id, string failure, bool retry, CancellationToken cancellationToken)
+    public async Task FailAsync(Guid id, int attempt, string failure, bool retry, CancellationToken cancellationToken)
     {
-        var job = await FindAsync(id, cancellationToken) ?? throw new InvalidOperationException($"No AI job {id}.");
         var now = time.GetUtcNow();
-        if (retry && job.Attempts < MaxAttempts)
+        if (retry && attempt < MaxAttempts)
         {
-            var next = now + RetryDelays[Math.Clamp(job.Attempts - 1, 0, RetryDelays.Length - 1)];
+            var next = now + RetryDelays[Math.Clamp(attempt - 1, 0, RetryDelays.Length - 1)];
             await db.Database.ExecuteSqlAsync(
                 $"""
                 UPDATE ai.jobs SET status = 'queued', failure = {failure}, locked_until = NULL, next_attempt_at = {next}
-                WHERE id = {id}
+                WHERE id = {id} AND status = 'running' AND attempts = {attempt}
                 """,
                 cancellationToken);
             return;
         }
 
         await db.Database.ExecuteSqlAsync(
-            $"UPDATE ai.jobs SET status = 'failed', failure = {failure}, locked_until = NULL, completed_at = {now} WHERE id = {id}",
+            $"""
+            UPDATE ai.jobs SET status = 'failed', failure = {failure}, locked_until = NULL, completed_at = {now}
+            WHERE id = {id} AND status = 'running' AND attempts = {attempt}
+            """,
             cancellationToken);
     }
 }

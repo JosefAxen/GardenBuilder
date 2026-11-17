@@ -22,6 +22,7 @@ internal sealed partial class AiCalls(
 {
     public const string CutOff = "Svaret från AI:n blev avklippt.";
     public const string Refused = "AI:n avböjde att svara.";
+    public const string TimedOut = "Claude svarade inte i tid.";
 
     /// <summary>The last day the 80 % warning was logged, so it is logged once a day per Worker.</summary>
     private static DateTimeOffset _warnedFor;
@@ -44,6 +45,12 @@ internal sealed partial class AiCalls(
         {
             await LogAsync(promptVersion, model.Model, started, clock, 0, 0, Money.InSek(0m), "error", e.InnerException?.GetType().Name ?? e.GetType().Name, cancellationToken);
             throw;
+        }
+        catch (OperationCanceledException e) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Nobody asked to stop, so the provider timed out. Worth another attempt.
+            await LogAsync(promptVersion, model.Model, started, clock, 0, 0, Money.InSek(0m), "error", e.GetType().Name, cancellationToken);
+            throw new AiProviderException(TimedOut, retryable: true, e);
         }
 
         // The price was checked before the call; the answering model is normally the same one.

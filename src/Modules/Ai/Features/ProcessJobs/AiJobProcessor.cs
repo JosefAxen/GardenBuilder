@@ -43,7 +43,7 @@ internal sealed partial class AiJobProcessor(
                 {
                 }
             }
-            catch (Exception e) when (e is not OperationCanceledException)
+            catch (Exception e) when (!stoppingToken.IsCancellationRequested)
             {
                 // The database may be briefly away; the next tick tries again.
                 LogTickFailed(logger, e);
