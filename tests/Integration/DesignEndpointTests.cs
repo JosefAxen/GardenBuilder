@@ -53,6 +53,26 @@ public sealed class DesignEndpointTests(ApiFactory factory) : IClassFixture<ApiF
     }
 
     [Fact]
+    public async Task Post_when_the_customer_has_a_design_is_409_with_it_and_creates_nothing()
+    {
+        using var client = IdentityTestHelpers.HttpsClient(factory);
+        var id = await CreateAsync(client);
+        using var saved = await PutAsync(client, id, SceneJson.Serialize(Scene(20)), "\"1\"");
+        var gardens = await CountAsync<GardenDbContext, GardenBuilder.Modules.Garden.Domain.Garden>();
+
+        using var second = await PostAsync(client, SceneJson.Serialize(Scene(30)));
+
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+        var body = await ReadAsync(second);
+        Assert.Equal("design-exists", body.GetProperty("code").GetString());
+        Assert.Equal(id, body.GetProperty("id").GetGuid());
+        Assert.Equal(2, body.GetProperty("revision").GetInt32());
+        Assert.Equal(gardens, await CountAsync<GardenDbContext, GardenBuilder.Modules.Garden.Domain.Garden>());
+        var stored = await GetAsync(client, id);
+        Assert.Equal(2, stored.GetProperty("revision").GetInt32());
+    }
+
+    [Fact]
     public async Task Latest_without_cookie_is_404_and_creates_no_customer()
     {
         var before = await CountAsync<IdentityDbContext, Customer>();

@@ -133,7 +133,10 @@ async function flush(keepalive = false) {
     set({ status: waiting ? 'pending' : 'saved' })
   } catch (error) {
     if (run !== generation) return
-    failed(document, error instanceof DesignError ? error : new DesignError('unavailable', String(error)))
+    const reason = error instanceof DesignError ? error : new DesignError('unavailable', String(error))
+    if (reason.reason === 'conflict' && (await savedAfterAll(document, reason, run))) return
+    if (run !== generation) return
+    failed(document, reason)
   } finally {
     if (run === generation) {
       saving = false
@@ -143,6 +146,40 @@ async function flush(keepalive = false) {
       if (due) void flush()
     }
   }
+}
+
+/**
+ * A conflict can be this tab's own save: the server stored it but the answer was lost, and the retry then met the
+ * revision it had made itself. When the server's design is the one that was sent, that is adopted without a
+ * conflict box. Otherwise the conflict stays, with the server's revision as fetched now.
+ */
+async function savedAfterAll(document: SceneDocument, error: DesignError, run: number): Promise<boolean> {
+  const designId = error.designId ?? get().designId
+  if (designId === null) return false
+  if (error.designId) set({ designId })
+  try {
+    const server = await fetchDesign(designId)
+    if (run !== generation) return true
+    if (canonical(server.scene) !== canonical(document)) {
+      failed(document, new DesignError('conflict', error.message, server.revision, designId))
+      return true
+    }
+    savedDocument = document
+    retries = 0
+    set({ designId, revision: server.revision, conflictRevision: null, status: waiting ? 'pending' : 'saved' })
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** JSON with the keys of every object sorted, so two scenes compare equal whatever order the server gives keys in. */
+function canonical(value: unknown): string {
+  return JSON.stringify(value, (_key, item: unknown) =>
+    item && typeof item === 'object' && !Array.isArray(item)
+      ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+      : item,
+  )
 }
 
 function failed(document: SceneDocument, error: DesignError) {

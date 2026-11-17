@@ -5,7 +5,8 @@ export type SavedDesign = { id: string; revision: number; scene: SceneDocument }
 
 /**
  * Why a design could not be fetched or saved:
- * - conflict: someone saved a newer revision, for example in another tab (412). `revision` is the server's.
+ * - conflict: someone saved a newer revision, for example in another tab (412), or the customer already has a design
+ *   when this tab tried to create one (409). `revision` is the server's; `designId` names the existing design on a 409.
  * - not-found: no such design for this customer (404).
  * - invalid: the server refused the scene (400 or 413). Sending it again gives the same answer.
  * - unavailable: no answer, a timeout or a server error. Worth trying again.
@@ -13,12 +14,14 @@ export type SavedDesign = { id: string; revision: number; scene: SceneDocument }
 export class DesignError extends Error {
   readonly reason: 'conflict' | 'not-found' | 'invalid' | 'unavailable'
   readonly revision?: number
+  readonly designId?: string
 
-  constructor(reason: DesignError['reason'], message: string, revision?: number) {
+  constructor(reason: DesignError['reason'], message: string, revision?: number, designId?: string) {
     super(message)
     this.name = 'DesignError'
     this.reason = reason
     this.revision = revision
+    this.designId = designId
   }
 }
 
@@ -37,6 +40,10 @@ async function send(url: string, init: RequestInit, { keepalive = false, timeout
     case 412: {
       const body = (await response.json().catch(() => null)) as { revision?: number } | null
       throw new DesignError('conflict', 'The design has a newer revision on the server.', body?.revision)
+    }
+    case 409: {
+      const body = (await response.json().catch(() => null)) as { id?: string; revision?: number } | null
+      throw new DesignError('conflict', 'The customer already has a design.', body?.revision, body?.id)
     }
     case 404:
       throw new DesignError('not-found', 'No such design for this customer.')

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { SceneDocument } from './scene'
-import { DesignError, fetchLatestDesign, saveWorkingCopy } from './designs'
+import { createDesign, DesignError, fetchLatestDesign, saveWorkingCopy } from './designs'
 
 const scene: SceneDocument = { formatVersion: 1, elements: [] }
 
@@ -27,6 +27,17 @@ describe('designs api', () => {
     expect(error).toBeInstanceOf(DesignError)
     expect((error as DesignError).reason).toBe('conflict')
     expect((error as DesignError).revision).toBe(5)
+  })
+
+  it('reports a 409 on create as a conflict with the existing design', async () => {
+    answer(() => new Response(JSON.stringify({ code: 'design-exists', id: 'd9', revision: 3 }), { status: 409 }))
+
+    const error = await createDesign(scene).catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(DesignError)
+    expect((error as DesignError).reason).toBe('conflict')
+    expect((error as DesignError).designId).toBe('d9')
+    expect((error as DesignError).revision).toBe(3)
   })
 
   it('sends the revision in If-Match and reads the new one from ETag', async () => {

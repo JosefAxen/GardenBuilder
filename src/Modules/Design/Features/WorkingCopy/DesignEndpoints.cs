@@ -23,6 +23,8 @@ internal static class DesignEndpoints
 
     public sealed record CodeResponse(string Code);
 
+    public sealed record ExistsResponse(string Code, Guid Id, int Revision);
+
     public static RouteGroupBuilder MapWorkingCopy(this RouteGroupBuilder group)
     {
         group.MapGet("/latest", GetLatestAsync).WithName("GetLatestDesign");
@@ -65,6 +67,8 @@ internal static class DesignEndpoints
 
     /// <summary>
     /// The first save. The scene is checked before anything is created, so a bad scene leaves no customer or garden behind.
+    /// A customer has one design for now: when there already is one (another tab got there first, or the answer to an
+    /// earlier POST was lost) this answers 409 with it instead of creating a second.
     /// </summary>
     private static async Task<IResult> CreateAsync(
         HttpRequest request,
@@ -79,6 +83,13 @@ internal static class DesignEndpoints
         if (error is not null)
         {
             return error;
+        }
+
+        if (await customer.FindAsync(cancellationToken) is { } knownCustomer
+            && await store.LatestAsync(knownCustomer, cancellationToken) is { } existing)
+        {
+            return TypedResults.Json(
+                new ExistsResponse("design-exists", existing.Id, existing.Revision), statusCode: StatusCodes.Status409Conflict);
         }
 
         var customerId = await customer.GetOrCreateAsync(cancellationToken);

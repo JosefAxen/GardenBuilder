@@ -229,18 +229,21 @@ describe('saveStore', () => {
 
     calls[0].answer(json(412, { code: 'conflict', revision: 4 }))
     await settle()
+    expect(calls[1].url).toBe('/api/designs/d1')
+    calls[1].answer(json(200, { id: 'd1', revision: 4, scene: doc(99) }, 4))
+    await settle()
     expect(useSaveStore.getState()).toMatchObject({ status: 'conflict', conflictRevision: 4 })
     scheduleSave(doc(2))
     await vi.advanceTimersByTimeAsync(120_000)
-    expect(calls).toHaveLength(1)
+    expect(calls).toHaveLength(2)
     expect(hasUnsavedChanges()).toBe(true)
 
     keepMine()
     await settle()
-    expect(calls).toHaveLength(2)
-    expect(ifMatch(calls[1])).toBe('"4"')
-    expect(JSON.parse(calls[1].init?.body as string).n).toBe(2)
-    calls[1].answer(saved(5))
+    expect(calls).toHaveLength(3)
+    expect(ifMatch(calls[2])).toBe('"4"')
+    expect(JSON.parse(calls[2].init?.body as string).n).toBe(2)
+    calls[2].answer(saved(5))
     await settle()
     expect(useSaveStore.getState()).toMatchObject({ status: 'saved', revision: 5, conflictRevision: null })
   })
@@ -252,18 +255,78 @@ describe('saveStore', () => {
     await vi.advanceTimersByTimeAsync(1_000)
     calls[0].answer(json(412, { code: 'conflict', revision: 4 }))
     await settle()
+    calls[1].answer(json(200, { id: 'd1', revision: 4, scene: doc(40) }, 4))
+    await settle()
 
     const latest = takeLatest()
     await settle()
-    expect(calls[1].url).toBe('/api/designs/d1')
-    calls[1].answer(json(200, { id: 'd1', revision: 4, scene: doc(40) }, 4))
+    expect(calls[2].url).toBe('/api/designs/d1')
+    calls[2].answer(json(200, { id: 'd1', revision: 4, scene: doc(40) }, 4))
     await latest
 
     expect((useSceneStore.getState().document as unknown as { n: number }).n).toBe(40)
     expect(useSaveStore.getState()).toMatchObject({ status: 'saved', revision: 4, conflictRevision: null })
     scheduleSave(useSceneStore.getState().document)
     await vi.advanceTimersByTimeAsync(5_000)
-    expect(calls).toHaveLength(2)
+    expect(calls).toHaveLength(3)
+    expect(hasUnsavedChanges()).toBe(false)
+  })
+
+  it('a save whose answer was lost is not taken for a conflict', async () => {
+    const { calls } = manualFetch()
+    startSaving({ id: 'd1', revision: 1, scene: doc() }, doc())
+    scheduleSave(doc(1))
+    await vi.advanceTimersByTimeAsync(1_000)
+    calls[0].fail(new TypeError('Failed to fetch'))
+    await settle()
+    await vi.advanceTimersByTimeAsync(2_000)
+
+    calls[1].answer(json(412, { code: 'conflict', revision: 2 }))
+    await settle()
+    expect(calls[2].url).toBe('/api/designs/d1')
+    // The server stores jsonb, which may give the keys back in another order.
+    calls[2].answer(json(200, { id: 'd1', revision: 2, scene: { n: 1, elements: [], formatVersion: 1 } }, 2))
+    await settle()
+
+    expect(useSaveStore.getState()).toMatchObject({ status: 'saved', revision: 2, conflictRevision: null })
+    expect(hasUnsavedChanges()).toBe(false)
+  })
+
+  it('a design made in another tab before the first save shows the conflict box', async () => {
+    const { calls } = manualFetch()
+    startSaving(null, doc())
+    scheduleSave(doc(1))
+    await vi.advanceTimersByTimeAsync(1_000)
+
+    calls[0].answer(json(409, { code: 'design-exists', id: 'd9', revision: 3 }))
+    await settle()
+    expect(calls[1].url).toBe('/api/designs/d9')
+    calls[1].answer(json(200, { id: 'd9', revision: 3, scene: doc(7) }, 3))
+    await settle()
+    expect(useSaveStore.getState()).toMatchObject({ status: 'conflict', designId: 'd9', conflictRevision: 3 })
+
+    keepMine()
+    await settle()
+    expect(calls[2].url).toBe('/api/designs/d9/working-copy')
+    expect(ifMatch(calls[2])).toBe('"3"')
+  })
+
+  it('a first save whose answer was lost does not make a second design', async () => {
+    const { calls } = manualFetch()
+    startSaving(null, doc())
+    scheduleSave(doc(1))
+    await vi.advanceTimersByTimeAsync(1_000)
+    calls[0].fail(new TypeError('Failed to fetch'))
+    await settle()
+    await vi.advanceTimersByTimeAsync(2_000)
+    expect(calls[1].init?.method).toBe('POST')
+
+    calls[1].answer(json(409, { code: 'design-exists', id: 'd1', revision: 1 }))
+    await settle()
+    calls[2].answer(json(200, { id: 'd1', revision: 1, scene: doc(1) }, 1))
+    await settle()
+
+    expect(useSaveStore.getState()).toMatchObject({ status: 'saved', designId: 'd1', revision: 1 })
     expect(hasUnsavedChanges()).toBe(false)
   })
 
