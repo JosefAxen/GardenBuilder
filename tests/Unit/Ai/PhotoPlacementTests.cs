@@ -143,6 +143,21 @@ public sealed class PhotoPlacementTests
         Assert.Equal(["pine", "tree-large", "tree-small"], forms);
     }
 
+    [Theory]
+    [InlineData("Ek vid gränsen", "tree-large")]
+    [InlineData("Grannens björk", "tree-large")]
+    [InlineData("Lönnen", "tree-large")]
+    [InlineData("Gran", "pine")]
+    [InlineData("Tall vid staketet", "pine")]
+    [InlineData("Tujor", "pine")]
+    [InlineData("Barrträd", "pine")]
+    public void Only_conifer_words_make_a_conifer(string label, string form)
+    {
+        var proposal = Place((Answer(Thing("tree", "point", 0.9, Pts(AtScene(5, 5)), label: label, width: 4, height: 10)), South));
+
+        Assert.Equal(form, Assert.IsType<PointElement>(Assert.Single(proposal.Elements).Element).Form);
+    }
+
     [Fact]
     public void Yellow_wall_becomes_E3B23C_and_hip_roof_becomes_gable()
     {

@@ -126,6 +126,60 @@ public sealed class PhotoInterpretationTests(ApiFactory factory) : IClassFixture
     }
 
     [Fact]
+    public async Task The_latest_interpretation_can_be_fetched_again_after_leaving_the_page()
+    {
+        var (client, gardenId, designId) = await CustomerAsync(_app);
+        await UploadFromSouthAsync(client, gardenId);
+        _model.Answers.Enqueue(LawnAnswer());
+        var jobId = await StartOkAsync(client, gardenId, designId);
+        await RunAsync();
+        var (other, _, _) = await CustomerAsync(_app);
+
+        var latest = await client.GetFromJsonAsync<JsonElement>(Interpretations(gardenId, "/latest"), Ct);
+        using var othersView = await other.GetAsync(Interpretations(gardenId, "/latest"), Ct);
+
+        Assert.Equal(jobId, latest.GetProperty("id").GetGuid());
+        Assert.Equal("succeeded", latest.GetProperty("status").GetString());
+        Assert.Single(latest.GetProperty("result").GetProperty("elements").EnumerateArray());
+        Assert.Equal(HttpStatusCode.NotFound, othersView.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_garden_without_interpretations_has_no_latest()
+    {
+        var (client, gardenId, _) = await CustomerAsync(_app);
+
+        using var response = await client.GetAsync(Interpretations(gardenId, "/latest"), Ct);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Each_call_renews_the_jobs_lease()
+    {
+        var (client, gardenId, designId) = await CustomerAsync(_app);
+        await UploadFromSouthAsync(client, gardenId);
+        await UploadFromSouthAsync(client, gardenId);
+        _model.Answers.Enqueue(LawnAnswer());
+        _model.Answers.Enqueue(LawnAnswer());
+        var jobId = await StartOkAsync(client, gardenId, designId);
+        var leases = new List<DateTimeOffset>();
+        _model.OnCall = async () =>
+        {
+            await Task.Delay(50, Ct);
+            using var scope = _app.Services.CreateScope();
+            var job = await scope.ServiceProvider.GetRequiredService<AiDbContext>().Set<AiJob>().AsNoTracking().SingleAsync(j => j.Id == jobId, Ct);
+            leases.Add(job.LockedUntil!.Value);
+        };
+
+        await RunAsync();
+
+        // Six slow calls must not outlast the five-minute lease, or a second Worker would start the job again.
+        Assert.Equal(2, leases.Count);
+        Assert.True(leases[1] > leases[0]);
+    }
+
+    [Fact]
     public async Task Unparseable_answer_skips_that_photo()
     {
         var (client, gardenId, designId) = await CustomerAsync(_app);
@@ -256,13 +310,21 @@ public sealed class PhotoInterpretationTests(ApiFactory factory) : IClassFixture
 
         public ConcurrentQueue<TextRequest> Requests { get; } = new();
 
+        /// <summary>Runs inside each call, so a test can look at the job while it is running.</summary>
+        public Func<Task>? OnCall { get; set; }
+
         public string ModelFor(string kind) => kind == AiJobKinds.PhotoInterpretation ? "claude-sonnet-5-5" : "claude-haiku-5-5";
 
-        public Task<TextResponse> CompleteAsync(TextRequest request, CancellationToken cancellationToken)
+        public async Task<TextResponse> CompleteAsync(TextRequest request, CancellationToken cancellationToken)
         {
             Requests.Enqueue(request);
+            if (OnCall is { } onCall)
+            {
+                await onCall();
+            }
+
             var text = Answers.TryDequeue(out var answer) ? answer : "{}";
-            return Task.FromResult(new TextResponse(text, request.Model, 1500, 800, "end_turn"));
+            return new TextResponse(text, request.Model, 1500, 800, "end_turn");
         }
     }
 }

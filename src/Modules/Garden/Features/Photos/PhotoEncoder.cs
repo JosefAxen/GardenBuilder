@@ -17,6 +17,12 @@ internal static class PhotoEncoder
     /// <summary>Claude scales larger images down to about this anyway, so more pixels only cost storage.</summary>
     public const int MaxSide = 1568;
 
+    /// <summary>
+    /// The most pixels a photo may declare. A small file can claim a huge image that takes gigabytes to decode; 50
+    /// megapixels is more than any phone camera takes.
+    /// </summary>
+    public const long MaxPixels = 50_000_000;
+
     private const uint Quality = 85;
 
     private static readonly HashSet<MagickFormat> Accepted =
@@ -24,8 +30,8 @@ internal static class PhotoEncoder
         MagickFormat.Jpeg, MagickFormat.Jpg, MagickFormat.Pjpeg, MagickFormat.Png, MagickFormat.WebP, MagickFormat.Heic, MagickFormat.Heif, MagickFormat.Avif,
     ];
 
-    /// <summary>The re-encoded photo, or null when the content is not an image type we accept.</summary>
-    public static EncodedPhoto? Encode(Stream input)
+    /// <summary>The re-encoded photo, or null when the content is not an image type we accept or is too large.</summary>
+    public static EncodedPhoto? Encode(Stream input, long maxPixels = MaxPixels)
     {
         ArgumentNullException.ThrowIfNull(input);
         using var buffer = new MemoryStream();
@@ -42,7 +48,8 @@ internal static class PhotoEncoder
             return null;
         }
 
-        if (!Accepted.Contains(info.Format))
+        // Checked from the header, before a single pixel is decoded.
+        if (!Accepted.Contains(info.Format) || (long)info.Width * info.Height > maxPixels)
         {
             return null;
         }

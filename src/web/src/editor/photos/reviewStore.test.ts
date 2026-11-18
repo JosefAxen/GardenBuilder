@@ -90,6 +90,20 @@ describe('review of a photo interpretation', () => {
     expect(useSceneStore.getState().notice).toBe('Passar inte längre på tomten.')
   })
 
+  it('show leaves out proposals that are already in the scene', () => {
+    useReviewStore.getState().take('a')
+    useReviewStore.getState().show({
+      elements: [
+        { label: 'Björk', confidence: 0.9, element: tree('a', 5) },
+        { label: 'Lönn', confidence: 0.5, element: tree('b', 10) },
+      ],
+      house: null,
+      dropped: [],
+      skippedPhotos: 0,
+    })
+    expect(useReviewStore.getState().proposals.map((p) => p.element.id)).toEqual(['b'])
+  })
+
   it('confidence in words', () => {
     expect([confidenceText(0.9), confidenceText(0.5), confidenceText(0.3)]).toEqual(['säker', 'ganska säker', 'osäker'])
   })

@@ -39,7 +39,7 @@ internal sealed partial class JobRunner(
             return true;
         }
 
-        var calls = new AiCalls(job, model, guards, costs, settings, pricing, time, logger);
+        var calls = new AiCalls(job, queue, model, guards, costs, settings, pricing, time, logger);
         try
         {
             var result = await handler.RunAsync(job, calls, cancellationToken);

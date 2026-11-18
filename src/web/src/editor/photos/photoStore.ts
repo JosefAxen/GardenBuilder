@@ -2,11 +2,13 @@ import { create } from 'zustand'
 import {
   deletePhoto,
   fetchInterpretation,
+  fetchLatestInterpretation,
   listPhotos,
   PhotoError,
   setCamera,
   startInterpretation,
   uploadPhoto,
+  type InterpretationJob,
   type Photo,
 } from '../../api/photos'
 import type { Point2 } from '../../api/scene'
@@ -27,6 +29,8 @@ type PhotoState = {
 
 export const FALLBACK = 'Vi kunde inte tolka fotona. Lägg in det som finns i trädgården själv, det går snabbt.'
 const POLL_MS = 2_000
+/** Longer than any job can take (six photos, each call with its own lease), so a stuck queue ends in the fallback. */
+const GIVE_UP_MS = 6 * 60_000
 
 /** The customer's photos and the photo interpretation's progress. The photos live on the server; this is a view of them. */
 export const usePhotoStore = create<PhotoState>(() => ({ gardenId: null, photos: [], busy: false, message: null, interpret: 'idle' }))
@@ -41,11 +45,51 @@ export function headingFrom(from: Point2, to: Point2): number {
 }
 
 export async function loadPhotos(gardenId: string): Promise<void> {
-  set({ gardenId, message: null })
+  set({ gardenId, message: null, interpret: 'idle' })
+  useReviewStore.getState().clear()
   try {
     set({ photos: await listPhotos(gardenId) })
+    // A proposal from before the page was left (or one still running) is picked up again.
+    const latest = await fetchLatestInterpretation(gardenId)
+    if (latest && get().gardenId === gardenId) {
+      if (latest.status === 'queued' || latest.status === 'running') void follow(gardenId, latest.id)
+      else if (latest.status === 'succeeded') settle(latest)
+    }
   } catch (error) {
     set({ message: messageOf(error) })
+  }
+}
+
+/** Shows a finished job: the proposal, or the fallback when there is nothing to take. */
+function settle(job: InterpretationJob): void {
+  if (job.status === 'succeeded' && job.result) {
+    useReviewStore.getState().show(job.result)
+    const { proposals, house } = useReviewStore.getState()
+    const empty = proposals.length === 0 && !house
+    set({ interpret: empty ? 'failed' : 'done', message: empty ? FALLBACK : null })
+    return
+  }
+  set({ interpret: 'failed', message: FALLBACK })
+}
+
+/** Asks for the job's status every two seconds until it is done, the garden changes, or it takes too long. */
+async function follow(gardenId: string, jobId: string): Promise<void> {
+  set({ interpret: 'running' })
+  const deadline = Date.now() + GIVE_UP_MS
+  try {
+    while (Date.now() < deadline) {
+      await wait(POLL_MS)
+      if (get().gardenId !== gardenId) return
+      const job = await fetchInterpretation(gardenId, jobId)
+      if (get().gardenId !== gardenId) return
+      if (job.status === 'succeeded' || job.status === 'failed') {
+        settle(job)
+        return
+      }
+    }
+    set({ interpret: 'failed', message: FALLBACK })
+  } catch {
+    if (get().gardenId === gardenId) set({ interpret: 'failed', message: FALLBACK })
   }
 }
 
@@ -116,20 +160,7 @@ export async function interpretPhotos(): Promise<void> {
   useReviewStore.getState().clear()
   try {
     const jobId = await startInterpretation(gardenId, designId)
-    for (;;) {
-      await wait(POLL_MS)
-      const job = await fetchInterpretation(gardenId, jobId)
-      if (job.status === 'succeeded' && job.result) {
-        const empty = job.result.elements.length === 0 && !job.result.house
-        useReviewStore.getState().show(job.result)
-        set({ interpret: empty ? 'failed' : 'done', message: empty ? FALLBACK : null })
-        return
-      }
-      if (job.status === 'failed') {
-        set({ interpret: 'failed', message: FALLBACK })
-        return
-      }
-    }
+    await follow(gardenId, jobId)
   } catch (error) {
     set({ interpret: 'failed', message: error instanceof PhotoError && error.code !== 'unavailable' ? error.message : FALLBACK })
   }

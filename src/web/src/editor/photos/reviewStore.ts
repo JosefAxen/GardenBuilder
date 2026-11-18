@@ -45,7 +45,11 @@ function addIfItFits(command: SceneCommand): boolean {
 export const useReviewStore = create<ReviewState>((set, get) => ({
   proposals: [],
   house: null,
-  show: (result) => set({ proposals: result.elements, house: result.house }),
+  // Proposals the customer already took (before leaving the page, say) are in the scene with the same id.
+  show: (result) => {
+    const inScene = new Set(useSceneStore.getState().document.elements.map((e) => e.id))
+    set({ proposals: result.elements.filter((p) => !inScene.has(p.element.id)), house: result.house })
+  },
   take: (id) => {
     const proposal = get().proposals.find((p) => p.element.id === id)
     if (!proposal) return

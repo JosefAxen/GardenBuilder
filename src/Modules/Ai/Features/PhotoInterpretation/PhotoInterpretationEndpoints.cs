@@ -9,6 +9,7 @@ using GardenBuilder.Modules.Ai.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore;
 
 namespace GardenBuilder.Modules.Ai.Features.PhotoInterpretation;
 
@@ -22,7 +23,7 @@ internal static class PhotoInterpretationEndpoints
 
     public sealed record CodeResponse(string Code);
 
-    public sealed record JobResponse(string Status, JsonElement? Result, string? Failure);
+    public sealed record JobResponse(Guid Id, string Status, JsonElement? Result, string? Failure);
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -30,6 +31,7 @@ internal static class PhotoInterpretationEndpoints
     {
         group.MapPost("/{gardenId:guid}/photo-interpretations", StartAsync).WithName("StartPhotoInterpretation");
         group.MapGet("/{gardenId:guid}/photo-interpretations/{jobId:guid}", GetAsync).WithName("GetPhotoInterpretation");
+        group.MapGet("/{gardenId:guid}/photo-interpretations/latest", GetLatestAsync).WithName("GetLatestPhotoInterpretation");
         return group;
     }
 
@@ -85,6 +87,22 @@ internal static class PhotoInterpretationEndpoints
             return TypedResults.NotFound();
         }
 
-        return TypedResults.Ok(new JobResponse(AiJobConfiguration.StatusText(job.Status), job.Result, job.Failure));
+        return TypedResults.Ok(new JobResponse(job.Id, AiJobConfiguration.StatusText(job.Status), job.Result, job.Failure));
+    }
+
+    /// <summary>The garden's most recent interpretation, so a proposal is not lost when the customer leaves the page.</summary>
+    private static async Task<IResult> GetLatestAsync(
+        Guid gardenId, ICurrentCustomer customer, AiDbContext db, CancellationToken cancellationToken)
+    {
+        if (await customer.FindAsync(cancellationToken) is not { } customerId
+            || await db.Set<AiJob>().AsNoTracking()
+                .Where(j => j.GardenId == gardenId && j.CustomerId == customerId && j.Kind == AiJobKinds.PhotoInterpretation)
+                .OrderByDescending(j => j.CreatedAt)
+                .FirstOrDefaultAsync(cancellationToken) is not { } job)
+        {
+            return TypedResults.NotFound();
+        }
+
+        return TypedResults.Ok(new JobResponse(job.Id, AiJobConfiguration.StatusText(job.Status), job.Result, job.Failure));
     }
 }

@@ -38,7 +38,15 @@ internal static class PhotoPlacement
     private const double LargeTreeHeight = 6;
     private const int Precision = 3;
 
-    private static readonly string[] ConiferWords = ["barr", "gran", "tall", "tuja", "thuja", "cypress", "conifer", "spruce", "pine", "fir", "en "];
+    /// <summary>Whole words that name a conifer. "en" (juniper) only counts alone, since many Swedish words end in it.</summary>
+    private static readonly HashSet<string> ConiferWords = new(StringComparer.Ordinal)
+    {
+        "gran", "granar", "granen", "tall", "tallar", "tallen", "en", "enar", "tuja", "tujor", "thuja", "idegran", "cypress",
+        "barrträd", "barrträdet", "conifer", "spruce", "pine", "fir", "juniper",
+    };
+
+    /// <summary>Beginnings that only conifers have, for compound words such as "tujahäck" or "barrträdsrad".</summary>
+    private static readonly string[] ConiferStems = ["tuja", "thuja", "barr", "cypress", "conifer"];
 
     /// <summary>The colour words Claude uses, longest first so "red-brown" is not read as "red".</summary>
     private static readonly (string Word, string Hex)[] Colors =
@@ -293,8 +301,8 @@ internal static class PhotoPlacement
             return "shrub-round";
         }
 
-        var label = c.Label.ToLowerInvariant() + " ";
-        if (ConiferWords.Any(label.Contains))
+        var words = c.Label.ToLower(CultureInfo.GetCultureInfo("sv-SE")).Split((char[])[' ', ',', '.', '-', '/', '(', ')'], StringSplitOptions.RemoveEmptyEntries);
+        if (words.Any(w => ConiferWords.Contains(w) || ConiferStems.Any(stem => w.StartsWith(stem, StringComparison.Ordinal))))
         {
             return "pine";
         }

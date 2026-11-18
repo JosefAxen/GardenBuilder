@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using GardenBuilder.Modules.Ai.Domain;
 using GardenBuilder.Modules.Ai.Features.Costs;
+using GardenBuilder.Modules.Ai.Features.Queue;
 using GardenBuilder.Modules.Ai.Features.Settings;
 using GardenBuilder.Modules.Ai.Providers;
 using GardenBuilder.SharedKernel;
@@ -12,6 +13,7 @@ namespace GardenBuilder.Modules.Ai.Features.Run;
 /// <summary>The calls one job makes: guards first, then the model, then a row in ai.calls whatever happened.</summary>
 internal sealed partial class AiCalls(
     AiJob job,
+    JobQueue queue,
     ITextModel model,
     AiGuards guards,
     CostLog costs,
@@ -36,6 +38,7 @@ internal sealed partial class AiCalls(
             throw new AiJobStoppedException(refusal);
         }
 
+        await queue.RenewLeaseAsync(job.Id, job.Attempts, cancellationToken);
         var started = time.GetUtcNow();
         var clock = Stopwatch.StartNew();
         TextResponse response;

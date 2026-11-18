@@ -16,7 +16,7 @@ export type Interpretation = {
   skippedPhotos: number
 }
 
-export type InterpretationJob = { status: 'queued' | 'running' | 'succeeded' | 'failed'; result: Interpretation | null; failure: string | null }
+export type InterpretationJob = { id: string; status: 'queued' | 'running' | 'succeeded' | 'failed'; result: Interpretation | null; failure: string | null }
 
 const MESSAGES: Record<string, string> = {
   'too-many-photos': 'Du kan ladda upp högst 6 foton.',
@@ -78,6 +78,16 @@ export async function setCamera(gardenId: string, photoId: string, camera: Camer
 export async function startInterpretation(gardenId: string, designId: string): Promise<string> {
   const response = await send(`/api/gardens/${gardenId}/photo-interpretations`, { method: 'POST', ...json({ designId }) })
   return ((await response.json()) as { id: string }).id
+}
+
+/** The garden's most recent interpretation, or null when it has none. */
+export async function fetchLatestInterpretation(gardenId: string): Promise<InterpretationJob | null> {
+  try {
+    return (await (await send(`/api/gardens/${gardenId}/photo-interpretations/latest`)).json()) as InterpretationJob
+  } catch (error) {
+    if (error instanceof PhotoError && error.code === 'http-404') return null
+    throw error
+  }
 }
 
 export async function fetchInterpretation(gardenId: string, jobId: string): Promise<InterpretationJob> {

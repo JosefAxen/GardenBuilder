@@ -70,6 +70,15 @@ public sealed class PhotoEncoderTests
     }
 
     [Fact]
+    public void An_image_over_the_pixel_limit_is_refused_before_it_is_decoded()
+    {
+        // A small file can declare a huge image (30 000 × 30 000 pixels is gigabytes once decoded).
+        Assert.Null(PhotoEncoder.Encode(Image(2000, 1000, MagickFormat.Png), maxPixels: 1_000_000));
+        Assert.NotNull(PhotoEncoder.Encode(Image(1000, 1000, MagickFormat.Png), maxPixels: 1_000_000));
+        Assert.Equal(50_000_000, PhotoEncoder.MaxPixels);
+    }
+
+    [Fact]
     public void Small_images_are_not_enlarged()
     {
         var photo = PhotoEncoder.Encode(Image(640, 480, MagickFormat.Jpeg))!;
