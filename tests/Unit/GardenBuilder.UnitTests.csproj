@@ -6,5 +6,6 @@
     <ProjectReference Include="..\..\src\Modules\Catalog\GardenBuilder.Modules.Catalog.csproj" />
     <ProjectReference Include="..\..\src\Modules\Pricing\GardenBuilder.Modules.Pricing.csproj" />
     <ProjectReference Include="..\..\src\Modules\Ai\GardenBuilder.Modules.Ai.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Garden\GardenBuilder.Modules.Garden.csproj" />
   </ItemGroup>
 </Project>
