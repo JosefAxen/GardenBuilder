@@ -27,6 +27,8 @@ export interface BuildingElement {
   points: Point2[];
   height: number;
   roof: RoofShape;
+  wallColor?: string | null;
+  roofColor?: string | null;
   id: string;
   status: ElementStatus;
   measurementSource: MeasurementSource;
@@ -44,6 +46,8 @@ export interface LineElement {
   kind: "line";
   articleId: string | null;
   points: Point2[];
+  form?: string | null;
+  height?: number | null;
   id: string;
   status: ElementStatus;
   measurementSource: MeasurementSource;
@@ -53,6 +57,9 @@ export interface PointElement {
   articleId: string | null;
   position: Point2;
   rotation: number;
+  form?: string | null;
+  width?: number | null;
+  height?: number | null;
   id: string;
   status: ElementStatus;
   measurementSource: MeasurementSource;

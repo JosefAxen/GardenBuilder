@@ -1,7 +1,7 @@
 import type { SceneDocument } from './scene'
 
 /** A design as the server has it (DesignEndpoints.DesignResponse in the Design module). */
-export type SavedDesign = { id: string; revision: number; scene: SceneDocument }
+export type SavedDesign = { id: string; gardenId: string; revision: number; scene: SceneDocument }
 
 /**
  * Why a design could not be fetched or saved:

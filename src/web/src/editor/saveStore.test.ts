@@ -34,7 +34,7 @@ const json = (status: number, body: unknown, revision?: number) =>
     headers: revision === undefined ? {} : { ETag: `"${revision}"` },
   })
 const created = (id: string, revision = 1) => json(201, { id, revision, scene: doc() }, revision)
-const saved = (revision: number) => json(200, { id: 'd1', revision, scene: doc() }, revision)
+const saved = (revision: number) => json(200, { id: 'd1', gardenId: 'g1', revision, scene: doc() }, revision)
 const ifMatch = (call: Call) => new Headers(call.init?.headers).get('If-Match')
 const settle = () => vi.advanceTimersByTimeAsync(0)
 
@@ -63,7 +63,7 @@ describe('saveStore', () => {
 
   it('saves one second after the last change', async () => {
     const { calls } = manualFetch()
-    startSaving({ id: 'd1', revision: 1, scene: doc() }, doc())
+    startSaving({ id: 'd1', gardenId: 'g1', revision: 1, scene: doc() }, doc())
 
     scheduleSave(doc(1))
     await vi.advanceTimersByTimeAsync(300)
@@ -102,7 +102,7 @@ describe('saveStore', () => {
 
   it('a change during a save is saved after it with the new revision', async () => {
     const { calls } = manualFetch()
-    startSaving({ id: 'd1', revision: 1, scene: doc() }, doc())
+    startSaving({ id: 'd1', gardenId: 'g1', revision: 1, scene: doc() }, doc())
     scheduleSave(doc(1))
     await vi.advanceTimersByTimeAsync(1_000)
     expect(ifMatch(calls[0])).toBe('"1"')
@@ -123,7 +123,7 @@ describe('saveStore', () => {
 
   it('retries with backoff and saves when the server is back', async () => {
     const { calls } = manualFetch()
-    startSaving({ id: 'd1', revision: 1, scene: doc() }, doc())
+    startSaving({ id: 'd1', gardenId: 'g1', revision: 1, scene: doc() }, doc())
     scheduleSave(doc(1))
     await vi.advanceTimersByTimeAsync(1_000)
 
@@ -150,7 +150,7 @@ describe('saveStore', () => {
 
   it('a retry on its way still shows retrying', async () => {
     const { calls } = manualFetch()
-    startSaving({ id: 'd1', revision: 1, scene: doc() }, doc())
+    startSaving({ id: 'd1', gardenId: 'g1', revision: 1, scene: doc() }, doc())
     scheduleSave(doc(1))
     await vi.advanceTimersByTimeAsync(1_000)
     calls[0].answer(new Response(null, { status: 503 }))
@@ -167,7 +167,7 @@ describe('saveStore', () => {
 
   it('a change while a retry is on its way is saved after it', async () => {
     const { calls } = manualFetch()
-    startSaving({ id: 'd1', revision: 1, scene: doc() }, doc())
+    startSaving({ id: 'd1', gardenId: 'g1', revision: 1, scene: doc() }, doc())
     scheduleSave(doc(1))
     await vi.advanceTimersByTimeAsync(1_000)
     calls[0].answer(new Response(null, { status: 503 }))
@@ -187,7 +187,7 @@ describe('saveStore', () => {
   it('undo back to the saved design during a save sends it again', async () => {
     const { calls } = manualFetch()
     const shown = doc()
-    startSaving({ id: 'd1', revision: 1, scene: shown }, shown)
+    startSaving({ id: 'd1', gardenId: 'g1', revision: 1, scene: shown }, shown)
     scheduleSave(doc(1))
     await vi.advanceTimersByTimeAsync(1_000)
 
@@ -207,7 +207,7 @@ describe('saveStore', () => {
   it('undo back to the saved design while retrying ends the retries', async () => {
     const { calls } = manualFetch()
     const shown = doc()
-    startSaving({ id: 'd1', revision: 1, scene: shown }, shown)
+    startSaving({ id: 'd1', gardenId: 'g1', revision: 1, scene: shown }, shown)
     scheduleSave(doc(1))
     await vi.advanceTimersByTimeAsync(1_000)
     calls[0].answer(new Response(null, { status: 503 }))
@@ -223,14 +223,14 @@ describe('saveStore', () => {
 
   it('conflict stops saving until the customer chooses', async () => {
     const { calls } = manualFetch()
-    startSaving({ id: 'd1', revision: 1, scene: doc() }, doc())
+    startSaving({ id: 'd1', gardenId: 'g1', revision: 1, scene: doc() }, doc())
     scheduleSave(doc(1))
     await vi.advanceTimersByTimeAsync(1_000)
 
     calls[0].answer(json(412, { code: 'conflict', revision: 4 }))
     await settle()
     expect(calls[1].url).toBe('/api/designs/d1')
-    calls[1].answer(json(200, { id: 'd1', revision: 4, scene: doc(99) }, 4))
+    calls[1].answer(json(200, { id: 'd1', gardenId: 'g1', revision: 4, scene: doc(99) }, 4))
     await settle()
     expect(useSaveStore.getState()).toMatchObject({ status: 'conflict', conflictRevision: 4 })
     scheduleSave(doc(2))
@@ -250,18 +250,18 @@ describe('saveStore', () => {
 
   it('takeLatest loads the server design', async () => {
     const { calls } = manualFetch()
-    startSaving({ id: 'd1', revision: 1, scene: doc() }, doc())
+    startSaving({ id: 'd1', gardenId: 'g1', revision: 1, scene: doc() }, doc())
     scheduleSave(doc(1))
     await vi.advanceTimersByTimeAsync(1_000)
     calls[0].answer(json(412, { code: 'conflict', revision: 4 }))
     await settle()
-    calls[1].answer(json(200, { id: 'd1', revision: 4, scene: doc(40) }, 4))
+    calls[1].answer(json(200, { id: 'd1', gardenId: 'g1', revision: 4, scene: doc(40) }, 4))
     await settle()
 
     const latest = takeLatest()
     await settle()
     expect(calls[2].url).toBe('/api/designs/d1')
-    calls[2].answer(json(200, { id: 'd1', revision: 4, scene: doc(40) }, 4))
+    calls[2].answer(json(200, { id: 'd1', gardenId: 'g1', revision: 4, scene: doc(40) }, 4))
     await latest
 
     expect((useSceneStore.getState().document as unknown as { n: number }).n).toBe(40)
@@ -274,7 +274,7 @@ describe('saveStore', () => {
 
   it('a save whose answer was lost is not taken for a conflict', async () => {
     const { calls } = manualFetch()
-    startSaving({ id: 'd1', revision: 1, scene: doc() }, doc())
+    startSaving({ id: 'd1', gardenId: 'g1', revision: 1, scene: doc() }, doc())
     scheduleSave(doc(1))
     await vi.advanceTimersByTimeAsync(1_000)
     calls[0].fail(new TypeError('Failed to fetch'))
@@ -285,7 +285,7 @@ describe('saveStore', () => {
     await settle()
     expect(calls[2].url).toBe('/api/designs/d1')
     // The server stores jsonb, which may give the keys back in another order.
-    calls[2].answer(json(200, { id: 'd1', revision: 2, scene: { n: 1, elements: [], formatVersion: 1 } }, 2))
+    calls[2].answer(json(200, { id: 'd1', gardenId: 'g1', revision: 2, scene: { n: 1, elements: [], formatVersion: 1 } }, 2))
     await settle()
 
     expect(useSaveStore.getState()).toMatchObject({ status: 'saved', revision: 2, conflictRevision: null })
@@ -323,7 +323,7 @@ describe('saveStore', () => {
 
     calls[1].answer(json(409, { code: 'design-exists', id: 'd1', revision: 1 }))
     await settle()
-    calls[2].answer(json(200, { id: 'd1', revision: 1, scene: doc(1) }, 1))
+    calls[2].answer(json(200, { id: 'd1', gardenId: 'g1', revision: 1, scene: doc(1) }, 1))
     await settle()
 
     expect(useSaveStore.getState()).toMatchObject({ status: 'saved', designId: 'd1', revision: 1 })
@@ -332,7 +332,7 @@ describe('saveStore', () => {
 
   it('invalid is not retried', async () => {
     const { calls } = manualFetch()
-    startSaving({ id: 'd1', revision: 1, scene: doc() }, doc())
+    startSaving({ id: 'd1', gardenId: 'g1', revision: 1, scene: doc() }, doc())
     scheduleSave(doc(1))
     await vi.advanceTimersByTimeAsync(1_000)
 
@@ -349,7 +349,7 @@ describe('saveStore', () => {
 
   it('not-found starts a new design on the next save', async () => {
     const { calls } = manualFetch()
-    startSaving({ id: 'gone', revision: 3, scene: doc() }, doc())
+    startSaving({ id: 'gone', gardenId: 'g1', revision: 3, scene: doc() }, doc())
     scheduleSave(doc(1))
     await vi.advanceTimersByTimeAsync(1_000)
 
@@ -364,7 +364,7 @@ describe('saveStore', () => {
 
   it('saveOnLeave uses keepalive only under 60 000 bytes', async () => {
     const { calls } = manualFetch()
-    startSaving({ id: 'd1', revision: 1, scene: doc() }, doc())
+    startSaving({ id: 'd1', gardenId: 'g1', revision: 1, scene: doc() }, doc())
 
     saveOnLeave(doc(1))
     await settle()

@@ -36,6 +36,12 @@ internal static class SceneValidator
 
     public const double MaxBuildingHeight = 30;
 
+    /// <summary>How far outside the plot a point may lie: fences and hedges stand on the boundary.</summary>
+    public const double PlotTolerance = 0.5;
+
+    /// <summary>The largest width or height an existing thing without an article may have, in meters.</summary>
+    public const double MaxThingSize = 40;
+
     public static IReadOnlyList<SceneError> Validate(SceneDocument scene)
     {
         ArgumentNullException.ThrowIfNull(scene);
@@ -59,36 +65,80 @@ internal static class SceneValidator
         }
 
         Polygon? plot = null;
-        var pointsToPlace = new List<PointElement>();
+        var toPlace = new List<SceneElement>();
         foreach (var element in scene.Elements)
         {
-            var error = CheckGeometry(element) ?? CheckArticle(element);
+            var error = CheckGeometry(element) ?? CheckArticle(element) ?? CheckLook(element);
             if (error is not null)
             {
                 errors.Add(error);
                 continue;
             }
 
-            if (element is PlotElement plotElement && plotCount == 1)
+            if (element is PlotElement plotElement)
             {
-                plot = new Polygon(plotElement.Points);
+                if (plotCount == 1)
+                {
+                    plot = new Polygon(plotElement.Points);
+                }
             }
-            else if (element is PointElement point)
+            else
             {
-                pointsToPlace.Add(point);
+                toPlace.Add(element);
             }
         }
 
         // Only a usable plot can tell inside from outside; without one, the plot error above already says enough.
         if (plot is not null)
         {
-            errors.AddRange(pointsToPlace
-                .Where(p => !plot.Contains(p.Position))
-                .Select(p => new SceneError("outside-plot", p.Id, $"Point element {p.Id} at ({p.Position.X}, {p.Position.Y}) is outside the plot.")));
+            errors.AddRange(toPlace
+                .Where(e => PointsOf(e).Any(p => plot.DistanceTo(p) > PlotTolerance))
+                .Select(e => new SceneError("outside-plot", e.Id, $"Element {e.Id} lies more than {PlotTolerance} m outside the plot.")));
         }
 
         return errors;
     }
+
+    private static IEnumerable<Point2> PointsOf(SceneElement element) => element switch
+    {
+        BuildingElement building => building.Points,
+        SurfaceElement surface => surface.Points,
+        LineElement line => line.Points,
+        PointElement point => [point.Position],
+        _ => [],
+    };
+
+    /// <summary>
+    /// An existing thing without an article is drawn from its own form and size, so it needs a form; sizes and colours
+    /// must be usable when given.
+    /// </summary>
+    private static SceneError? CheckLook(SceneElement element)
+    {
+        var (articleId, form, sizes, colors) = element switch
+        {
+            PointElement p => (p.ArticleId, p.Form, new[] { p.Width, p.Height }, Array.Empty<string?>()),
+            LineElement l => (l.ArticleId, l.Form, new[] { l.Height }, Array.Empty<string?>()),
+            BuildingElement b => (Guid.Empty, "building", Array.Empty<double?>(), new[] { b.WallColor, b.RoofColor }),
+            _ => (Guid.Empty, "other", Array.Empty<double?>(), Array.Empty<string?>()),
+        };
+
+        if (articleId is null && string.IsNullOrWhiteSpace(form))
+        {
+            return new SceneError("missing-form", element.Id, $"Element {element.Id} has neither an article nor a form.");
+        }
+
+        if (sizes.Any(s => s is { } size && size is <= 0 or > MaxThingSize))
+        {
+            return new SceneError("bad-size", element.Id, $"Element {element.Id} has a width or height outside (0, {MaxThingSize}] m.");
+        }
+
+        return colors.Any(c => c is not null && !IsHexColor(c))
+            ? new SceneError("bad-color", element.Id, $"Building {element.Id} has a colour that is not #RRGGBB.")
+            : null;
+    }
+
+    private static bool IsHexColor(string color) =>
+        color.Length == 7 && color[0] == '#' && color.Skip(1).All(char.IsAsciiHexDigit);
 
     private static SceneError? CheckGeometry(SceneElement element) => element switch
     {

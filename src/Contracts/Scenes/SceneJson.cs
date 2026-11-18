@@ -46,7 +46,10 @@ public static class SceneJson
             throw new JsonException("A scene can only contain finite numbers.");
         }
 
-        return scene;
+        // Version 1 lacks only optional fields, so upgrading it means calling it version 2.
+        return scene.FormatVersion < SceneDocument.CurrentFormatVersion
+            ? scene with { FormatVersion = SceneDocument.CurrentFormatVersion }
+            : scene;
     }
 
     private static bool HasOnlyFiniteNumbers(SceneElement element) => element switch
@@ -54,12 +57,14 @@ public static class SceneJson
         PlotElement plot => plot.Points.All(IsFinite),
         BuildingElement building => building.Points.All(IsFinite) && double.IsFinite(building.Height),
         SurfaceElement surface => surface.Points.All(IsFinite),
-        LineElement line => line.Points.All(IsFinite),
-        PointElement point => IsFinite(point.Position) && double.IsFinite(point.Rotation),
+        LineElement line => line.Points.All(IsFinite) && IsFinite(line.Height),
+        PointElement point => IsFinite(point.Position) && double.IsFinite(point.Rotation) && IsFinite(point.Width) && IsFinite(point.Height),
         _ => true,
     };
 
     private static bool IsFinite(Point2 point) => double.IsFinite(point.X) && double.IsFinite(point.Y);
+
+    private static bool IsFinite(double? value) => value is not { } number || double.IsFinite(number);
 
     /// <summary>
     /// Reads only "formatVersion" first, so a document from another format version is reported as exactly that,
@@ -72,10 +77,10 @@ public static class SceneJson
             && document.RootElement.TryGetProperty("formatVersion", out var version)
             && version.ValueKind == JsonValueKind.Number
             && version.TryGetInt32(out var number)
-            && number != SceneDocument.CurrentFormatVersion)
+            && (number < SceneDocument.OldestReadableFormatVersion || number > SceneDocument.CurrentFormatVersion))
         {
             throw new JsonException(
-                $"Unsupported scene format version {number}; this version reads format version {SceneDocument.CurrentFormatVersion}.");
+                $"Unsupported scene format version {number}; this version reads format versions {SceneDocument.OldestReadableFormatVersion} to {SceneDocument.CurrentFormatVersion}.");
         }
     }
 
