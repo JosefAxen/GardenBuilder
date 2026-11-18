@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using GardenBuilder.Contracts.Designs;
 using GardenBuilder.Contracts.Gardens;
 using GardenBuilder.Contracts.Scenes;
@@ -28,7 +29,11 @@ internal sealed class PhotoInterpretationHandler(IDesignWorkingCopies designs, I
     public const string NothingUsable = "Vi kunde inte tolka fotona.";
     public const string DesignGone = "Designen finns inte längre.";
 
-    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+    /// <summary>Enums as their kebab-case names, like the scene format: the editor puts the roof straight into the scene.</summary>
+    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
+    {
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.KebabCaseLower) },
+    };
 
     public string Kind => AiJobKinds.PhotoInterpretation;
 

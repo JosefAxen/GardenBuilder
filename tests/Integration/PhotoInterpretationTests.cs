@@ -98,6 +98,8 @@ public sealed class PhotoInterpretationTests(ApiFactory factory) : IClassFixture
         Assert.Equal("Gräsmatta", element.GetProperty("label").GetString());
         Assert.Equal("surface", element.GetProperty("element").GetProperty("kind").GetString());
         Assert.Equal("#E3B23C", result.GetProperty("house").GetProperty("wallColor").GetString());
+        // The editor puts the roof straight into the scene, which only accepts the names.
+        Assert.Equal("gable", result.GetProperty("house").GetProperty("roof").GetString());
         Assert.Equal(0, result.GetProperty("skippedPhotos").GetInt32());
         var calls = await CallsAsync();
         Assert.Equal(2, calls.Count);
