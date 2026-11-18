@@ -68,7 +68,7 @@ Fält på `Article` i Catalog-modulen (befintliga i fetstil):
 | Typmodell | en nyckel ur listan nedan | Krävs |
 | Skala | tal | Större än 0, högst 5. Standard 1. Används bara för det som inte är växter (krukor, möbler) |
 | Färg och accentfärg | `#rrggbb` | Färg krävs, accent valfri |
-| Växtzon | heltal 1–8 | Krävs för typmodeller som är växter, annars tom |
+| Växtzon | heltal 1–8 | Krävs för typmodeller som är växter, annars tom. Den kallaste zonen växten klarar, som i plantskolornas märkning: 5 betyder zon I–V. Designförslagen använder bara växter med växtzon ≥ kundens zon |
 | Höjd | meter, större än 0 | Växter och häckar: planteringshöjden, alltså den höjd plantan har när den levereras. Staket: staketets höjd. Krävs för dem, tomt för övriga |
 | Bredd | meter, större än 0 | Häckar och staket: linjens bredd. Krävs för dem, tomt för övriga |
 | Fullvuxen höjd | meter, större än 0 | Valfri. Uppgift om växten, ritas inte |

@@ -126,7 +126,7 @@ internal static class EstimatePrice
     }
 
     /// <summary>Every article the scene mentions, whatever the element's status: removed things are priced by their type.</summary>
-    private static List<Guid> ArticleIds(SceneDocument scene) =>
+    internal static List<Guid> ArticleIds(SceneDocument scene) =>
     [
         .. scene.Elements
             .Select(element => element switch
