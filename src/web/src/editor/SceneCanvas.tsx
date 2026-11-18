@@ -14,6 +14,8 @@ import { GrowthRings, type PlacedPoint } from './PointInstances'
 import { useSceneStore } from './sceneStore'
 import { drawClick, dropShapeDrag } from './shapeCommands'
 import { ShapeHandles, TopCamera } from './ShapeHandles'
+import { CameraPins, ProposalGhosts } from './photos/PhotoMarks'
+import { pinClick } from './photos/photoStore'
 import { boxCenter } from './geometry'
 import { crowdingFootprints, findCrowdedPlants } from './spacing'
 import { lookOf } from './existingLook'
@@ -274,6 +276,9 @@ function Scene() {
       case 'draw':
         drawClick(ground)
         break
+      case 'pin':
+        void pinClick(ground)
+        break
       case 'shape':
         break
       case 'select':
@@ -336,6 +341,8 @@ function Scene() {
       )}
 
       <ShapeHandles />
+      <CameraPins />
+      <ProposalGhosts />
       {view === 'top' && <TopCamera />}
       <OrbitControls
         key={view}

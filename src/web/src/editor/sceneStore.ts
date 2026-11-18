@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Point2, SceneDocument, SceneElement, SurfaceMaterial } from '../api/scene'
+import type { Point2, RoofShape, SceneDocument, SceneElement, SurfaceMaterial } from '../api/scene'
 import type { CatalogArticle } from '../api/catalog'
 import { demoScene, stressElements } from './demoScene'
 import { placementProblem } from './placement'
@@ -26,6 +26,8 @@ export type SceneCommand =
   /** Removes a corner, but never below three. */
   | { type: 'remove-point'; id: string; index: number }
   | { type: 'redraw'; id: string; points: Point2[] }
+  /** The house's colours and roof, for example as the photos showed them. Null colours are left out. */
+  | { type: 'house-look'; id: string; wallColor: string | null; roofColor: string | null; roof: RoofShape }
 
 const MIN_CORNERS = 3
 
@@ -97,6 +99,17 @@ export function applyCommand(document: SceneDocument, command: SceneCommand): Sc
       )
     case 'redraw':
       return reshape(document, command.id, () => command.points)
+    case 'house-look':
+      return updateElement(document, command.id, (e) => {
+        if (e.kind !== 'building') return e
+        const next = {
+          ...e,
+          roof: command.roof,
+          ...(command.wallColor ? { wallColor: command.wallColor } : {}),
+          ...(command.roofColor ? { roofColor: command.roofColor } : {}),
+        }
+        return next.roof === e.roof && next.wallColor === e.wallColor && next.roofColor === e.roofColor ? e : next
+      })
   }
 }
 
@@ -109,6 +122,8 @@ export type Tool =
   | { mode: 'shape'; id: string }
   /** Drawing the plot or a building anew, corner by corner. */
   | { mode: 'draw'; id: string; points: Point2[] }
+  /** Showing where a photo was taken: first where the customer stood, then the direction. */
+  | { mode: 'pin'; photoId: string; position?: Point2 }
 
 /** A corner being dragged in the shape tool. insert: a mid-edge handle, so the drop adds a corner before index. */
 export type ShapeDrag = { id: string; index: number; insert: boolean; point: Point2 }

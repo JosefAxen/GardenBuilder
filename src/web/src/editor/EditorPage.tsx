@@ -1,6 +1,7 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { CatalogPanel } from './CatalogPanel'
+import { PhotoPanel } from './photos/PhotoPanel'
 import { PricePanel } from './PricePanel'
 import { schedulePrice } from './priceStore'
 import { useCatalogStore } from './catalogStore'
@@ -30,7 +31,10 @@ function useKeyboardShortcuts() {
         redo()
       } else if (key === 'delete' || key === 'backspace') removeSelected()
       else if (key === 'escape') {
-        setTool({ mode: 'select' })
+        // Leaving the shape or pin tool also leaves the top view.
+        const mode = useSceneStore.getState().tool.mode
+        if (mode === 'shape' || mode === 'draw' || mode === 'pin') finishShaping()
+        else setTool({ mode: 'select' })
         select(null)
       } else if (key === 'q') rotateSelected(1)
       else if (key === 'e') rotateSelected(-1)
@@ -96,6 +100,7 @@ export function EditorPage() {
   const past = useSceneStore((s) => s.past)
   const toolMode = useSceneStore((s) => s.tool.mode)
   const shaping = toolMode === 'shape' || toolMode === 'draw'
+  const [panel, setPanel] = useState<'catalog' | 'photos'>('catalog')
   const future = useSceneStore((s) => s.future)
   const document = useSceneStore((s) => s.document)
   const { undo, redo, execute } = useSceneStore.getState()
@@ -138,6 +143,9 @@ export function EditorPage() {
           </>
         ) : (
           <>
+            <button onClick={() => setPanel(panel === 'photos' ? 'catalog' : 'photos')} disabled={!ready}>
+              {panel === 'photos' ? 'Katalog' : 'Foton'}
+            </button>
             <button onClick={() => startShaping('plot')} disabled={!ready}>Forma tomt</button>
             <button onClick={() => startShaping('building')} disabled={!ready}>Forma hus</button>
           </>
@@ -147,7 +155,7 @@ export function EditorPage() {
         <button onClick={undo} disabled={!ready || past.length === 0} title="Snabbtangent: Ctrl+Z">Ångra</button>
         <button onClick={redo} disabled={!ready || future.length === 0} title="Snabbtangent: Ctrl+Y">Gör om</button>
       </header>
-      <CatalogPanel />
+      {panel === 'photos' ? <PhotoPanel /> : <CatalogPanel />}
       <main className="editor-canvas">
         <SceneCanvas />
         <PricePanel />

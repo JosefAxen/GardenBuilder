@@ -306,3 +306,56 @@
   font-size: 13px;
   color: #3b4a5a;
 }
+
+.photo-panel button {
+  margin: 4px 4px 4px 0;
+}
+
+.photo-list {
+  list-style: none;
+  padding: 0;
+}
+
+.editor-panel .photo-list li {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.photo-list img,
+.photo-pinning img {
+  width: 100%;
+  border-radius: 4px;
+  display: block;
+}
+
+.photo-pinning {
+  border: 2px solid #f59e0b;
+  border-radius: 6px;
+  padding: 6px;
+  margin: 8px 0;
+}
+
+.photo-review ul {
+  list-style: none;
+  padding: 0;
+}
+
+.photo-proposal {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.photo-proposal .name {
+  flex: 1;
+}
+
+.photo-proposal .swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-left: 4px;
+  border-radius: 2px;
+  vertical-align: middle;
+}
