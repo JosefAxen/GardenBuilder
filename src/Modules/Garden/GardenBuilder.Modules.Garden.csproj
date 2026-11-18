@@ -5,6 +5,7 @@
     <PackageReference Include="EFCore.NamingConventions" />
     <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Magick.NET-Q8-AnyCPU" />
+    <PackageReference Include="Aspire.Azure.Storage.Blobs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Contracts\GardenBuilder.Contracts.csproj" />

@@ -46,6 +46,66 @@ namespace GardenBuilder.Modules.Garden.Infrastructure.Migrations
 
                     b.ToTable("gardens", "garden");
                 });
+
+            modelBuilder.Entity("GardenBuilder.Modules.Garden.Domain.GardenPhoto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BlobName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("blob_name");
+
+                    b.Property<double?>("CameraHeading")
+                        .HasColumnType("double precision")
+                        .HasColumnName("camera_heading");
+
+                    b.Property<double?>("CameraX")
+                        .HasColumnType("double precision")
+                        .HasColumnName("camera_x");
+
+                    b.Property<double?>("CameraY")
+                        .HasColumnType("double precision")
+                        .HasColumnName("camera_y");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("GardenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("garden_id");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("integer")
+                        .HasColumnName("height");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("integer")
+                        .HasColumnName("width");
+
+                    b.HasKey("Id")
+                        .HasName("pk_photos");
+
+                    b.HasIndex("GardenId")
+                        .HasDatabaseName("ix_photos_garden_id");
+
+                    b.ToTable("photos", "garden");
+                });
+
+            modelBuilder.Entity("GardenBuilder.Modules.Garden.Domain.GardenPhoto", b =>
+                {
+                    b.HasOne("GardenBuilder.Modules.Garden.Domain.Garden", null)
+                        .WithMany()
+                        .HasForeignKey("GardenId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_photos_gardens_garden_id");
+                });
 #pragma warning restore 612, 618
         }
     }
