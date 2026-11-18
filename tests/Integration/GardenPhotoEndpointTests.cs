@@ -1,11 +1,9 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text;
 using System.Text.Json;
-using GardenBuilder.Contracts.Scenes;
-using GardenBuilder.SharedKernel;
 using ImageMagick;
+
+using static GardenBuilder.IntegrationTests.PhotoTestHelpers;
 
 namespace GardenBuilder.IntegrationTests;
 
@@ -16,63 +14,13 @@ public sealed class GardenPhotoEndpointTests(ApiFactory factory) : IClassFixture
 
     private static readonly HttpClient Storage = new();
 
-    /// <summary>A new customer with a design on a 20 × 20 m plot. Returns their browser and garden.</summary>
-    private async Task<(HttpClient Client, Guid GardenId)> CustomerAsync()
-    {
-        var client = IdentityTestHelpers.HttpsClient(factory);
-        var scene = new SceneDocument(SceneDocument.CurrentFormatVersion,
-        [
-            new PlotElement(Ids.New(), ElementStatus.ExistingKeep, MeasurementSource.Customer,
-                [new Point2(0, 0), new Point2(20, 0), new Point2(20, 20), new Point2(0, 20)], Sloped: false),
-        ]);
-        using var body = new StringContent(SceneJson.Serialize(scene), Encoding.UTF8, "application/json");
-        using var created = await client.PostAsync(new Uri("/api/designs", UriKind.Relative), body, Ct);
-        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
-        var json = await created.Content.ReadFromJsonAsync<JsonElement>(Ct);
-        return (client, json.GetProperty("gardenId").GetGuid());
-    }
-
-    private static byte[] Jpeg(uint width = 800, uint height = 600, bool withGps = false)
-    {
-        using var image = new MagickImage(MagickColors.ForestGreen, width, height);
-        if (withGps)
-        {
-            var exif = new ExifProfile();
-            exif.SetValue(ExifTag.GPSLatitude, [new Rational(59, 1), new Rational(20, 1), new Rational(0, 1)]);
-            image.SetProfile(exif);
-        }
-
-        return image.ToByteArray(MagickFormat.Jpeg);
-    }
-
-    private static Uri Photos(Guid gardenId, string rest = "") => new($"/api/gardens/{gardenId}/photos{rest}", UriKind.Relative);
-
-    private static async Task<HttpResponseMessage> UploadAsync(HttpClient client, Guid gardenId, byte[] bytes)
-    {
-        using var form = new MultipartFormDataContent();
-        var file = new ByteArrayContent(bytes);
-        file.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
-        form.Add(file, "file", "foto.jpg");
-        return await client.PostAsync(Photos(gardenId), form, Ct);
-    }
-
-    private static async Task<Guid> UploadOkAsync(HttpClient client, Guid gardenId)
-    {
-        using var response = await UploadAsync(client, gardenId, Jpeg());
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        return (await response.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("id").GetGuid();
-    }
-
-    private static async Task<string?> CodeAsync(HttpResponseMessage response) =>
-        (await response.Content.ReadFromJsonAsync<JsonElement>(Ct)).GetProperty("code").GetString();
-
     private static async Task<JsonElement[]> ListAsync(HttpClient client, Guid gardenId) =>
         [.. (await client.GetFromJsonAsync<JsonElement>(Photos(gardenId), Ct)).EnumerateArray()];
 
     [Fact]
     public async Task Upload_list_and_read_a_photo()
     {
-        var (client, gardenId) = await CustomerAsync();
+        var (client, gardenId, _) = await PhotoTestHelpers.CustomerAsync(factory);
 
         using var uploaded = await UploadAsync(client, gardenId, Jpeg(4000, 3000, withGps: true));
 
@@ -91,7 +39,7 @@ public sealed class GardenPhotoEndpointTests(ApiFactory factory) : IClassFixture
     [Fact]
     public async Task Seventh_photo_is_409_too_many_photos()
     {
-        var (client, gardenId) = await CustomerAsync();
+        var (client, gardenId, _) = await PhotoTestHelpers.CustomerAsync(factory);
         for (var i = 0; i < 6; i++)
         {
             await UploadOkAsync(client, gardenId);
@@ -107,7 +55,7 @@ public sealed class GardenPhotoEndpointTests(ApiFactory factory) : IClassFixture
     [Fact]
     public async Task Two_uploads_racing_for_the_sixth_slot_store_one()
     {
-        var (client, gardenId) = await CustomerAsync();
+        var (client, gardenId, _) = await PhotoTestHelpers.CustomerAsync(factory);
         for (var i = 0; i < 5; i++)
         {
             await UploadOkAsync(client, gardenId);
@@ -126,7 +74,7 @@ public sealed class GardenPhotoEndpointTests(ApiFactory factory) : IClassFixture
     [Fact]
     public async Task File_over_15_MB_is_413_too_large()
     {
-        var (client, gardenId) = await CustomerAsync();
+        var (client, gardenId, _) = await PhotoTestHelpers.CustomerAsync(factory);
 
         using var response = await UploadAsync(client, gardenId, new byte[(15 * 1024 * 1024) + 1]);
 
@@ -137,7 +85,7 @@ public sealed class GardenPhotoEndpointTests(ApiFactory factory) : IClassFixture
     [Fact]
     public async Task Text_file_is_400_not_an_image()
     {
-        var (client, gardenId) = await CustomerAsync();
+        var (client, gardenId, _) = await PhotoTestHelpers.CustomerAsync(factory);
 
         using var response = await UploadAsync(client, gardenId, "Inget foto här."u8.ToArray());
 
@@ -149,9 +97,9 @@ public sealed class GardenPhotoEndpointTests(ApiFactory factory) : IClassFixture
     [Fact]
     public async Task Another_customers_garden_is_404_for_every_endpoint()
     {
-        var (owner, gardenId) = await CustomerAsync();
+        var (owner, gardenId, _) = await PhotoTestHelpers.CustomerAsync(factory);
         var photoId = await UploadOkAsync(owner, gardenId);
-        var (other, _) = await CustomerAsync();
+        var (other, _, _) = await PhotoTestHelpers.CustomerAsync(factory);
         using var anonymous = IdentityTestHelpers.HttpsClient(factory);
 
         foreach (var client in new[] { other, anonymous })
@@ -169,7 +117,7 @@ public sealed class GardenPhotoEndpointTests(ApiFactory factory) : IClassFixture
     [Fact]
     public async Task Camera_is_saved_and_listed()
     {
-        var (client, gardenId) = await CustomerAsync();
+        var (client, gardenId, _) = await PhotoTestHelpers.CustomerAsync(factory);
         var photoId = await UploadOkAsync(client, gardenId);
 
         using var saved = await client.PutAsJsonAsync(Photos(gardenId, $"/{photoId}/camera"), new { x = 3.5, y = -4, heading = 270 }, Ct);
@@ -182,7 +130,7 @@ public sealed class GardenPhotoEndpointTests(ApiFactory factory) : IClassFixture
     [Fact]
     public async Task Camera_six_meters_outside_the_plot_is_400()
     {
-        var (client, gardenId) = await CustomerAsync();
+        var (client, gardenId, _) = await PhotoTestHelpers.CustomerAsync(factory);
         var photoId = await UploadOkAsync(client, gardenId);
 
         using var response = await client.PutAsJsonAsync(Photos(gardenId, $"/{photoId}/camera"), new { x = 26, y = 10, heading = 0 }, Ct);
@@ -194,7 +142,7 @@ public sealed class GardenPhotoEndpointTests(ApiFactory factory) : IClassFixture
     [Fact]
     public async Task Deleting_removes_the_blob()
     {
-        var (client, gardenId) = await CustomerAsync();
+        var (client, gardenId, _) = await PhotoTestHelpers.CustomerAsync(factory);
         var photoId = await UploadOkAsync(client, gardenId);
         var url = new Uri(Assert.Single(await ListAsync(client, gardenId)).GetProperty("url").GetString()!);
 

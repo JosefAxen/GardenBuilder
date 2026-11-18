@@ -1,4 +1,5 @@
 using GardenBuilder.Modules.Ai.Features.ConnectionTest;
+using GardenBuilder.Modules.Ai.Features.PhotoInterpretation;
 using GardenBuilder.Modules.Ai.Features.ProcessJobs;
 using GardenBuilder.Modules.Ai.Features.Run;
 using GardenBuilder.Modules.Ai.Providers;
@@ -28,6 +29,7 @@ public static class AiJobProcessingExtensions
     {
         services.AddScoped<JobRunner>();
         services.AddScoped<IAiJobHandler, ConnectionTestHandler>();
+        services.AddScoped<IAiJobHandler, PhotoInterpretationHandler>();
         return services;
     }
 }

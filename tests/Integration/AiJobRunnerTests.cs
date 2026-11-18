@@ -189,7 +189,7 @@ public sealed class AiJobRunnerTests(ApiFactory factory) : IClassFixture<ApiFact
     [Fact]
     public async Task A_step_that_is_off_fails_its_waiting_jobs()
     {
-        var photo = await EnqueueAsync(AiJobKinds.PhotoInterpretation, Ids.New());
+        var step = await EnqueueAsync(AiJobKinds.DesignProposal, Ids.New());
         var test = await EnqueueAsync(AiJobKinds.ConnectionTest);
         await SaveSettingsAsync(AiSettings.Defaults with
         {
@@ -200,7 +200,7 @@ public sealed class AiJobRunnerTests(ApiFactory factory) : IClassFixture<ApiFact
         await RunAsync();
         await RunAsync();
 
-        Assert.Equal("Det här AI-steget är avstängt.", (await JobAsync(photo))?.Failure);
+        Assert.Equal("Det här AI-steget är avstängt.", (await JobAsync(step))?.Failure);
         Assert.Equal(AiJobStatus.Succeeded, (await JobAsync(test))?.Status);
     }
 
@@ -220,15 +220,15 @@ public sealed class AiJobRunnerTests(ApiFactory factory) : IClassFixture<ApiFact
     public async Task Enqueue_refuses_when_the_quota_is_reached()
     {
         var garden = Ids.New();
-        for (var i = 0; i < 3; i++)
+        for (var i = 0; i < AiSettings.Defaults.Quotas[AiJobKinds.DesignProposal]; i++)
         {
-            await EnqueueAsync(AiJobKinds.PhotoInterpretation, garden);
+            await EnqueueAsync(AiJobKinds.DesignProposal, garden);
         }
 
-        var refused = await Assert.ThrowsAsync<AiJobRefusedException>(() => EnqueueAsync(AiJobKinds.PhotoInterpretation, garden));
+        var refused = await Assert.ThrowsAsync<AiJobRefusedException>(() => EnqueueAsync(AiJobKinds.DesignProposal, garden));
         Assert.Equal("quota-reached", refused.Code);
         // Another garden has its own quota.
-        await EnqueueAsync(AiJobKinds.PhotoInterpretation, Ids.New());
+        await EnqueueAsync(AiJobKinds.DesignProposal, Ids.New());
     }
 
     [Fact]
@@ -237,13 +237,13 @@ public sealed class AiJobRunnerTests(ApiFactory factory) : IClassFixture<ApiFact
         var garden = Ids.New();
         await SaveSettingsAsync(AiSettings.Defaults with
         {
-            Quotas = new Dictionary<string, int>(AiSettings.Defaults.Quotas) { [AiJobKinds.PhotoInterpretation] = 1 },
+            Quotas = new Dictionary<string, int>(AiSettings.Defaults.Quotas) { [AiJobKinds.DesignProposal] = 1 },
         });
         _model.Errors.Enqueue(new AiProviderException("Ingen API-nyckel för Claude är inställd.", retryable: false));
-        await EnqueueAsync(AiJobKinds.PhotoInterpretation, garden);
+        await EnqueueAsync(AiJobKinds.DesignProposal, garden);
         await RunAsync();
 
-        await EnqueueAsync(AiJobKinds.PhotoInterpretation, garden);
+        await EnqueueAsync(AiJobKinds.DesignProposal, garden);
     }
 
     [Fact]
@@ -274,6 +274,8 @@ public sealed class AiJobRunnerTests(ApiFactory factory) : IClassFixture<ApiFact
 
         public string Model { get; set; } = "claude-opus-5-5";
 
+        public string ModelFor(string kind) => Model;
+
         public ConcurrentQueue<TextResponse> Responses { get; } = new();
 
         public ConcurrentQueue<AiProviderException> Errors { get; } = new();
@@ -300,14 +302,14 @@ public sealed class AiJobRunnerTests(ApiFactory factory) : IClassFixture<ApiFact
         }
     }
 
-    /// <summary>Stands in for the photo interpretation of sub-project 8: one text call.</summary>
+    /// <summary>Stands in for an AI step that has no real handler yet (design proposals, sub-project 9): one text call.</summary>
     private sealed class StepHandler : IAiJobHandler
     {
-        public string Kind => AiJobKinds.PhotoInterpretation;
+        public string Kind => AiJobKinds.DesignProposal;
 
         public async Task<JsonElement> RunAsync(AiJob job, IAiCalls calls, CancellationToken cancellationToken)
         {
-            var result = await calls.TextAsync("photo-test@1", new TextRequest(null, "Beskriv fotot.", 64), cancellationToken);
+            var result = await calls.TextAsync("step-test@1", new TextRequest(null, "Föreslå en rabatt.", 64), cancellationToken);
             return JsonSerializer.SerializeToElement(new { answer = result.Response.Text });
         }
     }

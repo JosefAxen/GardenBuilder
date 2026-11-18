@@ -29,7 +29,9 @@ internal sealed partial class AiCalls(
 
     public async Task<AiTextResult> TextAsync(string promptVersion, TextRequest request, CancellationToken cancellationToken)
     {
-        if (await guards.RefuseCallAsync(job.Kind, model.Model, cancellationToken) is { } refusal)
+        var modelName = model.ModelFor(job.Kind);
+        request = request with { Model = modelName };
+        if (await guards.RefuseCallAsync(job.Kind, modelName, cancellationToken) is { } refusal)
         {
             throw new AiJobStoppedException(refusal);
         }
@@ -43,19 +45,19 @@ internal sealed partial class AiCalls(
         }
         catch (AiProviderException e)
         {
-            await LogAsync(promptVersion, model.Model, started, clock, 0, 0, Money.InSek(0m), "error", e.InnerException?.GetType().Name ?? e.GetType().Name, cancellationToken);
+            await LogAsync(promptVersion, modelName, started, clock, 0, 0, Money.InSek(0m), "error", e.InnerException?.GetType().Name ?? e.GetType().Name, cancellationToken);
             throw;
         }
         catch (OperationCanceledException e) when (!cancellationToken.IsCancellationRequested)
         {
             // Nobody asked to stop, so the provider timed out. Worth another attempt.
-            await LogAsync(promptVersion, model.Model, started, clock, 0, 0, Money.InSek(0m), "error", e.GetType().Name, cancellationToken);
+            await LogAsync(promptVersion, modelName, started, clock, 0, 0, Money.InSek(0m), "error", e.GetType().Name, cancellationToken);
             throw new AiProviderException(TimedOut, retryable: true, e);
         }
 
         // The price was checked before the call; the answering model is normally the same one.
         var cost = AiCost.Of(response.Model, response.InputTokens, response.OutputTokens, pricing.Value)
-            ?? AiCost.Of(model.Model, response.InputTokens, response.OutputTokens, pricing.Value)
+            ?? AiCost.Of(modelName, response.InputTokens, response.OutputTokens, pricing.Value)
             ?? Money.InSek(0m);
         var outcome = response.StopReason switch
         {

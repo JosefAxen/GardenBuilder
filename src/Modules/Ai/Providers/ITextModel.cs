@@ -1,7 +1,16 @@
+using System.Text.Json;
+
 namespace GardenBuilder.Modules.Ai.Providers;
 
+/// <summary>A JPEG sent along with a question.</summary>
+internal sealed record ImageInput(byte[] Jpeg);
+
 /// <summary>A question to a language model. <paramref name="MaxTokens"/> caps the answer's length.</summary>
-internal sealed record TextRequest(string? System, string Prompt, int MaxTokens);
+/// <param name="Model">Set by the caller of the model (AiCalls) from <see cref="ITextModel.ModelFor"/>; handlers leave it empty.</param>
+/// <param name="Images">Sent before the prompt, in order.</param>
+/// <param name="OutputSchema">A JSON schema the answer must follow (structured output), or null for free text.</param>
+internal sealed record TextRequest(
+    string? System, string Prompt, int MaxTokens, string Model = "", IReadOnlyList<ImageInput>? Images = null, JsonElement? OutputSchema = null);
 
 /// <summary>
 /// The model's answer and what it used. <paramref name="StopReason"/> is the provider's reason for stopping, for
@@ -18,8 +27,8 @@ internal interface ITextModel
     /// <summary>For example "anthropic".</summary>
     string Provider { get; }
 
-    /// <summary>The model the next call will use, so its price can be checked before calling.</summary>
-    string Model { get; }
+    /// <summary>The model a job of this kind uses, so its price can be checked before calling.</summary>
+    string ModelFor(string kind);
 
     Task<TextResponse> CompleteAsync(TextRequest request, CancellationToken cancellationToken);
 }

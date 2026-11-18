@@ -13,6 +13,14 @@ internal sealed class AnthropicOptions
     public string? ApiKey { get; set; }
 
     public string Model { get; set; } = "claude-haiku-5-5";
+
+    /// <summary>A model per kind of job, e.g. "photo-interpretation": "claude-sonnet-5-5". Kinds not listed use <see cref="Model"/>.</summary>
+    public Dictionary<string, string> Models { get; set; } = [];
+
+    public string ModelFor(string kind) => Models.TryGetValue(kind, out var model) && !string.IsNullOrWhiteSpace(model) ? model : Model;
+
+    /// <summary>Every model a job may use, for checking at start that each has a price.</summary>
+    public IEnumerable<string> AllModels => Models.Values.Append(Model).Where(m => !string.IsNullOrWhiteSpace(m)).Distinct(StringComparer.Ordinal);
 }
 
 /// <summary>Claude through Anthropic's official C# SDK. The queue retries, so the SDK's own retries are off.</summary>
@@ -26,7 +34,7 @@ internal sealed class ClaudeTextModel(IOptions<AnthropicOptions> options) : ITex
 
     public string Provider => "anthropic";
 
-    public string Model => _options.Model;
+    public string ModelFor(string kind) => _options.ModelFor(kind);
 
     public async Task<TextResponse> CompleteAsync(TextRequest request, CancellationToken cancellationToken)
     {
@@ -38,16 +46,27 @@ internal sealed class ClaudeTextModel(IOptions<AnthropicOptions> options) : ITex
         // Well inside the queue's five-minute lease, so a slow call ends before another Worker may take the job.
         _client ??= new AnthropicClient { ApiKey = _options.ApiKey, MaxRetries = 0, Timeout = CallTimeout };
         MessageCreateParamsSystem? system = request.System is { } instructions ? (MessageCreateParamsSystem)instructions : null;
+        var content = new List<ContentBlockParam>();
+        foreach (var image in request.Images ?? [])
+        {
+            content.Add(new ImageBlockParam { Source = new Base64ImageSource { Data = Convert.ToBase64String(image.Jpeg), MediaType = MediaType.ImageJpeg } });
+        }
+
+        content.Add(new TextBlockParam { Text = request.Prompt });
+        var output = request.OutputSchema is { } schema
+            ? new OutputConfig { Format = new JsonOutputFormat { Schema = schema.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.Clone()) } }
+            : null;
         Message message;
         try
         {
             message = await _client.Messages.Create(
                 new MessageCreateParams
                 {
-                    Model = _options.Model,
+                    Model = string.IsNullOrWhiteSpace(request.Model) ? _options.Model : request.Model,
                     MaxTokens = request.MaxTokens,
                     System = system,
-                    Messages = [new UserMessageParam { Content = request.Prompt }],
+                    Messages = [new UserMessageParam { Content = content }],
+                    OutputConfig = output,
                 },
                 cancellationToken);
         }

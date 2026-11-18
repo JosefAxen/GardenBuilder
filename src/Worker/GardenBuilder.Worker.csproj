@@ -6,5 +6,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ServiceDefaults\GardenBuilder.ServiceDefaults.csproj" />
     <ProjectReference Include="..\Modules\Ai\GardenBuilder.Modules.Ai.csproj" />
+    <ProjectReference Include="..\Modules\Design\GardenBuilder.Modules.Design.csproj" />
+    <ProjectReference Include="..\Modules\Garden\GardenBuilder.Modules.Garden.csproj" />
   </ItemGroup>
 </Project>
