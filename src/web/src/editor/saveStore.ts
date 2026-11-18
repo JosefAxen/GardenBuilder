@@ -17,6 +17,8 @@ type SaveState = {
   status: SaveStatus
   /** Null until the first save has created the design. */
   designId: string | null
+  /** The design's garden, which owns the photos. Null until the design exists. */
+  gardenId: string | null
   /** The revision this tab last saved or loaded; sent as If-Match. */
   revision: number
   /** The server's revision after a 412, until the customer chooses. */
@@ -24,7 +26,7 @@ type SaveState = {
 }
 
 /** Saving of the customer's design. Separate from the scene store: a save is not a change to the design and is not undone. */
-export const useSaveStore = create<SaveState>(() => ({ status: 'idle', designId: null, revision: 0, conflictRevision: null }))
+export const useSaveStore = create<SaveState>(() => ({ status: 'idle', designId: null, gardenId: null, revision: 0, conflictRevision: null }))
 
 const messages: Record<SaveStatus, string> = {
   idle: '',
@@ -68,7 +70,7 @@ export function startSaving(saved: SavedDesign | null, shown: SceneDocument) {
   saving = false
   saveWhenDone = false
   retries = 0
-  set({ status: saved ? 'saved' : 'idle', designId: saved?.id ?? null, revision: saved?.revision ?? 0, conflictRevision: null })
+  set({ status: saved ? 'saved' : 'idle', designId: saved?.id ?? null, gardenId: saved?.gardenId ?? null, revision: saved?.revision ?? 0, conflictRevision: null })
 }
 
 /** Saves the document one second after the last call. Call it with every new document the editor shows. */
@@ -122,7 +124,7 @@ async function flush(keepalive = false) {
     if (designId === null) {
       const design = await createDesign(document, { keepalive })
       if (run !== generation) return
-      set({ designId: design.id, revision: design.revision })
+      set({ designId: design.id, gardenId: design.gardenId, revision: design.revision })
     } else {
       const next = await saveWorkingCopy(designId, revision, document, { keepalive })
       if (run !== generation) return
@@ -191,7 +193,7 @@ function failed(document: SceneDocument, error: DesignError) {
       return
     case 'not-found':
       // The design is not this customer's (for example after a new cookie): the next save creates a new one.
-      set({ designId: null, revision: 0, status: 'pending' })
+      set({ designId: null, gardenId: null, revision: 0, status: 'pending' })
       timer = setTimeout(() => void flush(), DEBOUNCE_MS)
       return
     case 'invalid':

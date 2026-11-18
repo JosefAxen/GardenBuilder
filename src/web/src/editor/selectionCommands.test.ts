@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { SceneDocument } from '../api/scene'
 import { useSceneStore } from './sceneStore'
-import { keepSelected, removeSelected, replaceSelected } from './selectionCommands'
+import { keepSelected, pickTarget, removeSelected, replaceSelected } from './selectionCommands'
 
 const plot = {
   kind: 'plot' as const,
@@ -127,5 +127,28 @@ describe('removing and keeping the selected element', () => {
     const { document, selectedId } = useSceneStore.getState()
     expect(document.elements.map((e) => e.id)).toEqual(['plot', 'old-tree', 'lawn'])
     expect(selectedId).toBeNull()
+  })
+})
+
+describe('Byt in the same place', () => {
+  it('after Byt and undo the restored element is selected', () => {
+    start('old-tree')
+    replaceSelected('pear')
+    expect(useSceneStore.getState().selectedId).not.toBe('old-tree')
+    useSceneStore.getState().undo()
+    expect(useSceneStore.getState().selectedId).toBe('old-tree')
+  })
+
+  it('a click on a spot with a removed and a new element selects the new one', () => {
+    start('old-tree')
+    replaceSelected('pear')
+    const replacement = useSceneStore.getState().selectedId!
+    expect(pickTarget('old-tree', useSceneStore.getState().document.elements)).toBe(replacement)
+  })
+
+  it('a click on a removed element with nothing on top selects it', () => {
+    start('old-tree')
+    removeSelected()
+    expect(pickTarget('old-tree', useSceneStore.getState().document.elements)).toBe('old-tree')
   })
 })

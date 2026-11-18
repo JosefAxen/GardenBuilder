@@ -70,7 +70,7 @@ public sealed class SceneValidatorTests
     [Fact]
     public void Unknown_format_version_is_an_error()
     {
-        var error = SingleError(ValidScene() with { FormatVersion = 2 });
+        var error = SingleError(ValidScene() with { FormatVersion = 3 });
 
         Assert.Equal("format-version", error.Code);
         Assert.Null(error.ElementId);
@@ -182,9 +182,74 @@ public sealed class SceneValidatorTests
     }
 
     [Fact]
-    public void Existing_element_without_article_is_allowed()
+    public void Existing_point_with_form_is_valid()
     {
-        Assert.Empty(SceneValidator.Validate(ValidScene(Tree with { Status = ElementStatus.ExistingKeep, ArticleId = null })));
+        Assert.Empty(SceneValidator.Validate(ValidScene(Tree with { Status = ElementStatus.ExistingKeep, ArticleId = null, Form = "tree-large", Width = 6, Height = 9 })));
+    }
+
+    [Fact]
+    public void Existing_point_without_article_or_form_is_missing_form()
+    {
+        var error = SingleError(ValidScene(Tree with { Status = ElementStatus.ExistingKeep, ArticleId = null }));
+
+        Assert.Equal("missing-form", error.Code);
+        Assert.Equal(Tree.Id, error.ElementId);
+    }
+
+    [Fact]
+    public void Existing_line_without_article_or_form_is_missing_form()
+    {
+        var error = SingleError(ValidScene(Hedge with { Status = ElementStatus.ExistingKeep, ArticleId = null }));
+
+        Assert.Equal("missing-form", error.Code);
+    }
+
+    [Fact]
+    public void Hedge_half_a_meter_outside_is_valid()
+    {
+        Assert.Empty(SceneValidator.Validate(ValidScene(Hedge with { Points = [new(-9.5, 10.4), new(9.5, 10.4)] })));
+    }
+
+    [Fact]
+    public void Surface_two_meters_outside_is_outside_plot()
+    {
+        var error = SingleError(ValidScene(Lawn with { Points = [new(-9, -9), new(12, -9), new(12, 1), new(-9, 1)] }));
+
+        Assert.Equal("outside-plot", error.Code);
+        Assert.Equal(Lawn.Id, error.ElementId);
+    }
+
+    [Fact]
+    public void Building_outside_is_outside_plot()
+    {
+        var error = SingleError(ValidScene(House with { Points = [new(-4, 2), new(4, 2), new(4, 13), new(-4, 13)] }));
+
+        Assert.Equal("outside-plot", error.Code);
+        Assert.Equal(House.Id, error.ElementId);
+    }
+
+    [Fact]
+    public void Wall_color_red_is_bad_color()
+    {
+        var error = SingleError(ValidScene(House with { WallColor = "red" }));
+
+        Assert.Equal("bad-color", error.Code);
+    }
+
+    [Fact]
+    public void Hex_wall_and_roof_colors_are_valid()
+    {
+        Assert.Empty(SceneValidator.Validate(ValidScene(House with { WallColor = "#E3B23C", RoofColor = "#7a3b2e" })));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(41)]
+    public void Point_size_outside_0_to_40_meters_is_bad_size(double width)
+    {
+        var error = SingleError(ValidScene(Tree with { Width = width }));
+
+        Assert.Equal("bad-size", error.Code);
     }
 
     [Fact]

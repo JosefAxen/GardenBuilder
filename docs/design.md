@@ -253,6 +253,11 @@ Tre AI-jobb körs i bakgrunden. Inget av dem får skriva till en design förrän
 
 Fototolkningen ger en grov bild av nuläget, inte exakta lägen. Därför visas resultatet alltid som ett förslag som kunden bekräftar eller rättar.
 
+Kunden visar på tomten var varje foto togs och åt vilket håll. Claude beskriver varje foto som en karta sett från
+kameran, och vanlig kod lägger kartorna på tomten, klipper mot tomtgränsen och slår ihop det som syns på flera foton.
+Se [designen för fototolkningen](superpowers/specs/2026-11-18-photo-interpretation-design.md). Modell: Claude Sonnet 5.5
+(ett prov 2026-11-18 på fem foton: nästan lika bra som Opus, 0,15 kr och 9 sekunder per foto).
+
 Drömbilden styrs av renderingen från 3D-scenen, så att växterna hamnar där de står i designen.
 
 **Så blir designförslagen giltiga**
@@ -272,6 +277,8 @@ Språkmodeller är svaga på exakta koordinater. Därför bestämmer modellen va
 - Promptar versionshanteras i kodförrådet.
 - Varje jobb loggar promptversion, modell, tid, kostnad och utfall.
 - En testmängd med 20 riktiga trädgårdsfoton körs innan en prompt eller modell byts.
+- Modellen väljs per sorts jobb (`Anthropic:Models` i Workers inställningar). Varje modell som används måste ha ett pris i
+  `Ai:Prices`.
 - Krav på leverantören: bildindata, strukturerad utdata, personuppgiftsbiträdesavtal och ingen träning på kundernas data.
 
 **Jobbkön**

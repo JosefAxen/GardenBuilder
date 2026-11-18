@@ -112,6 +112,20 @@
         "roof": {
           "$ref": "#/$defs/RoofShape"
         },
+        "wallColor": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "roofColor": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
         "id": {
           "type": "string",
           "format": "uuid"
@@ -207,6 +221,20 @@
             "$ref": "#/$defs/Point2"
           }
         },
+        "form": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "height": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "default": null
+        },
         "id": {
           "type": "string",
           "format": "uuid"
@@ -246,6 +274,27 @@
         },
         "rotation": {
           "type": "number"
+        },
+        "form": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "width": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "default": null
+        },
+        "height": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "default": null
         },
         "id": {
           "type": "string",

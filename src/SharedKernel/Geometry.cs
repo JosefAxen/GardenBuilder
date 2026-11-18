@@ -156,4 +156,30 @@ public sealed class Polygon
 
         return inside;
     }
+
+    /// <summary>Zero inside the polygon, otherwise the distance to the nearest edge.</summary>
+    public double DistanceTo(Point2 point)
+    {
+        if (Contains(point))
+        {
+            return 0;
+        }
+
+        var nearest = double.PositiveInfinity;
+        for (int i = 0, j = Points.Count - 1; i < Points.Count; j = i++)
+        {
+            nearest = Math.Min(nearest, DistanceToSegment(point, Points[j], Points[i]));
+        }
+
+        return nearest;
+    }
+
+    private static double DistanceToSegment(Point2 p, Point2 a, Point2 b)
+    {
+        var dx = b.X - a.X;
+        var dy = b.Y - a.Y;
+        var lengthSquared = (dx * dx) + (dy * dy);
+        var t = lengthSquared == 0 ? 0 : Math.Clamp((((p.X - a.X) * dx) + ((p.Y - a.Y) * dy)) / lengthSquared, 0, 1);
+        return p.DistanceTo(new Point2(a.X + (t * dx), a.Y + (t * dy)));
+    }
 }

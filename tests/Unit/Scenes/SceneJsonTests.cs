@@ -41,7 +41,7 @@ public sealed class SceneJsonTests
 
         var json = SceneJson.Serialize(scene);
 
-        Assert.Contains("\"formatVersion\":1", json, StringComparison.Ordinal);
+        Assert.Contains("\"formatVersion\":2", json, StringComparison.Ordinal);
         Assert.Contains("\"kind\":\"point\"", json, StringComparison.Ordinal);
         Assert.Contains("\"status\":\"existing-keep\"", json, StringComparison.Ordinal);
         Assert.Contains("\"measurementSource\":\"estimated\"", json, StringComparison.Ordinal);
@@ -121,9 +121,9 @@ public sealed class SceneJsonTests
     public void Unsupported_format_version_is_named_in_the_error()
     {
         // A future version may carry fields this version does not know; the error must say "version", not "camera".
-        var error = Assert.Throws<JsonException>(() => SceneJson.Deserialize("""{"formatVersion":2,"elements":[],"camera":{}}"""));
+        var error = Assert.Throws<JsonException>(() => SceneJson.Deserialize("""{"formatVersion":3,"elements":[],"camera":{}}"""));
 
-        Assert.Contains("format version 2", error.Message, StringComparison.Ordinal);
+        Assert.Contains("format version 3", error.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -171,5 +171,57 @@ public sealed class SceneJsonTests
     public void Rejects_missing_elements()
     {
         Assert.Throws<JsonException>(() => SceneJson.Deserialize("""{"formatVersion":1}"""));
+    }
+
+    [Fact]
+    public void Version_1_is_read_as_version_2()
+    {
+        const string json = """
+            {"formatVersion":1,"elements":[{"kind":"point","id":"019a7d3c-0000-7000-8000-000000000002","status":"existing-keep",
+             "measurementSource":"estimated","articleId":null,"position":{"x":1,"y":2},"rotation":0}]}
+            """;
+
+        var scene = SceneJson.Deserialize(json);
+
+        Assert.Equal(2, scene.FormatVersion);
+        Assert.Null(Assert.IsType<PointElement>(Assert.Single(scene.Elements)).Form);
+    }
+
+    [Fact]
+    public void Version_3_is_refused()
+    {
+        Assert.Throws<JsonException>(() => SceneJson.Deserialize("""{"formatVersion":3,"elements":[]}"""));
+    }
+
+    [Fact]
+    public void New_fields_round_trip()
+    {
+        var scene = new SceneDocument(SceneDocument.CurrentFormatVersion,
+        [
+            new PointElement(Ids.New(), ElementStatus.ExistingKeep, MeasurementSource.Estimated, null, new(1, 2), 0, Form: "tree-large", Width: 6, Height: 9),
+            new LineElement(Ids.New(), ElementStatus.ExistingKeep, MeasurementSource.Estimated, null, [new(0, 0), new(5, 0)], Form: "hedge", Height: 1.5),
+            new BuildingElement(Ids.New(), ElementStatus.ExistingKeep, MeasurementSource.Estimated, [new(0, 0), new(1, 0), new(1, 1)], 3, RoofShape.Gable, WallColor: "#E3B23C", RoofColor: "#7A3B2E"),
+        ]);
+
+        var read = SceneJson.Deserialize(SceneJson.Serialize(scene));
+
+        var point = Assert.IsType<PointElement>(read.Elements[0]);
+        Assert.Equal(("tree-large", 6.0, 9.0), (point.Form, point.Width!.Value, point.Height!.Value));
+        var line = Assert.IsType<LineElement>(read.Elements[1]);
+        Assert.Equal(("hedge", 1.5), (line.Form, line.Height!.Value));
+        var building = Assert.IsType<BuildingElement>(read.Elements[2]);
+        Assert.Equal(("#E3B23C", "#7A3B2E"), (building.WallColor, building.RoofColor));
+    }
+
+    [Fact]
+    public void Null_new_fields_are_omitted()
+    {
+        var scene = new SceneDocument(SceneDocument.CurrentFormatVersion,
+            [new PointElement(Ids.New(), ElementStatus.New, MeasurementSource.Estimated, ArticleId, new(1, 2), 0)]);
+
+        var json = SceneJson.Serialize(scene);
+
+        Assert.DoesNotContain("\"form\"", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"width\"", json, StringComparison.Ordinal);
     }
 }

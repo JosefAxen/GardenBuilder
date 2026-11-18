@@ -2,6 +2,7 @@ using GardenBuilder.Contracts;
 using GardenBuilder.Contracts.Database;
 using GardenBuilder.Contracts.Gardens;
 using GardenBuilder.Modules.Garden.Features.CreateGarden;
+using GardenBuilder.Modules.Garden.Features.Photos;
 using GardenBuilder.Modules.Garden.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -32,14 +33,16 @@ public static class GardenModule
         builder.Services.AddScoped<IModuleMigrator, GardenMigrator>();
         builder.Services.TryAddSingleton(TimeProvider.System);
         builder.Services.AddScoped<IGardens, Gardens>();
+        builder.AddAzureBlobServiceClient(ResourceNames.Blobs);
+        builder.Services.AddScoped<PhotoStore>();
+        builder.Services.AddScoped<IGardenPhotos, GardenPhotos>();
 
         return builder;
     }
 
     public static IEndpointRouteBuilder MapGardenEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/gardens").WithTags("Garden");
-        _ = group; // Map features here, e.g. group.MapSomething();
+        app.MapGroup("/api/gardens").WithTags("Garden").MapPhotos();
 
         return app;
     }

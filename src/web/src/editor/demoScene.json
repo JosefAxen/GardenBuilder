@@ -1,5 +1,5 @@
 {
-  "formatVersion": 1,
+  "formatVersion": 2,
   "elements": [
     { "kind": "plot", "id": "019a7d3c-e000-7000-8000-000000000001", "status": "existing-keep", "measurementSource": "estimated", "sloped": false, "points": [{ "x": -12, "y": -9 }, { "x": 12, "y": -9 }, { "x": 12, "y": 9 }, { "x": -12, "y": 9 }] },
     { "kind": "building", "id": "019a7d3c-e000-7000-8000-000000000002", "status": "existing-keep", "measurementSource": "estimated", "height": 5, "roof": "gable", "points": [{ "x": -5, "y": 2 }, { "x": 5, "y": 2 }, { "x": 5, "y": 8 }, { "x": -5, "y": 8 }] },

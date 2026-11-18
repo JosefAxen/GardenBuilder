@@ -28,9 +28,9 @@ internal sealed partial class AiJobProcessor(
             LogNoKey(logger);
         }
 
-        if (!pricing.Value.HasPrice(anthropic.Value.Model))
+        foreach (var model in anthropic.Value.AllModels.Where(m => !pricing.Value.HasPrice(m)))
         {
-            LogNoPrice(logger, anthropic.Value.Model);
+            LogNoPrice(logger, model);
         }
 
         using var timer = new PeriodicTimer(PollInterval);

@@ -12,7 +12,11 @@ namespace GardenBuilder.Contracts.Scenes;
 public sealed record SceneDocument(int FormatVersion, IReadOnlyList<SceneElement> Elements)
 {
     /// <summary>Bump when the format changes in a way old documents must be upgraded for.</summary>
-    public const int CurrentFormatVersion = 1;
+    /// <remarks>Version 2 added form and size for existing things without an article, and the house's colours.</remarks>
+    public const int CurrentFormatVersion = 2;
+
+    /// <summary>The oldest version <see cref="SceneJson.Deserialize"/> still reads and upgrades.</summary>
+    public const int OldestReadableFormatVersion = 1;
 }
 
 /// <summary>One thing in the scene. The JSON property "kind" says which type it is.</summary>
@@ -34,13 +38,17 @@ public sealed record PlotElement(
     : SceneElement(Id, Status, MeasurementSource);
 
 /// <summary>A house, garage or shed. Not priced.</summary>
+/// <param name="WallColor">"#RRGGBB", or null to draw the default colour.</param>
+/// <param name="RoofColor">"#RRGGBB", or null to draw the default colour.</param>
 public sealed record BuildingElement(
     Guid Id,
     ElementStatus Status,
     MeasurementSource MeasurementSource,
     IReadOnlyList<Point2> Points,
     double Height,
-    RoofShape Roof)
+    RoofShape Roof,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? WallColor = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? RoofColor = null)
     : SceneElement(Id, Status, MeasurementSource);
 
 /// <summary>Lawn, paving, gravel, decking or a bed. Priced per square meter.</summary>
@@ -54,23 +62,33 @@ public sealed record SurfaceElement(
     : SceneElement(Id, Status, MeasurementSource);
 
 /// <summary>A hedge, fence or edging along two or more points. Priced per meter.</summary>
+/// <param name="Form">What to draw when there is no article, e.g. an existing hedge: "hedge" or "fence".</param>
+/// <param name="Height">Meters, for an existing line without an article.</param>
 public sealed record LineElement(
     Guid Id,
     ElementStatus Status,
     MeasurementSource MeasurementSource,
     Guid? ArticleId,
-    IReadOnlyList<Point2> Points)
+    IReadOnlyList<Point2> Points,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Form = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] double? Height = null)
     : SceneElement(Id, Status, MeasurementSource);
 
 /// <summary>A tree, shrub, pot or piece of furniture. Priced per piece.</summary>
 /// <param name="Rotation">Radians, counter-clockwise seen from above.</param>
+/// <param name="Form">What to draw when there is no article, e.g. an existing tree: a form key such as "tree-large".</param>
+/// <param name="Width">Crown or plant width in meters, for an existing thing without an article.</param>
+/// <param name="Height">Height in meters, for an existing thing without an article.</param>
 public sealed record PointElement(
     Guid Id,
     ElementStatus Status,
     MeasurementSource MeasurementSource,
     Guid? ArticleId,
     Point2 Position,
-    double Rotation)
+    double Rotation,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Form = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] double? Width = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] double? Height = null)
     : SceneElement(Id, Status, MeasurementSource);
 
 /// <summary>Whether an element exists today and is kept, exists and is removed, or is new.</summary>

@@ -17,7 +17,10 @@ namespace GardenBuilder.Modules.Design.Features.WorkingCopy;
 /// </summary>
 internal static class DesignEndpoints
 {
-    public sealed record DesignResponse(Guid Id, int Revision, JsonElement Scene);
+    /// <param name="GardenId">The garden the design belongs to, so the client can reach its photos.</param>
+    public sealed record DesignResponse(Guid Id, Guid GardenId, int Revision, JsonElement Scene);
+
+    public sealed record SavedResponse(Guid Id, int Revision, JsonElement Scene);
 
     public sealed record ConflictResponse(string Code, int Revision);
 
@@ -49,7 +52,7 @@ internal static class DesignEndpoints
         }
 
         SetRevision(response, design.Revision);
-        return TypedResults.Ok(new DesignResponse(design.Id, design.Revision, Parse(design.WorkingCopy)));
+        return TypedResults.Ok(new DesignResponse(design.Id, design.GardenId, design.Revision, Upgraded(design.WorkingCopy)));
     }
 
     private static async Task<IResult> GetAsync(
@@ -62,7 +65,7 @@ internal static class DesignEndpoints
         }
 
         SetRevision(response, design.Revision);
-        return TypedResults.Ok(new DesignResponse(design.Id, design.Revision, Parse(design.WorkingCopy)));
+        return TypedResults.Ok(new DesignResponse(design.Id, design.GardenId, design.Revision, Upgraded(design.WorkingCopy)));
     }
 
     /// <summary>
@@ -98,7 +101,7 @@ internal static class DesignEndpoints
 
         SetRevision(response, design.Revision);
         return TypedResults.Created(
-            $"/api/designs/{design.Id}", new DesignResponse(design.Id, design.Revision, Parse(design.WorkingCopy)));
+            $"/api/designs/{design.Id}", new DesignResponse(design.Id, design.GardenId, design.Revision, Upgraded(design.WorkingCopy)));
     }
 
     /// <summary>Saves only when If-Match names the revision the design has now; otherwise 412 with the current revision.</summary>
@@ -131,7 +134,7 @@ internal static class DesignEndpoints
         {
             case SaveResult.Saved saved:
                 SetRevision(response, saved.Revision);
-                return TypedResults.Ok(new DesignResponse(id, saved.Revision, JsonSerializer.SerializeToElement(scene, SceneJson.Options)));
+                return TypedResults.Ok(new SavedResponse(id, saved.Revision, JsonSerializer.SerializeToElement(scene, SceneJson.Options)));
             case SaveResult.Conflict conflict:
                 return TypedResults.Json(
                     new ConflictResponse("conflict", conflict.CurrentRevision), statusCode: StatusCodes.Status412PreconditionFailed);
@@ -164,9 +167,7 @@ internal static class DesignEndpoints
     private static void SetRevision(HttpResponse response, int revision) =>
         response.Headers.ETag = $"\"{revision.ToString(CultureInfo.InvariantCulture)}\"";
 
-    private static JsonElement Parse(string json)
-    {
-        using var document = JsonDocument.Parse(json);
-        return document.RootElement.Clone();
-    }
+    /// <summary>The stored scene in the current format: an older version is upgraded on the way out, not in the database.</summary>
+    private static JsonElement Upgraded(string json) =>
+        JsonSerializer.SerializeToElement(SceneJson.Deserialize(json), SceneJson.Options);
 }

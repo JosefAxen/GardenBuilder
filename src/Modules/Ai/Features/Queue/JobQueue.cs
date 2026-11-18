@@ -75,6 +75,18 @@ internal sealed class JobQueue(AiDbContext db, TimeProvider time)
     /// Stores the result of <paramref name="attempt"/>. A Worker whose lease ran out while another took the job changes
     /// nothing: only the attempt that holds the job may finish it.
     /// </summary>
+    /// <summary>
+    /// Gives the attempt that holds the job a new full lease. Called before every model call, so a job of several slow
+    /// calls (six photos) is never taken over by another Worker while it is still running.
+    /// </summary>
+    public async Task RenewLeaseAsync(Guid id, int attempt, CancellationToken cancellationToken)
+    {
+        var lockedUntil = time.GetUtcNow() + Lease;
+        await db.Database.ExecuteSqlAsync(
+            $"UPDATE ai.jobs SET locked_until = {lockedUntil} WHERE id = {id} AND status = 'running' AND attempts = {attempt}",
+            cancellationToken);
+    }
+
     public async Task SucceedAsync(Guid id, int attempt, JsonElement result, CancellationToken cancellationToken)
     {
         var now = time.GetUtcNow();

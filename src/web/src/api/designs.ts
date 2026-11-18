@@ -1,7 +1,7 @@
 import type { SceneDocument } from './scene'
 
 /** A design as the server has it (DesignEndpoints.DesignResponse in the Design module). */
-export type SavedDesign = { id: string; revision: number; scene: SceneDocument }
+export type SavedDesign = { id: string; gardenId: string; revision: number; scene: SceneDocument }
 
 /**
  * Why a design could not be fetched or saved:
@@ -78,10 +78,10 @@ export async function fetchDesign(id: string): Promise<SavedDesign> {
 }
 
 /** The first save: creates the customer (when needed), the garden and the design with revision 1. */
-export async function createDesign(scene: SceneDocument, options?: SendOptions): Promise<{ id: string; revision: number }> {
+export async function createDesign(scene: SceneDocument, options?: SendOptions): Promise<{ id: string; gardenId: string; revision: number }> {
   const response = await send('/api/designs', { method: 'POST', headers: jsonHeaders, body: JSON.stringify(scene) }, options)
-  const body = (await response.json()) as { id: string; revision: number }
-  return { id: body.id, revision: revisionFrom(response) ?? body.revision }
+  const body = (await response.json()) as { id: string; gardenId: string; revision: number }
+  return { id: body.id, gardenId: body.gardenId, revision: revisionFrom(response) ?? body.revision }
 }
 
 /** Saves the working copy if the server still has `revision`. Returns the new revision. */

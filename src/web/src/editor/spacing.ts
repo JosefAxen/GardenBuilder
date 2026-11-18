@@ -23,3 +23,10 @@ export function findCrowdedPlants(plants: PlantFootprint[]): Set<string> {
   }
   return crowded
 }
+
+/** The plants that count in the crowding check: not those that will be removed, and only those with a known width. */
+export function crowdingFootprints(
+  plants: { id: string; position: Point2; matureWidth: number | null; removed: boolean }[],
+): PlantFootprint[] {
+  return plants.flatMap((p) => (!p.removed && p.matureWidth ? [{ id: p.id, position: p.position, matureWidth: p.matureWidth }] : []))
+}

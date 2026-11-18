@@ -37,6 +37,7 @@ public static class DesignModule
         builder.Services.TryAddSingleton(TimeProvider.System);
         builder.Services.AddScoped<WorkingCopyStore>();
         builder.Services.AddScoped<IDesignVersions, DesignVersions>();
+        builder.Services.AddScoped<IDesignWorkingCopies, DesignWorkingCopies>();
 
         return builder;
     }

@@ -12,13 +12,28 @@ import { isPointForm, type PointFormKey } from './modelLibrary'
 import { placementProblem } from './placement'
 import { GrowthRings, type PlacedPoint } from './PointInstances'
 import { useSceneStore } from './sceneStore'
-import { findCrowdedPlants } from './spacing'
+import { drawClick, dropShapeDrag } from './shapeCommands'
+import { ShapeHandles, TopCamera } from './ShapeHandles'
+import { CameraPins, ProposalGhosts } from './photos/PhotoMarks'
+import { pinClick } from './photos/photoStore'
+import { boxCenter } from './geometry'
+import { crowdingFootprints, findCrowdedPlants } from './spacing'
+import { lookOf } from './existingLook'
+import { pickTarget } from './selectionCommands'
 
 // Scene coordinates are (x = east, y = north). In three.js the ground is the XZ plane with -Z as north.
 const toShape = (points: Point2[]) => new Shape(points.map((p) => new Vector2(p.x, p.y)))
 const fromGround = (point: Vector3): Point2 => ({ x: point.x, y: -point.z })
 const GROUND = new Plane(new Vector3(0, 1, 0), 0)
 const ignore = () => {}
+
+/** Where the top view's controls look: the middle of the plot. */
+function topTargetOf(elements: SceneElement[]): [number, number, number] {
+  const plot = elements.find((e) => e.kind === 'plot')
+  if (plot?.kind !== 'plot') return [0, 0, 0]
+  const center = boxCenter(plot.points)
+  return [center.x, 0, -center.y]
+}
 
 const SURFACE_COLORS: Record<SurfaceMaterial, string> = {
   grass: '#7fb069',
@@ -66,7 +81,7 @@ function Building({ element }: { element: BuildingElement }) {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} castShadow receiveShadow>
       <extrudeGeometry args={[shape, { depth: element.height, bevelEnabled: false }]} />
-      <meshStandardMaterial color="#e8e2d6" />
+      <meshStandardMaterial color={element.wallColor ?? '#e8e2d6'} />
     </mesh>
   )
 }
@@ -78,7 +93,7 @@ function StaticElement({ element, index }: { element: SceneElement; index: numbe
     const { tool, select } = useSceneStore.getState()
     if (tool.mode !== 'select' || event.button !== 0) return
     event.stopPropagation()
-    select(element.id)
+    select(pickTarget(element.id, useSceneStore.getState().document.elements))
   }
 
   switch (element.kind) {
@@ -141,6 +156,10 @@ function Scene() {
   const hover = useSceneStore((s) => s.hover)
   const selectedId = useSceneStore((s) => s.selectedId)
   const detail = useSceneStore((s) => s.detail)
+  const shapeDrag = useSceneStore((s) => s.shapeDrag)
+  const view = useSceneStore((s) => s.view)
+  // Taken when the top view opens, like the camera, so the view does not move while corners are dragged.
+  const topTarget = useMemo(() => (view === 'top' ? topTargetOf(useSceneStore.getState().document.elements) : undefined), [view])
   // Re-render when the catalog arrives, so elements whose article just loaded are drawn.
   const articles = useCatalogStore((s) => s.articles)
   const { execute, select, setTool, setDrag, setHover, setNotice } = useSceneStore.getState()
@@ -152,7 +171,8 @@ function Scene() {
     () =>
       elements.flatMap((e): PlacedPoint[] => {
         if (e.kind !== 'point') return []
-        const article = findArticle(e.articleId, articles)
+        // An existing thing without an article is drawn from its own form and size.
+        const article = lookOf(e, articles)
         // Elements whose article is not in the catalog (not loaded, or discontinued) are skipped, not drawn wrong.
         if (article?.geometry !== 'point' || !isPointForm(article.typeModel)) return []
         const position = drag?.id === e.id ? drag.position : e.position
@@ -162,7 +182,7 @@ function Scene() {
   )
 
   const crowded = useMemo(
-    () => findCrowdedPlants(placed.flatMap((p) => (p.article.matureWidth ? [{ id: p.id, position: p.position, matureWidth: p.article.matureWidth }] : []))),
+    () => findCrowdedPlants(crowdingFootprints(placed.map((p) => ({ ...p, matureWidth: p.article.matureWidth })))),
     [placed],
   )
 
@@ -179,20 +199,30 @@ function Scene() {
   // A release anywhere drops the element. If the pointer is lost instead (the window loses focus, or the browser
   // cancels the pointer), the drag is cancelled so it can never get stuck with the camera locked.
   useEffect(() => {
-    const { dropDrag, cancelDrag } = useSceneStore.getState()
-    window.addEventListener('pointerup', dropDrag)
-    window.addEventListener('pointercancel', cancelDrag)
-    window.addEventListener('blur', cancelDrag)
+    const { dropDrag, cancelDrag, setShapeDrag } = useSceneStore.getState()
+    const drop = () => {
+      dropDrag()
+      dropShapeDrag()
+    }
+    const cancel = () => {
+      cancelDrag()
+      setShapeDrag(null)
+    }
+    window.addEventListener('pointerup', drop)
+    window.addEventListener('pointercancel', cancel)
+    window.addEventListener('blur', cancel)
     return () => {
-      window.removeEventListener('pointerup', dropDrag)
-      window.removeEventListener('pointercancel', cancelDrag)
-      window.removeEventListener('blur', cancelDrag)
+      window.removeEventListener('pointerup', drop)
+      window.removeEventListener('pointercancel', cancel)
+      window.removeEventListener('blur', cancel)
     }
   }, [])
 
   const startDrag = (id: string, event: ThreeEvent<PointerEvent>) => {
     if (useSceneStore.getState().tool.mode !== 'select' || event.button !== 0) return
     event.stopPropagation()
+    // After "Byt" the removed original lies under its replacement; a click there means the replacement.
+    id = pickTarget(id, useSceneStore.getState().document.elements)
     select(id)
     const point = placed.find((p) => p.id === id)
     const hit = event.ray.intersectPlane(GROUND, new Vector3())
@@ -204,8 +234,9 @@ function Scene() {
 
   const onGroundMove = (event: ThreeEvent<PointerEvent>) => {
     const ground = fromGround(event.point)
-    const current = useSceneStore.getState().drag
-    if (current) setDrag({ ...current, position: { x: ground.x - current.offset.x, y: ground.y - current.offset.y }, moved: true })
+    const { drag: current, shapeDrag: shaping, setShapeDrag } = useSceneStore.getState()
+    if (shaping) setShapeDrag({ ...shaping, point: ground })
+    else if (current) setDrag({ ...current, position: { x: ground.x - current.offset.x, y: ground.y - current.offset.y }, moved: true })
     else if (tool.mode !== 'select') setHover(ground)
   }
 
@@ -242,6 +273,14 @@ function Scene() {
         }
         break
       }
+      case 'draw':
+        drawClick(ground)
+        break
+      case 'pin':
+        void pinClick(ground)
+        break
+      case 'shape':
+        break
       case 'select':
         // Only the nearest hit counts: a click on a plant must not also deselect it through the ground.
         if (event.intersections[0]?.eventObject === event.eventObject) select(null)
@@ -250,7 +289,7 @@ function Scene() {
   }
 
   const selectedPoint = placed.find((p) => p.id === selectedId)
-  const placeArticle = tool.mode !== 'select' ? findArticle(tool.articleId) : undefined
+  const placeArticle = tool.mode === 'place' || tool.mode === 'line' ? findArticle(tool.articleId) : undefined
   const ghost: PlacedPoint | null =
     tool.mode === 'place' && hover && placeArticle?.geometry === 'point'
       ? { id: 'ghost', position: hover, rotation: 0, article: placeArticle, removed: false }
@@ -269,7 +308,7 @@ function Scene() {
 
       {elements.map((element) => {
         if (element.kind !== 'line') return null
-        const article = findArticle(element.articleId)
+        const article = lookOf(element, articles)
         if (article?.geometry !== 'line') return null
         return (
           <LineView
@@ -281,7 +320,7 @@ function Scene() {
             onPointerDown={(event) => {
               if (useSceneStore.getState().tool.mode !== 'select') return
               event.stopPropagation()
-              select(element.id)
+              select(pickTarget(element.id, useSceneStore.getState().document.elements))
             }}
           />
         )
@@ -301,7 +340,18 @@ function Scene() {
         <LineView points={[tool.start, hover]} article={placeArticle} ghost />
       )}
 
-      <OrbitControls makeDefault enabled={drag === null} maxPolarAngle={Math.PI / 2.1} />
+      <ShapeHandles />
+      <CameraPins />
+      <ProposalGhosts />
+      {view === 'top' && <TopCamera />}
+      <OrbitControls
+        key={view}
+        makeDefault
+        enabled={drag === null && shapeDrag === null}
+        enableRotate={view !== 'top'}
+        target={view === 'top' ? topTarget : undefined}
+        maxPolarAngle={Math.PI / 2.1}
+      />
       {measuring && <PerfMeter />}
     </>
   )

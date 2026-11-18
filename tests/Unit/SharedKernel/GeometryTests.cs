@@ -70,4 +70,14 @@ public sealed class GeometryTests
     {
         Assert.Throws<ArgumentException>(() => new Polygon([new(0, 0), new(1, 1)]));
     }
+
+    [Theory]
+    [InlineData(5, 2, 0)]
+    [InlineData(12, 2, 2)]
+    [InlineData(13, 9, 5)]
+    [InlineData(5, -0.5, 0.5)]
+    public void Distance_to_polygon_is_zero_inside_and_to_the_nearest_edge_outside(double x, double y, double expected)
+    {
+        Assert.Equal(expected, Rectangle10By5.DistanceTo(new Point2(x, y)), precision: 9);
+    }
 }

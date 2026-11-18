@@ -8,7 +8,8 @@ var postgres = builder.AddPostgres("postgres")
     .WithPgAdmin();
 var database = postgres.AddDatabase("gardenbuilder");
 
-var storage = builder.AddAzureStorage("storage").RunAsEmulator(emulator => emulator.WithDataVolume());
+// Azurite 3.37.0 or newer: older images refuse the API version the current Azure.Storage.Blobs sends.
+var storage = builder.AddAzureStorage("storage").RunAsEmulator(emulator => emulator.WithImageTag("3.37.0").WithDataVolume());
 var blobs = storage.AddBlobs("blobs");
 
 // Migrations run as their own step; the API and the worker start only after it has completed.

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Point2, SceneDocument, SceneElement, SurfaceMaterial } from '../api/scene'
+import type { Point2, RoofShape, SceneDocument, SceneElement, SurfaceMaterial } from '../api/scene'
 import type { CatalogArticle } from '../api/catalog'
 import { demoScene, stressElements } from './demoScene'
 import { placementProblem } from './placement'
@@ -19,6 +19,26 @@ export type SceneCommand =
   | { type: 'keep'; id: string }
   /** Several commands that undo and redo as one step. */
   | { type: 'batch'; commands: SceneCommand[] }
+  /** Shape commands, for the plot and buildings only: move, add or remove one corner, or draw all corners anew. */
+  | { type: 'move-point'; id: string; index: number; point: Point2 }
+  /** Inserts a corner before index (index equal to the number of corners adds it last). */
+  | { type: 'insert-point'; id: string; index: number; point: Point2 }
+  /** Removes a corner, but never below three. */
+  | { type: 'remove-point'; id: string; index: number }
+  | { type: 'redraw'; id: string; points: Point2[] }
+  /** The house's colours and roof, for example as the photos showed them. Null colours are left out. */
+  | { type: 'house-look'; id: string; wallColor: string | null; roofColor: string | null; roof: RoofShape }
+
+const MIN_CORNERS = 3
+
+/** Changes the corners of a plot or a building; everything else is left as it is. */
+function reshape(document: SceneDocument, id: string, change: (points: Point2[]) => Point2[] | null): SceneDocument {
+  return updateElement(document, id, (e) => {
+    if (e.kind !== 'plot' && e.kind !== 'building') return e
+    const points = change(e.points)
+    return points && points.length >= MIN_CORNERS ? { ...e, points } : e
+  })
+}
 
 /**
  * Changes the one element with this id. Returns the same document when there is no such element or the update
@@ -63,6 +83,33 @@ export function applyCommand(document: SceneDocument, command: SceneCommand): Sc
       return updateElement(document, command.id, (e) => (e.status === 'existing-remove' ? { ...e, status: 'existing-keep' } : e))
     case 'batch':
       return command.commands.reduce(applyCommand, document)
+    case 'move-point':
+      return reshape(document, command.id, (points) => {
+        const old = points[command.index]
+        if (!old || (old.x === command.point.x && old.y === command.point.y)) return null
+        return points.with(command.index, command.point)
+      })
+    case 'insert-point':
+      return reshape(document, command.id, (points) =>
+        command.index < 0 || command.index > points.length ? null : points.toSpliced(command.index, 0, command.point),
+      )
+    case 'remove-point':
+      return reshape(document, command.id, (points) =>
+        command.index < 0 || command.index >= points.length || points.length <= MIN_CORNERS ? null : points.toSpliced(command.index, 1),
+      )
+    case 'redraw':
+      return reshape(document, command.id, () => command.points)
+    case 'house-look':
+      return updateElement(document, command.id, (e) => {
+        if (e.kind !== 'building') return e
+        const next = {
+          ...e,
+          roof: command.roof,
+          ...(command.wallColor ? { wallColor: command.wallColor } : {}),
+          ...(command.roofColor ? { roofColor: command.roofColor } : {}),
+        }
+        return next.roof === e.roof && next.wallColor === e.wallColor && next.roofColor === e.roofColor ? e : next
+      })
   }
 }
 
@@ -71,6 +118,15 @@ export type Tool =
   | { mode: 'select' }
   | { mode: 'place'; articleId: string }
   | { mode: 'line'; articleId: string; start?: Point2 }
+  /** Handles on the corners of the plot or a building. */
+  | { mode: 'shape'; id: string }
+  /** Drawing the plot or a building anew, corner by corner. */
+  | { mode: 'draw'; id: string; points: Point2[] }
+  /** Showing where a photo was taken: first where the customer stood, then the direction. */
+  | { mode: 'pin'; photoId: string; position?: Point2 }
+
+/** A corner being dragged in the shape tool. insert: a mid-edge handle, so the drop adds a corner before index. */
+export type ShapeDrag = { id: string; index: number; insert: boolean; point: Point2 }
 
 /** An element being dragged. Kept outside the document until the drop, so one drag is one undo step. */
 export type Drag = { id: string; position: Point2; offset: Point2; moved: boolean }
@@ -81,9 +137,14 @@ type SceneState = {
   document: SceneDocument
   past: SceneDocument[]
   future: SceneDocument[]
+  /** What was selected before each step in past, so undo can select it again (for example the original after "Byt"). */
+  pastSelected: (string | null)[]
   selectedId: string | null
   tool: Tool
   drag: Drag | null
+  shapeDrag: ShapeDrag | null
+  /** 'top' looks straight down with north up, for shaping the plot and pinning photos. */
+  view: 'perspective' | 'top'
   /** Ground point under the pointer, for the placement preview. */
   hover: Point2 | null
   /** A short message to the customer, in Swedish, for example why something could not be placed. */
@@ -100,6 +161,8 @@ type SceneState = {
   select: (id: string | null) => void
   setTool: (tool: Tool) => void
   setDrag: (drag: Drag | null) => void
+  setShapeDrag: (shapeDrag: ShapeDrag | null) => void
+  setView: (view: 'perspective' | 'top') => void
   /** Ends a drag where the pointer was released: one move, or nothing if the spot is not allowed. */
   dropDrag: () => void
   /** Ends a drag that was interrupted (the window lost focus, the browser cancelled the pointer): nothing moves. */
@@ -115,9 +178,12 @@ export const useSceneStore = create<SceneState>((set, get) => ({
   document: demoScene,
   past: [],
   future: [],
+  pastSelected: [],
   selectedId: null,
   tool: { mode: 'select' },
   drag: null,
+  shapeDrag: null,
+  view: 'perspective',
   hover: null,
   notice: null,
   detail: 'high',
@@ -127,24 +193,30 @@ export const useSceneStore = create<SceneState>((set, get) => ({
     set((state) => {
       const document = applyCommand(state.document, command)
       if (document === state.document) return state
-      return { document, past: [...state.past, state.document], future: [], notice: null }
+      return { document, past: [...state.past, state.document], pastSelected: [...state.pastSelected, state.selectedId], future: [], notice: null }
     }),
-  load: (document) => set({ document, past: [], future: [], selectedId: null, drag: null, notice: null }),
+  load: (document) => set({ document, past: [], pastSelected: [], future: [], selectedId: null, drag: null, shapeDrag: null, notice: null }),
   undo: () =>
     set((state) => {
       const previous = state.past.at(-1)
       if (!previous) return state
-      return { document: previous, past: state.past.slice(0, -1), future: [state.document, ...state.future] }
+      const exists = (id: string | null | undefined) => id != null && previous.elements.some((e) => e.id === id)
+      const before = state.pastSelected.at(-1)
+      const selectedId = exists(before) ? before! : exists(state.selectedId) ? state.selectedId : null
+      return { document: previous, past: state.past.slice(0, -1), pastSelected: state.pastSelected.slice(0, -1), future: [state.document, ...state.future], selectedId }
     }),
   redo: () =>
     set((state) => {
       const [next, ...rest] = state.future
       if (!next) return state
-      return { document: next, past: [...state.past, state.document], future: rest }
+      const selectedId = state.selectedId && next.elements.some((e) => e.id === state.selectedId) ? state.selectedId : null
+      return { document: next, past: [...state.past, state.document], pastSelected: [...state.pastSelected, state.selectedId], future: rest, selectedId }
     }),
   select: (selectedId) => set({ selectedId }),
   setTool: (tool) => set({ tool, hover: null, notice: null }),
   setDrag: (drag) => set({ drag }),
+  setShapeDrag: (shapeDrag) => set({ shapeDrag }),
+  setView: (view) => set({ view }),
   dropDrag: () => {
     const { drag, document, execute } = get()
     if (!drag) return

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using GardenBuilder.Modules.Ai.Domain;
 using GardenBuilder.Modules.Ai.Features.Costs;
+using GardenBuilder.Modules.Ai.Features.Queue;
 using GardenBuilder.Modules.Ai.Features.Settings;
 using GardenBuilder.Modules.Ai.Providers;
 using GardenBuilder.SharedKernel;
@@ -12,6 +13,7 @@ namespace GardenBuilder.Modules.Ai.Features.Run;
 /// <summary>The calls one job makes: guards first, then the model, then a row in ai.calls whatever happened.</summary>
 internal sealed partial class AiCalls(
     AiJob job,
+    JobQueue queue,
     ITextModel model,
     AiGuards guards,
     CostLog costs,
@@ -29,11 +31,14 @@ internal sealed partial class AiCalls(
 
     public async Task<AiTextResult> TextAsync(string promptVersion, TextRequest request, CancellationToken cancellationToken)
     {
-        if (await guards.RefuseCallAsync(job.Kind, model.Model, cancellationToken) is { } refusal)
+        var modelName = model.ModelFor(job.Kind);
+        request = request with { Model = modelName };
+        if (await guards.RefuseCallAsync(job.Kind, modelName, cancellationToken) is { } refusal)
         {
             throw new AiJobStoppedException(refusal);
         }
 
+        await queue.RenewLeaseAsync(job.Id, job.Attempts, cancellationToken);
         var started = time.GetUtcNow();
         var clock = Stopwatch.StartNew();
         TextResponse response;
@@ -43,19 +48,19 @@ internal sealed partial class AiCalls(
         }
         catch (AiProviderException e)
         {
-            await LogAsync(promptVersion, model.Model, started, clock, 0, 0, Money.InSek(0m), "error", e.InnerException?.GetType().Name ?? e.GetType().Name, cancellationToken);
+            await LogAsync(promptVersion, modelName, started, clock, 0, 0, Money.InSek(0m), "error", e.InnerException?.GetType().Name ?? e.GetType().Name, cancellationToken);
             throw;
         }
         catch (OperationCanceledException e) when (!cancellationToken.IsCancellationRequested)
         {
             // Nobody asked to stop, so the provider timed out. Worth another attempt.
-            await LogAsync(promptVersion, model.Model, started, clock, 0, 0, Money.InSek(0m), "error", e.GetType().Name, cancellationToken);
+            await LogAsync(promptVersion, modelName, started, clock, 0, 0, Money.InSek(0m), "error", e.GetType().Name, cancellationToken);
             throw new AiProviderException(TimedOut, retryable: true, e);
         }
 
         // The price was checked before the call; the answering model is normally the same one.
         var cost = AiCost.Of(response.Model, response.InputTokens, response.OutputTokens, pricing.Value)
-            ?? AiCost.Of(model.Model, response.InputTokens, response.OutputTokens, pricing.Value)
+            ?? AiCost.Of(modelName, response.InputTokens, response.OutputTokens, pricing.Value)
             ?? Money.InSek(0m);
         var outcome = response.StopReason switch
         {
