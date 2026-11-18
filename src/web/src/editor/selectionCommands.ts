@@ -53,3 +53,24 @@ export function replaceSelected(articleId: string, material?: SurfaceMaterial) {
   execute({ type: 'batch', commands: [{ type: 'remove', id: element.id }, { type: 'add', element: added }] })
   select(added.id)
 }
+
+/** How close two elements must be to count as standing in the same place. */
+const SAME_PLACE = 0.3
+
+const anchorOf = (element: SceneElement) =>
+  element.kind === 'point' ? element.position : 'points' in element ? element.points[0] : undefined
+
+/**
+ * What a click on this element should select. After "Byt" the removed original stays exactly under its replacement;
+ * a click there means the replacement, so a removed element gives way to a kept one of the same kind in the same place.
+ */
+export function pickTarget(clickedId: string, elements: SceneElement[]): string {
+  const clicked = elements.find((e) => e.id === clickedId)
+  const at = clicked && anchorOf(clicked)
+  if (!clicked || !at || clicked.status !== 'existing-remove') return clickedId
+  const onTop = elements.find((e) => {
+    const other = anchorOf(e)
+    return e.kind === clicked.kind && e.status !== 'existing-remove' && other && Math.hypot(other.x - at.x, other.y - at.y) < SAME_PLACE
+  })
+  return onTop?.id ?? clickedId
+}

@@ -122,6 +122,8 @@ type SceneState = {
   document: SceneDocument
   past: SceneDocument[]
   future: SceneDocument[]
+  /** What was selected before each step in past, so undo can select it again (for example the original after "Byt"). */
+  pastSelected: (string | null)[]
   selectedId: string | null
   tool: Tool
   drag: Drag | null
@@ -161,6 +163,7 @@ export const useSceneStore = create<SceneState>((set, get) => ({
   document: demoScene,
   past: [],
   future: [],
+  pastSelected: [],
   selectedId: null,
   tool: { mode: 'select' },
   drag: null,
@@ -175,20 +178,24 @@ export const useSceneStore = create<SceneState>((set, get) => ({
     set((state) => {
       const document = applyCommand(state.document, command)
       if (document === state.document) return state
-      return { document, past: [...state.past, state.document], future: [], notice: null }
+      return { document, past: [...state.past, state.document], pastSelected: [...state.pastSelected, state.selectedId], future: [], notice: null }
     }),
-  load: (document) => set({ document, past: [], future: [], selectedId: null, drag: null, shapeDrag: null, notice: null }),
+  load: (document) => set({ document, past: [], pastSelected: [], future: [], selectedId: null, drag: null, shapeDrag: null, notice: null }),
   undo: () =>
     set((state) => {
       const previous = state.past.at(-1)
       if (!previous) return state
-      return { document: previous, past: state.past.slice(0, -1), future: [state.document, ...state.future] }
+      const exists = (id: string | null | undefined) => id != null && previous.elements.some((e) => e.id === id)
+      const before = state.pastSelected.at(-1)
+      const selectedId = exists(before) ? before! : exists(state.selectedId) ? state.selectedId : null
+      return { document: previous, past: state.past.slice(0, -1), pastSelected: state.pastSelected.slice(0, -1), future: [state.document, ...state.future], selectedId }
     }),
   redo: () =>
     set((state) => {
       const [next, ...rest] = state.future
       if (!next) return state
-      return { document: next, past: [...state.past, state.document], future: rest }
+      const selectedId = state.selectedId && next.elements.some((e) => e.id === state.selectedId) ? state.selectedId : null
+      return { document: next, past: [...state.past, state.document], pastSelected: [...state.pastSelected, state.selectedId], future: rest, selectedId }
     }),
   select: (selectedId) => set({ selectedId }),
   setTool: (tool) => set({ tool, hover: null, notice: null }),

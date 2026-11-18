@@ -3,12 +3,13 @@ import { Link } from 'react-router'
 import { CatalogPanel } from './CatalogPanel'
 import { PricePanel } from './PricePanel'
 import { schedulePrice } from './priceStore'
-import { findArticle, useCatalogStore } from './catalogStore'
+import { useCatalogStore } from './catalogStore'
 import { SceneCanvas } from './SceneCanvas'
 import { addStressTest, useSceneStore } from './sceneStore'
 import { removeSelected, rotateSelected } from './selectionCommands'
 import { finishShaping, startDrawing, startShaping } from './shapeCommands'
-import { findCrowdedPlants } from './spacing'
+import { crowdingFootprints, findCrowdedPlants } from './spacing'
+import { lookOf } from './existingLook'
 import { countMissingArticles } from './catalogChecks'
 import { DesignLoading, SaveConflict, SaveStatus } from './SaveStatus'
 import { useSavedDesign } from './useSavedDesign'
@@ -52,10 +53,10 @@ function StatusBar() {
   const crowdedCount = useMemo(() => {
     const plants = elements.flatMap((e) => {
       if (e.kind !== 'point') return []
-      const article = findArticle(e.articleId, articles)
-      return article?.geometry === 'point' && article.matureWidth ? [{ id: e.id, position: e.position, matureWidth: article.matureWidth }] : []
+      const article = lookOf(e, articles)
+      return article?.geometry === 'point' ? [{ id: e.id, position: e.position, matureWidth: article.matureWidth, removed: e.status === 'existing-remove' }] : []
     })
-    return findCrowdedPlants(plants).size
+    return findCrowdedPlants(crowdingFootprints(plants)).size
   }, [elements, articles])
 
   const placedCount = elements.filter((e) => e.kind === 'point' || e.kind === 'line').length

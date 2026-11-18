@@ -15,7 +15,9 @@ import { useSceneStore } from './sceneStore'
 import { drawClick, dropShapeDrag } from './shapeCommands'
 import { ShapeHandles, TopCamera } from './ShapeHandles'
 import { boxCenter } from './geometry'
-import { findCrowdedPlants } from './spacing'
+import { crowdingFootprints, findCrowdedPlants } from './spacing'
+import { lookOf } from './existingLook'
+import { pickTarget } from './selectionCommands'
 
 // Scene coordinates are (x = east, y = north). In three.js the ground is the XZ plane with -Z as north.
 const toShape = (points: Point2[]) => new Shape(points.map((p) => new Vector2(p.x, p.y)))
@@ -77,7 +79,7 @@ function Building({ element }: { element: BuildingElement }) {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} castShadow receiveShadow>
       <extrudeGeometry args={[shape, { depth: element.height, bevelEnabled: false }]} />
-      <meshStandardMaterial color="#e8e2d6" />
+      <meshStandardMaterial color={element.wallColor ?? '#e8e2d6'} />
     </mesh>
   )
 }
@@ -89,7 +91,7 @@ function StaticElement({ element, index }: { element: SceneElement; index: numbe
     const { tool, select } = useSceneStore.getState()
     if (tool.mode !== 'select' || event.button !== 0) return
     event.stopPropagation()
-    select(element.id)
+    select(pickTarget(element.id, useSceneStore.getState().document.elements))
   }
 
   switch (element.kind) {
@@ -167,7 +169,8 @@ function Scene() {
     () =>
       elements.flatMap((e): PlacedPoint[] => {
         if (e.kind !== 'point') return []
-        const article = findArticle(e.articleId, articles)
+        // An existing thing without an article is drawn from its own form and size.
+        const article = lookOf(e, articles)
         // Elements whose article is not in the catalog (not loaded, or discontinued) are skipped, not drawn wrong.
         if (article?.geometry !== 'point' || !isPointForm(article.typeModel)) return []
         const position = drag?.id === e.id ? drag.position : e.position
@@ -177,7 +180,7 @@ function Scene() {
   )
 
   const crowded = useMemo(
-    () => findCrowdedPlants(placed.flatMap((p) => (p.article.matureWidth ? [{ id: p.id, position: p.position, matureWidth: p.article.matureWidth }] : []))),
+    () => findCrowdedPlants(crowdingFootprints(placed.map((p) => ({ ...p, matureWidth: p.article.matureWidth })))),
     [placed],
   )
 
@@ -216,6 +219,8 @@ function Scene() {
   const startDrag = (id: string, event: ThreeEvent<PointerEvent>) => {
     if (useSceneStore.getState().tool.mode !== 'select' || event.button !== 0) return
     event.stopPropagation()
+    // After "Byt" the removed original lies under its replacement; a click there means the replacement.
+    id = pickTarget(id, useSceneStore.getState().document.elements)
     select(id)
     const point = placed.find((p) => p.id === id)
     const hit = event.ray.intersectPlane(GROUND, new Vector3())
@@ -298,7 +303,7 @@ function Scene() {
 
       {elements.map((element) => {
         if (element.kind !== 'line') return null
-        const article = findArticle(element.articleId)
+        const article = lookOf(element, articles)
         if (article?.geometry !== 'line') return null
         return (
           <LineView
@@ -310,7 +315,7 @@ function Scene() {
             onPointerDown={(event) => {
               if (useSceneStore.getState().tool.mode !== 'select') return
               event.stopPropagation()
-              select(element.id)
+              select(pickTarget(element.id, useSceneStore.getState().document.elements))
             }}
           />
         )
