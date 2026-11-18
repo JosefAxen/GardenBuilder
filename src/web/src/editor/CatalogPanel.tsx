@@ -83,7 +83,7 @@ function Selection({ element }: { element: SceneElement }) {
 function ArticleRow({ article, label }: { article: CatalogArticle; label: string }) {
   const tool = useSceneStore((s) => s.tool)
   const { setTool, select } = useSceneStore.getState()
-  const active = tool.mode !== 'select' && tool.articleId === article.id
+  const active = (tool.mode === 'place' || tool.mode === 'line') && tool.articleId === article.id
   const outOfStock = article.stockStatus === 'out-of-stock'
 
   const startPlacing = () => {

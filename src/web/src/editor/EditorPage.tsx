@@ -7,6 +7,7 @@ import { findArticle, useCatalogStore } from './catalogStore'
 import { SceneCanvas } from './SceneCanvas'
 import { addStressTest, useSceneStore } from './sceneStore'
 import { removeSelected, rotateSelected } from './selectionCommands'
+import { finishShaping, startDrawing, startShaping } from './shapeCommands'
 import { findCrowdedPlants } from './spacing'
 import { countMissingArticles } from './catalogChecks'
 import { DesignLoading, SaveConflict, SaveStatus } from './SaveStatus'
@@ -92,6 +93,8 @@ function StatusBar() {
 
 export function EditorPage() {
   const past = useSceneStore((s) => s.past)
+  const toolMode = useSceneStore((s) => s.tool.mode)
+  const shaping = toolMode === 'shape' || toolMode === 'draw'
   const future = useSceneStore((s) => s.future)
   const document = useSceneStore((s) => s.document)
   const { undo, redo, execute } = useSceneStore.getState()
@@ -122,6 +125,22 @@ export function EditorPage() {
       <header className="editor-header">
         <Link to="/">Drömträdgård</Link>
         <span className="spacer" />
+        {shaping ? (
+          <>
+            <span className="editor-hint">
+              {toolMode === 'draw'
+                ? 'Klicka ut hörnen. Avsluta genom att klicka på första punkten.'
+                : 'Dra i punkterna. Dra i de små punkterna för att böja en kant. Dubbelklicka för att ta bort en punkt.'}
+            </span>
+            <button onClick={startDrawing} disabled={toolMode === 'draw'}>Rita om</button>
+            <button onClick={finishShaping}>Klar</button>
+          </>
+        ) : (
+          <>
+            <button onClick={() => startShaping('plot')} disabled={!ready}>Forma tomt</button>
+            <button onClick={() => startShaping('building')} disabled={!ready}>Forma hus</button>
+          </>
+        )}
         <button onClick={addStress} disabled={!ready}>Lägg till 300 växter</button>
         <button onClick={clearNew} disabled={!ready}>Rensa nya växter</button>
         <button onClick={undo} disabled={!ready || past.length === 0} title="Snabbtangent: Ctrl+Z">Ångra</button>
