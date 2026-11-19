@@ -19,6 +19,8 @@ export type SceneCommand =
   | { type: 'keep'; id: string }
   /** Several commands that undo and redo as one step. */
   | { type: 'batch'; commands: SceneCommand[] }
+  /** The whole scene at once, for example a design proposal the customer tries. Undo brings back the scene before. */
+  | { type: 'replace-scene'; document: SceneDocument }
   /** Shape commands, for the plot and buildings only: move, add or remove one corner, or draw all corners anew. */
   | { type: 'move-point'; id: string; index: number; point: Point2 }
   /** Inserts a corner before index (index equal to the number of corners adds it last). */
@@ -83,6 +85,8 @@ export function applyCommand(document: SceneDocument, command: SceneCommand): Sc
       return updateElement(document, command.id, (e) => (e.status === 'existing-remove' ? { ...e, status: 'existing-keep' } : e))
     case 'batch':
       return command.commands.reduce(applyCommand, document)
+    case 'replace-scene':
+      return command.document
     case 'move-point':
       return reshape(document, command.id, (points) => {
         const old = points[command.index]

@@ -359,3 +359,37 @@
   border-radius: 2px;
   vertical-align: middle;
 }
+
+.proposal-panel label {
+  display: block;
+  margin: 6px 0;
+  font-size: 13px;
+}
+
+.proposal-panel select,
+.proposal-panel textarea {
+  display: block;
+  width: 100%;
+  margin-top: 2px;
+  font: inherit;
+}
+
+.proposal-card {
+  border: 1px solid #c9d6c0;
+  border-radius: 6px;
+  padding: 8px;
+  margin: 10px 0;
+}
+
+.proposal-card.tried {
+  border: 2px solid #3d8b3d;
+  background: #eef6e9;
+}
+
+.proposal-card h3 {
+  margin: 0 0 4px;
+}
+
+.proposal-price {
+  font-weight: 600;
+}
