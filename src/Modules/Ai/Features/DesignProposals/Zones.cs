@@ -246,7 +246,8 @@ internal static class Zones
             case BuildingElement building:
                 // No margin: a patio lies right against the facade.
                 return [Path(building.Points)];
-            case SurfaceElement surface when surface.Material != SurfaceMaterial.Grass:
+            // Today's lawn is free ground; turf the customer has just added (new) is kept like any other surface.
+            case SurfaceElement surface when surface.Material != SurfaceMaterial.Grass || surface.Status == ElementStatus.New:
                 return Clipper.InflatePaths([Path(surface.Points)], SurfaceMargin, JoinType.Miter, EndType.Polygon, 2, Precision);
             case LineElement line:
                 return Clipper.InflatePaths([Path(line.Points)], SurfaceMargin + 0.25, JoinType.Round, EndType.Round, 2, Precision);

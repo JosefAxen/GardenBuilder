@@ -17,7 +17,8 @@ export type Proposal = {
 export type ProposalRound = {
   id: string
   status: 'queued' | 'running' | 'succeeded' | 'failed'
-  result: { proposals: Proposal[] } | null
+  /** revision: the saved garden the proposals start from. */
+  result: { proposals: Proposal[]; revision?: number } | null
   failure: string | null
 }
 

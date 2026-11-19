@@ -60,7 +60,7 @@ internal static class DesignProposalEndpoints
             return TypedResults.BadRequest(new ProblemsResponse("invalid-wishes", problems));
         }
 
-        var input = JsonSerializer.SerializeToElement(new DesignProposalInput(design.DesignId, wishes), DesignProposalHandler.Json);
+        var input = JsonSerializer.SerializeToElement(new DesignProposalInput(design.DesignId, wishes, design.Revision), DesignProposalHandler.Json);
         try
         {
             var jobId = await jobs.EnqueueAsync(AiJobKinds.DesignProposal, gardenId, design.CustomerId, input, cancellationToken);

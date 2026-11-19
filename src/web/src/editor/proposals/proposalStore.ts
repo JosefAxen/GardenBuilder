@@ -26,9 +26,12 @@ type ProposalState = {
   message: string | null
   /** What the server said was wrong with the wishes. */
   problems: string[]
+  /** The garden has been saved again since the round started: trying a proposal would undo that work. */
+  stale: boolean
 }
 
 export const FALLBACK = 'Vi kunde inte ta fram förslag just nu. Designa vidare själv i katalogen.'
+export const STALE = 'Trädgården har ändrats sedan förslagen togs fram. Be om nya förslag.'
 const POLL_MS = 2_000
 /** Longer than a round of six model calls can take. */
 const GIVE_UP_MS = 8 * 60_000
@@ -43,6 +46,7 @@ export const useProposalStore = create<ProposalState>(() => ({
   tried: null,
   message: null,
   problems: [],
+  stale: false,
 }))
 
 const set = useProposalStore.setState
@@ -51,7 +55,14 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 function settle(round: ProposalRound): void {
   const proposals = round.status === 'succeeded' ? (round.result?.proposals ?? []) : []
-  set(proposals.length > 0 ? { state: 'done', proposals, message: null } : { state: 'failed', proposals: [], message: FALLBACK })
+  if (proposals.length === 0) {
+    set({ state: 'failed', proposals: [], message: FALLBACK, stale: false })
+    return
+  }
+  // A proposal is the whole garden as it was when the round started; after later saves it would wipe that work.
+  const revision = round.result?.revision
+  const stale = typeof revision === 'number' && revision !== useSaveStore.getState().revision
+  set({ state: 'done', proposals, stale, message: stale ? STALE : null })
 }
 
 /** Asks for the round's status every two seconds until it is done, the garden changes, or it takes too long. */
@@ -77,7 +88,7 @@ async function follow(gardenId: string, jobId: string): Promise<void> {
 
 /** Shows the garden's latest round again (or picks up one still running) when the panel opens. */
 export async function loadProposals(gardenId: string): Promise<void> {
-  set({ gardenId, state: 'idle', proposals: [], jobId: null, tried: null, message: null, problems: [] })
+  set({ gardenId, state: 'idle', proposals: [], jobId: null, tried: null, message: null, problems: [], stale: false })
   try {
     const latest = await fetchLatestProposals(gardenId)
     if (!latest || get().gardenId !== gardenId) return
@@ -98,7 +109,7 @@ export async function startProposals(): Promise<void> {
   const { gardenId, wishes } = get()
   const { designId } = useSaveStore.getState()
   if (!gardenId || !designId) return
-  set({ state: 'running', proposals: [], tried: null, message: null, problems: [] })
+  set({ state: 'running', proposals: [], tried: null, message: null, problems: [], stale: false })
   try {
     const jobId = await postStart(gardenId, designId, wishes)
     await follow(gardenId, jobId)
@@ -112,6 +123,10 @@ export async function startProposals(): Promise<void> {
 export function tryProposal(index: number): void {
   const proposal = get().proposals[index]
   if (!proposal) return
+  if (get().stale) {
+    set({ message: STALE })
+    return
+  }
   useSceneStore.getState().execute({ type: 'replace-scene', document: proposal.scene })
   set({ tried: index, message: null })
 }
@@ -122,7 +137,7 @@ export async function chooseProposal(index: number): Promise<void> {
   if (!gardenId || !jobId) return
   // What the scene shows decides, not what was tried last: "Ångra" may have taken the proposal away again.
   const proposal = get().proposals[index]
-  if (!proposal) return
+  if (!proposal || get().stale) return
   if (useSceneStore.getState().document !== proposal.scene) tryProposal(index)
 
   const deadline = Date.now() + SAVE_WAIT_MS

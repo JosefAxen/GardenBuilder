@@ -18,5 +18,5 @@ internal sealed class DesignWorkingCopies(DesignDbContext db) : IDesignWorkingCo
 
     private static DesignScene? ToScene(Domain.Design? design) => design is null
         ? null
-        : new DesignScene(design.Id, design.GardenId, design.CustomerId, SceneJson.Deserialize(design.WorkingCopy));
+        : new DesignScene(design.Id, design.GardenId, design.CustomerId, SceneJson.Deserialize(design.WorkingCopy), design.Revision);
 }

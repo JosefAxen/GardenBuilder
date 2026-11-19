@@ -1,4 +1,5 @@
 using System.Globalization;
+using Clipper2Lib;
 using GardenBuilder.Contracts.Catalog;
 using GardenBuilder.Contracts.Pricing;
 using GardenBuilder.Contracts.Scenes;
@@ -41,12 +42,19 @@ internal static class ProposalCheck
         var errors = new List<BlockError>(layout.Errors);
         int BlockOf(Guid id) => layout.MadeBy.TryGetValue(id, out var block) ? block : -1;
 
-        foreach (var element in layout.Scene.Elements.Where(e => e.Status == ElementStatus.New))
+        // Only what the proposal made is checked: things the customer placed earlier stay, like everything else they kept.
+        var kept = KeptFootprints(current);
+        foreach (var element in layout.Scene.Elements.Where(e => layout.MadeBy.ContainsKey(e.Id)))
         {
             if (ArticleOf(element) is not { } articleId || !selection.TryGetValue(articleId, out var article))
             {
                 errors.Add(new BlockError(BlockOf(element.Id), "Artikeln finns inte i urvalet."));
                 continue;
+            }
+
+            if (element is SurfaceElement surface && Overlap(surface.Points, kept) > OverlapSlack)
+            {
+                errors.Add(new BlockError(BlockOf(element.Id), $"{article.Name} täcker något som ska stå kvar."));
             }
 
             if (!ArticleSelection.IsPlant(article))
@@ -99,6 +107,40 @@ internal static class ProposalCheck
             .ToList();
         return left.Count * 2 >= blocks.Count && left.Count > 0 ? left : null;
     }
+
+    private const double OverlapSlack = 0.05;
+    private const int Precision = 3;
+
+    /// <summary>The ground that stays covered: the house and every kept thing except today's lawn.</summary>
+    private static PathsD KeptFootprints(SceneDocument current)
+    {
+        var shapes = new PathsD();
+        foreach (var element in current.Elements.Where(e => e.Status != ElementStatus.ExistingRemove))
+        {
+            switch (element)
+            {
+                case BuildingElement building:
+                    shapes.Add(Zones.Path(building.Points));
+                    break;
+                case SurfaceElement surface when surface.Material != SurfaceMaterial.Grass || surface.Status == ElementStatus.New:
+                    shapes.Add(Zones.Path(surface.Points));
+                    break;
+                case LineElement line:
+                    shapes.AddRange(Clipper.InflatePaths([Zones.Path(line.Points)], 0.25, JoinType.Round, EndType.Round, 2, Precision));
+                    break;
+                case PointElement point:
+                    var radius = (point.Width ?? Zones.DefaultPlantWidth) / 2;
+                    shapes.Add(new PathD(Enumerable.Range(0, 16).Select(i => new PointD(
+                        point.Position.X + (radius * Math.Cos(i * Math.PI / 8)), point.Position.Y + (radius * Math.Sin(i * Math.PI / 8))))));
+                    break;
+            }
+        }
+
+        return shapes.Count == 0 ? shapes : Clipper.Union(shapes, FillRule.NonZero);
+    }
+
+    private static double Overlap(IReadOnlyList<Point2> points, PathsD kept) =>
+        kept.Count == 0 ? 0 : Zones.Area(Clipper.Intersect([Zones.Path(points)], kept, FillRule.NonZero, Precision));
 
     /// <summary>Everything the customer kept is still there, unchanged. Today's lawn may be cut, so lawns are not compared.</summary>
     private static bool KeptUntouched(SceneDocument current, SceneDocument proposal)

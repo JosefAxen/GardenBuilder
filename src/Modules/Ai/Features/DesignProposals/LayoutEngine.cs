@@ -257,10 +257,13 @@ internal static class LayoutEngine
             Point2[] square = [new(centre.X - (side / 2), centre.Y - (side / 2)), new(centre.X + (side / 2), centre.Y - (side / 2)),
                 new(centre.X + (side / 2), centre.Y + (side / 2)), new(centre.X - (side / 2), centre.Y + (side / 2))];
             var shape = Clipper.Intersect(usable, [Zones.Path(square)], FillRule.EvenOdd, Precision);
-            var ring = shape.Where(r => Clipper.Area(r) > 0).MaxBy(r => Clipper.Area(r));
-            if (ring is not null && Clipper.Area(ring) >= area)
+            if (DesignProposals.Zones.Area(shape) >= area)
             {
-                AddSurface(work, Zones.ToPoints(ring), article, SurfaceMaterial.Gravel);
+                foreach (var piece in HoleFree(shape))
+                {
+                    AddSurface(work, piece, article, SurfaceMaterial.Gravel);
+                }
+
                 return null;
             }
         }
@@ -294,15 +297,13 @@ internal static class LayoutEngine
         var half = length / 2;
         Point2[] rect = [new(mid.X - (ux * half), mid.Y - (uy * half)), new(mid.X + (ux * half), mid.Y + (uy * half)),
             new(mid.X + (ux * half) + (nx * depth), mid.Y + (uy * half) + (ny * depth)), new(mid.X - (ux * half) + (nx * depth), mid.Y - (uy * half) + (ny * depth))];
-        var shape = Clipper.Intersect(usable, [Zones.Path(rect)], FillRule.EvenOdd, Precision);
-        var bed = shape.Where(r => Clipper.Area(r) > 0).MaxBy(r => Clipper.Area(r));
-        if (bed is null || Clipper.Area(bed) < 0.6 * length * depth)
+        var region = Clipper.Intersect(usable, [Zones.Path(rect)], FillRule.EvenOdd, Precision);
+        if (DesignProposals.Zones.Area(region) < 0.6 * length * depth)
         {
             return $"Rabatten på {Number(length)} m får inte plats {zone.Name}.";
         }
 
         // Plants in groups of three per kind, each at least its own half width from everything placed before it.
-        var region = new PathsD { bed };
         var count = 0;
         foreach (var point in Grid(region).OrderBy(p => p.Y).ThenBy(p => p.X))
         {
@@ -323,9 +324,9 @@ internal static class LayoutEngine
             return $"Rabatten {zone.Name} blev för liten för växterna.";
         }
 
-        var bedPoints = Zones.ToPoints(bed);
-        work.Added.Insert(work.Added.Count - count, NewSurface(bedPoints, soil, SurfaceMaterial.Bed));
-        work.Used.Add(bedPoints);
+        var pieces = HoleFree(region);
+        work.Added.InsertRange(work.Added.Count - count, pieces.Select(p => (SceneElement)NewSurface(p, soil, SurfaceMaterial.Bed)));
+        work.Used.AddRange(pieces);
         work.Free = Clipper.Difference(work.Free, region, FillRule.NonZero, Precision);
         return null;
     }
@@ -418,13 +419,17 @@ internal static class LayoutEngine
             .Where(s => s.Material == SurfaceMaterial.Grass && s.Status != ElementStatus.ExistingRemove)
             .Select(s => Zones.Path(s.Points));
         var bare = Clipper.Difference(region, new PathsD(grass), FillRule.NonZero, Precision);
-        var ring = bare.Where(r => Clipper.Area(r) > 0).MaxBy(r => Clipper.Area(r));
-        if (ring is null || Clipper.Area(ring) < 1)
+        var pieces = HoleFree(bare).Where(p => Clipper.Area(Zones.Path(p)) >= 1).ToList();
+        if (pieces.Count == 0)
         {
             return $"Det finns ingen ny yta för gräs {zone?.Name ?? "på tomten"}.";
         }
 
-        AddSurface(work, Zones.ToPoints(ring), article, SurfaceMaterial.Grass);
+        foreach (var piece in pieces)
+        {
+            AddSurface(work, piece, article, SurfaceMaterial.Grass);
+        }
+
         return null;
     }
 
@@ -443,6 +448,30 @@ internal static class LayoutEngine
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// A shape as outlines without holes. A scene surface has one outline, so a hole (the house, a kept tree, a patio
+    /// already placed) would otherwise be covered. Each hole is opened by cutting a 2 mm slit through it, top to bottom.
+    /// </summary>
+    internal static List<Point2[]> HoleFree(PathsD shape)
+    {
+        var current = Clipper.Union(shape, FillRule.EvenOdd);
+        for (var guard = 0; guard < 100; guard++)
+        {
+            var hole = current.FirstOrDefault(r => Clipper.Area(r) < 0);
+            if (hole is null)
+            {
+                break;
+            }
+
+            var bounds = Clipper.GetBounds(current);
+            var x = DesignProposals.Zones.Centroid([hole]).X;
+            PathD slit = Zones.Path([new(x - 0.001, bounds.top - 1), new(x + 0.001, bounds.top - 1), new(x + 0.001, bounds.bottom + 1), new(x - 0.001, bounds.bottom + 1)]);
+            current = Clipper.Difference(current, [slit], FillRule.NonZero, Precision);
+        }
+
+        return [.. current.Where(r => Clipper.Area(r) >= LawnSplit.MinPiece).Select(Zones.ToPoints)];
     }
 
     /// <summary>Places a plant when it is at least half its width from everything; it then keeps that circle.</summary>

@@ -85,6 +85,19 @@ describe('the proposal panel', () => {
     expect(useSceneStore.getState().document).toBe(proposalScene)
   })
 
+  it('a round made from an older garden is marked out of date and cannot be tried', async () => {
+    useSaveStore.setState({ revision: 3 })
+    const old = { ...round('succeeded'), result: { ...round('succeeded').result!, revision: 1 } }
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(old), { status: 200 })))
+
+    await loadProposals('g1')
+    tryProposal(0)
+
+    expect(useProposalStore.getState().stale).toBe(true)
+    expect(useSceneStore.getState().document).toBe(today)
+    expect(useProposalStore.getState().message).toBe('Trädgården har ändrats sedan förslagen togs fram. Be om nya förslag.')
+  })
+
   it('a finished round is shown again on load', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(round('succeeded')), { status: 200 })))
 

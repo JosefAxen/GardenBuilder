@@ -124,6 +124,36 @@ public sealed class ProposalCheckTests
     }
 
     [Fact]
+    public void A_tender_plant_the_customer_placed_does_not_fail_the_proposal()
+    {
+        var tender = Plant("Kamelia", 2, "sun");
+        var ownPlant = new PointElement(Ids.New(), ElementStatus.New, MeasurementSource.Estimated, tender.Id, new Point2(3, 8), 0);
+        var current = Current with { Elements = [.. Current.Elements, ownPlant] };
+        Block[] blocks = [Shrubs("middle", Hardy)];
+        var layout = LayoutEngine.Build(current, Zones.Divide(current), blocks, Selection(Hardy));
+
+        var errors = ProposalCheck.Errors(current, layout, blocks, Selection(Hardy), Zones.Divide(current), Wishes with { Zone = 5 }, [], Cheap);
+
+        Assert.Empty(errors);
+    }
+
+    [Fact]
+    public void A_new_surface_over_something_that_stays_is_an_error()
+    {
+        var layout = LayoutEngine.Build(Current, Zones_, [Shrubs("middle", Hardy)], Selection(Hardy));
+        var overHouse = new SurfaceElement(Ids.New(), ElementStatus.New, MeasurementSource.Estimated, Slabs.Id, Rect(6, 13, 9, 16), SurfaceMaterial.Paving);
+        var bad = layout with
+        {
+            Scene = layout.Scene with { Elements = [.. layout.Scene.Elements, overHouse] },
+            MadeBy = new Dictionary<Guid, int>(layout.MadeBy) { [overHouse.Id] = 0 },
+        };
+
+        var errors = ProposalCheck.Errors(Current, bad, [Shrubs("middle", Hardy)], Selection(Hardy, Slabs), Zones_, Wishes, [], Cheap);
+
+        Assert.Contains(errors, e => e.Block == 0 && e.Message == "Betongplatta täcker något som ska stå kvar.");
+    }
+
+    [Fact]
     public void Layout_errors_are_included()
     {
         var errors = Check([Shrubs("on-the-roof", Hardy)], Selection(Hardy));

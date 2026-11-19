@@ -116,6 +116,8 @@ public sealed class DesignProposalTests(ApiFactory factory) : IClassFixture<ApiF
         Assert.Equal(2, _model.Requests.Count);
         var design = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/designs/{designId}", UriKind.Relative), Ct);
         Assert.Equal(1, design.GetProperty("revision").GetInt32());
+        // The round remembers which saved garden it started from, so the editor can tell when it is out of date.
+        Assert.Equal(1, job.GetProperty("result").GetProperty("revision").GetInt32());
     }
 
     [Fact]
@@ -152,6 +154,21 @@ public sealed class DesignProposalTests(ApiFactory factory) : IClassFixture<ApiF
         var proposals = ProposalsOf(await ReadAsync(client, gardenId, jobId));
         Assert.Single(proposals);
         Assert.Equal(4, _model.Requests.Count);
+    }
+
+    [Fact]
+    public async Task A_provider_error_on_the_second_proposal_keeps_the_first()
+    {
+        var (client, gardenId, designId) = await CustomerAsync(_app);
+        _model.Answers.Enqueue(Answer(_spiraea));
+        _model.Answers.Enqueue(FakeModel.Error);
+
+        var jobId = await StartOkAsync(client, gardenId, designId);
+        await RunAsync();
+
+        var job = await ReadAsync(client, gardenId, jobId);
+        Assert.Equal("succeeded", job.GetProperty("status").GetString());
+        Assert.Single(ProposalsOf(job));
     }
 
     [Fact]
@@ -294,6 +311,9 @@ public sealed class DesignProposalTests(ApiFactory factory) : IClassFixture<ApiF
     {
         public string Provider => "fake";
 
+        /// <summary>Queue this instead of an answer to make that call fail as when Claude does not answer.</summary>
+        public const string Error = "!error";
+
         public ConcurrentQueue<string> Answers { get; } = new();
 
         public ConcurrentQueue<TextRequest> Requests { get; } = new();
@@ -304,7 +324,9 @@ public sealed class DesignProposalTests(ApiFactory factory) : IClassFixture<ApiF
         {
             Requests.Enqueue(request);
             var text = Answers.TryDequeue(out var answer) ? answer : "{}";
-            return Task.FromResult(new TextResponse(text, request.Model, 3000, 800, "end_turn"));
+            return text == Error
+                ? throw new AiProviderException("Claude svarade inte.", retryable: false)
+                : Task.FromResult(new TextResponse(text, request.Model, 3000, 800, "end_turn"));
         }
     }
 }

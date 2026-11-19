@@ -10,14 +10,15 @@ using GardenBuilder.Modules.Ai.Providers;
 
 namespace GardenBuilder.Modules.Ai.Features.DesignProposals;
 
-/// <summary>The job's input: the design to start from and what the customer asked for.</summary>
-internal sealed record DesignProposalInput(Guid DesignId, ProposalWishes Wishes);
+/// <summary>The job's input: the design to start from, the revision it had, and what the customer asked for.</summary>
+internal sealed record DesignProposalInput(Guid DesignId, ProposalWishes Wishes, int Revision = 0);
 
 /// <summary>One finished proposal as stored in the job's result.</summary>
 internal sealed record ProposalResult(
     string Name, string Motivation, JsonElement Scene, decimal Low, decimal High, bool OverBudget, IReadOnlyList<string> Dropped);
 
-internal sealed record DesignProposalResult(IReadOnlyList<ProposalResult> Proposals);
+/// <param name="Revision">The design's revision the proposals start from; the editor marks the round out of date when it has moved on.</param>
+internal sealed record DesignProposalResult(IReadOnlyList<ProposalResult> Proposals, int Revision);
 
 /// <summary>
 /// Makes two whole-garden proposals (spec sections 4–5): "Nära din stil" and "Lite djärvare". For each, Claude chooses
@@ -61,16 +62,16 @@ internal sealed class DesignProposalHandler(
                     proposals.Add(proposal);
                 }
             }
-            catch (AiJobStoppedException) when (proposals.Count > 0)
+            catch (Exception e) when (proposals.Count > 0 && e is AiJobStoppedException or AiProviderException)
             {
-                // The daily budget or the switch stopped the second proposal; the first one is still worth showing.
+                // The second proposal could not be made (budget, switch or Claude); the first one is still worth showing.
                 break;
             }
         }
 
         return proposals.Count == 0
             ? throw new AiProviderException(NoProposals, retryable: false)
-            : JsonSerializer.SerializeToElement(new DesignProposalResult(proposals), Json);
+            : JsonSerializer.SerializeToElement(new DesignProposalResult(proposals, input.Revision), Json);
     }
 
     private async Task<ProposalResult?> ProposeAsync(

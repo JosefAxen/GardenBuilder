@@ -18,7 +18,7 @@ const kronor = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 })
 export function ProposalPanel() {
   const gardenId = useSaveStore((s) => s.gardenId)
   const saveStatus = useSaveStore((s) => s.status)
-  const { wishes, state, proposals, message, problems } = useProposalStore()
+  const { wishes, state, proposals, message, problems, stale } = useProposalStore()
   // The proposal on show is the one whose scene is the scene now; after "Ångra" none is.
   const document = useSceneStore((s) => s.document)
   const tried = proposals.findIndex((p) => p.scene === document)
@@ -100,10 +100,12 @@ export function ProposalPanel() {
             cirka {kronor.format(proposal.low)}–{kronor.format(proposal.high)} kr
             {proposal.overBudget && <span className="warning"> · Över din budget</span>}
           </p>
-          <div className="editor-row">
-            <button onClick={() => tryProposal(index)}>Prova</button>
-            <button onClick={() => void chooseProposal(index)}>Välj det här</button>
-          </div>
+          {!stale && (
+            <div className="editor-row">
+              <button onClick={() => tryProposal(index)}>Prova</button>
+              <button onClick={() => void chooseProposal(index)}>Välj det här</button>
+            </div>
+          )}
         </section>
       ))}
       {tried >= 0 && <p className="editor-hint">Ångra tar tillbaka trädgården som den var.</p>}

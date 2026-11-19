@@ -168,6 +168,43 @@ public sealed class LayoutEngineTests
         Assert.All(turf.Points, p => Assert.True(p.Y >= 10.99, $"{p} is on today's lawn"));
     }
 
+    /// <summary>Clipper's area of overlap between two outlines, in m².</summary>
+    private static double Overlap(IReadOnlyList<Point2> a, IReadOnlyList<Point2> b) =>
+        Math.Abs(Clipper2Lib.Clipper.Area(Clipper2Lib.Clipper.Intersect(
+            [Zones.Path(a)], [Zones.Path(b)], Clipper2Lib.FillRule.NonZero, 3)));
+
+    [Fact]
+    public void Lawn_on_the_rest_never_covers_the_house_the_birch_or_the_patio()
+    {
+        var bare = new SceneDocument(SceneDocument.CurrentFormatVersion, [Plot, House, Birch]);
+        var layout = LayoutEngine.Build(bare, Zones.Divide(bare),
+            [B("patio", "house-south", area: 20, articles: Slabs), B("lawn", "rest", articles: Turf)], Articles);
+
+        Assert.Empty(layout.Errors);
+        var patio = New(layout).OfType<SurfaceElement>().Single(s => s.Material == SurfaceMaterial.Paving);
+        var turf = New(layout).OfType<SurfaceElement>().Where(s => s.Material == SurfaceMaterial.Grass).ToList();
+        Assert.NotEmpty(turf);
+        Assert.All(turf, t =>
+        {
+            Assert.True(Overlap(t.Points, House.Points) < 0.05, "turf covers the house");
+            Assert.True(Overlap(t.Points, patio.Points) < 0.05, "turf covers the patio");
+            Assert.False(new Polygon(t.Points).Contains(Birch.Position), "turf covers the birch");
+        });
+        // The plot minus the house, the patio and the birch's circle: about 400 − 60 − 20 − 28.
+        Assert.InRange(turf.Sum(t => Area(t)), 285, 295);
+    }
+
+    [Fact]
+    public void Gravel_around_the_birch_leaves_it_out()
+    {
+        var layout = Build(B("gravel", "boundary-east", area: 25, articles: Gravel));
+
+        Assert.Empty(layout.Errors);
+        var gravel = New(layout).OfType<SurfaceElement>().ToList();
+        Assert.All(gravel, g => Assert.False(new Polygon(g.Points).Contains(Birch.Position), "gravel covers the birch"));
+        Assert.InRange(gravel.Sum(g => Area(g)), 24.5, 40);
+    }
+
     [Fact]
     public void Furniture_goes_on_the_patio_and_needs_one()
     {

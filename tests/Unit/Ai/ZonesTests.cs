@@ -133,6 +133,14 @@ public sealed class ZonesTests
     }
 
     [Fact]
+    public void A_new_lawn_the_customer_placed_is_not_free_ground()
+    {
+        var turf = new SurfaceElement(Ids.New(), ElementStatus.New, MeasurementSource.Estimated, Ids.New(), Rect(8, 2, 12, 6), SurfaceMaterial.Grass);
+
+        Assert.Null(ZoneAt(Zones.Divide(Scene(Plot(), House(), turf)), 10, 4));
+    }
+
+    [Fact]
     public void A_kept_patio_is_not_free_ground()
     {
         var patio = new SurfaceElement(Ids.New(), ElementStatus.ExistingKeep, MeasurementSource.Estimated, null, Rect(8, 8, 12, 11), SurfaceMaterial.Paving);
