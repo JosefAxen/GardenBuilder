@@ -8,5 +8,7 @@
     <ProjectReference Include="..\Modules\Ai\GardenBuilder.Modules.Ai.csproj" />
     <ProjectReference Include="..\Modules\Design\GardenBuilder.Modules.Design.csproj" />
     <ProjectReference Include="..\Modules\Garden\GardenBuilder.Modules.Garden.csproj" />
+    <ProjectReference Include="..\Modules\Catalog\GardenBuilder.Modules.Catalog.csproj" />
+    <ProjectReference Include="..\Modules\Pricing\GardenBuilder.Modules.Pricing.csproj" />
   </ItemGroup>
 </Project>
