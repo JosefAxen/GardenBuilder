@@ -24,3 +24,21 @@ two outside the plot and a shed (not supported yet).
 To rerun before changing `PhotoPrompt` or the model: put the photos in `evals/photos/`, upload them in the editor's
 "Foton" panel, show where each was taken and compare the proposals with the photos. Raise `PhotoPrompt.Version` with
 every change.
+
+## Design proposal trial (2026-11-19)
+
+One round in the app on a 24 × 18 m test garden with the example catalog (style Naturlig, budget 50 000–150 000 kr,
+care Medel, zone III), Sonnet 5.5:
+
+- Six calls (both proposals used all three attempts), 27 000 input and 14 000 output tokens, 2.09 kr, about 97 s of model
+  time and 2.5 minutes in all.
+- "Vild äng och trädäck" survived: a deck against the south facade with a bench and a pot, three perennial beds, a
+  gravel path, a hedge, new lawn and a tree; 71 new elements, 88 600–140 900 kr. The fruit trees were dropped (no room).
+- The bolder proposal still had errors after its retries and was left out.
+
+What to improve before launch: the model often asks for more than fits. Telling it each zone's free area and the
+largest patio per facade in the prompt should cut retries. Keep the failing errors of dropped proposals in the result
+so they can be studied.
+
+To rerun before changing `ProposalPrompt` or the model: shape a test garden, open "Förslag", run a round with fixed
+wishes and compare the cards and the 3D view. Raise `ProposalPrompt.Version` with every change.

@@ -270,6 +270,11 @@ Språkmodeller är svaga på exakta koordinater. Därför bestämmer modellen va
 4. En layoutmotor i C# räknar ut exakta positioner med rätt avstånd.
 5. Valideringen körs. Vid fel får modellen felen tillbaka och högst två nya försök.
 
+Förslagen gör om hela trädgården. Gräsmattan räknas som fri mark (det bortskurna gräset prissätts som borttagning);
+allt annat befintligt står kvar om inte kunden har tagit bort det. Se
+[designen för designförslagen](superpowers/specs/2026-11-18-design-proposals-design.md). Modell: Claude Sonnet 5.5.
+Ett första prov 2026-11-19 gav ett av två förslag efter alla omförsök, för 2,09 kr och cirka 2,5 minuter.
+
 **Gemensamma regler**
 
 - Varje leverantör ligger bakom ett eget gränssnitt: bildtolkning, designgenerering och bildrendering.

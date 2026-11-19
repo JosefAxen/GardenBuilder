@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useSaveStore } from '../saveStore'
+import { useSceneStore } from '../sceneStore'
 import { chooseProposal, loadProposals, setWishes, startProposals, tryProposal, useProposalStore } from './proposalStore'
 
 const STYLES: [string, string][] = [['natural', 'Naturlig'], ['modern', 'Modern'], ['classic', 'Klassisk'], ['rural', 'Lantlig']]
@@ -17,7 +18,10 @@ const kronor = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 })
 export function ProposalPanel() {
   const gardenId = useSaveStore((s) => s.gardenId)
   const saveStatus = useSaveStore((s) => s.status)
-  const { wishes, state, proposals, tried, message, problems } = useProposalStore()
+  const { wishes, state, proposals, message, problems } = useProposalStore()
+  // The proposal on show is the one whose scene is the scene now; after "Ångra" none is.
+  const document = useSceneStore((s) => s.document)
+  const tried = proposals.findIndex((p) => p.scene === document)
 
   useEffect(() => {
     if (gardenId) void loadProposals(gardenId)
@@ -102,7 +106,7 @@ export function ProposalPanel() {
           </div>
         </section>
       ))}
-      {tried !== null && <p className="editor-hint">Ångra tar tillbaka trädgården som den var.</p>}
+      {tried >= 0 && <p className="editor-hint">Ångra tar tillbaka trädgården som den var.</p>}
     </aside>
   )
 }

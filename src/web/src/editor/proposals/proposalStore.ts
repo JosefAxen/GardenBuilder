@@ -120,7 +120,10 @@ export function tryProposal(index: number): void {
 export async function chooseProposal(index: number): Promise<void> {
   const { gardenId, jobId } = get()
   if (!gardenId || !jobId) return
-  if (get().tried !== index) tryProposal(index)
+  // What the scene shows decides, not what was tried last: "Ångra" may have taken the proposal away again.
+  const proposal = get().proposals[index]
+  if (!proposal) return
+  if (useSceneStore.getState().document !== proposal.scene) tryProposal(index)
 
   const deadline = Date.now() + SAVE_WAIT_MS
   while (useSaveStore.getState().status !== 'saved' && Date.now() < deadline) await wait(500)

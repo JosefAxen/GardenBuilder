@@ -71,6 +71,20 @@ describe('the proposal panel', () => {
     expect(useProposalStore.getState().message).toBe('Förslaget är valt. Designa vidare som du vill.')
   })
 
+  it('choosing after Prova and Ångra shows the proposal again before saving it', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 204 })))
+    useProposalStore.setState({ proposals: round('succeeded').result!.proposals, jobId: 'job-1' })
+    tryProposal(0)
+    useSceneStore.getState().undo()
+
+    const choosing = chooseProposal(0)
+    await vi.advanceTimersByTimeAsync(600)
+    await choosing
+
+    expect(useSceneStore.getState().document).toBe(proposalScene)
+  })
+
   it('a finished round is shown again on load', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(round('succeeded')), { status: 200 })))
 
