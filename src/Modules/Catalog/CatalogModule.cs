@@ -4,6 +4,7 @@ using GardenBuilder.Contracts.Database;
 using GardenBuilder.Modules.Catalog.Features.ImportArticles;
 using GardenBuilder.Modules.Catalog.Features.ListArticles;
 using GardenBuilder.Modules.Catalog.Features.PriceFacts;
+using GardenBuilder.Modules.Catalog.Features.Selection;
 using GardenBuilder.Modules.Catalog.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -33,6 +34,7 @@ public static class CatalogModule
         builder.Services.AddScoped<IModuleMigrator, CatalogMigrator>();
         builder.Services.AddScoped<ICatalogImport, CatalogImport>();
         builder.Services.AddScoped<ICatalogPrices, CatalogPrices>();
+        builder.Services.AddScoped<ICatalogSelection, CatalogSelection>();
 
         return builder;
     }

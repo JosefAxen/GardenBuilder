@@ -4,6 +4,7 @@ using GardenBuilder.Modules.Ai.Domain;
 using GardenBuilder.Modules.Ai.Features.Costs;
 using GardenBuilder.Contracts.Ai;
 using GardenBuilder.Modules.Ai.Features.Admin;
+using GardenBuilder.Modules.Ai.Features.DesignProposals;
 using GardenBuilder.Modules.Ai.Features.PhotoInterpretation;
 using GardenBuilder.Modules.Ai.Features.Queue;
 using GardenBuilder.Modules.Ai.Features.Run;
@@ -51,7 +52,7 @@ public static class AiModule
     public static IEndpointRouteBuilder MapAiEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGroup("/api/ai").WithTags("Ai").MapAiAdmin();
-        app.MapGroup("/api/gardens").WithTags("Ai").MapPhotoInterpretation();
+        app.MapGroup("/api/gardens").WithTags("Ai").MapPhotoInterpretation().MapDesignProposals();
 
         return app;
     }

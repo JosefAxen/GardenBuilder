@@ -1,5 +1,6 @@
 using GardenBuilder.Contracts;
 using GardenBuilder.Contracts.Database;
+using GardenBuilder.Contracts.Pricing;
 using GardenBuilder.Modules.Pricing.Features.EstimatePrice;
 using GardenBuilder.Modules.Pricing.Infrastructure;
 using Microsoft.AspNetCore.Builder;
@@ -29,6 +30,7 @@ public static class PricingModule
         builder.EnrichNpgsqlDbContext<PricingDbContext>();
         builder.Services.AddScoped<IModuleMigrator, PricingMigrator>();
         builder.Services.AddScoped<PriceSettingsStore>();
+        builder.Services.AddScoped<IPriceEstimates, PriceEstimates>();
 
         return builder;
     }

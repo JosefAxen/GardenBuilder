@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { CatalogPanel } from './CatalogPanel'
 import { PhotoPanel } from './photos/PhotoPanel'
+import { ProposalPanel } from './proposals/ProposalPanel'
 import { PricePanel } from './PricePanel'
 import { schedulePrice } from './priceStore'
 import { useCatalogStore } from './catalogStore'
@@ -100,7 +101,7 @@ export function EditorPage() {
   const past = useSceneStore((s) => s.past)
   const toolMode = useSceneStore((s) => s.tool.mode)
   const shaping = toolMode === 'shape' || toolMode === 'draw'
-  const [panel, setPanel] = useState<'catalog' | 'photos'>('catalog')
+  const [panel, setPanel] = useState<'catalog' | 'photos' | 'proposals'>('catalog')
   const future = useSceneStore((s) => s.future)
   const document = useSceneStore((s) => s.document)
   const { undo, redo, execute } = useSceneStore.getState()
@@ -143,9 +144,9 @@ export function EditorPage() {
           </>
         ) : (
           <>
-            <button onClick={() => setPanel(panel === 'photos' ? 'catalog' : 'photos')} disabled={!ready}>
-              {panel === 'photos' ? 'Katalog' : 'Foton'}
-            </button>
+            <button onClick={() => setPanel('catalog')} disabled={!ready || panel === 'catalog'}>Katalog</button>
+            <button onClick={() => setPanel('photos')} disabled={!ready || panel === 'photos'}>Foton</button>
+            <button onClick={() => setPanel('proposals')} disabled={!ready || panel === 'proposals'}>Förslag</button>
             <button onClick={() => startShaping('plot')} disabled={!ready}>Forma tomt</button>
             <button onClick={() => startShaping('building')} disabled={!ready}>Forma hus</button>
           </>
@@ -155,7 +156,7 @@ export function EditorPage() {
         <button onClick={undo} disabled={!ready || past.length === 0} title="Snabbtangent: Ctrl+Z">Ångra</button>
         <button onClick={redo} disabled={!ready || future.length === 0} title="Snabbtangent: Ctrl+Y">Gör om</button>
       </header>
-      {panel === 'photos' ? <PhotoPanel /> : <CatalogPanel />}
+      {panel === 'photos' ? <PhotoPanel /> : panel === 'proposals' ? <ProposalPanel /> : <CatalogPanel />}
       <main className="editor-canvas">
         <SceneCanvas />
         <PricePanel />

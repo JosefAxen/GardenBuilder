@@ -189,7 +189,7 @@ public sealed class AiJobRunnerTests(ApiFactory factory) : IClassFixture<ApiFact
     [Fact]
     public async Task A_step_that_is_off_fails_its_waiting_jobs()
     {
-        var step = await EnqueueAsync(AiJobKinds.DesignProposal, Ids.New());
+        var step = await EnqueueAsync(AiJobKinds.DreamImage, Ids.New());
         var test = await EnqueueAsync(AiJobKinds.ConnectionTest);
         await SaveSettingsAsync(AiSettings.Defaults with
         {
@@ -220,15 +220,15 @@ public sealed class AiJobRunnerTests(ApiFactory factory) : IClassFixture<ApiFact
     public async Task Enqueue_refuses_when_the_quota_is_reached()
     {
         var garden = Ids.New();
-        for (var i = 0; i < AiSettings.Defaults.Quotas[AiJobKinds.DesignProposal]; i++)
+        for (var i = 0; i < AiSettings.Defaults.Quotas[AiJobKinds.DreamImage]; i++)
         {
-            await EnqueueAsync(AiJobKinds.DesignProposal, garden);
+            await EnqueueAsync(AiJobKinds.DreamImage, garden);
         }
 
-        var refused = await Assert.ThrowsAsync<AiJobRefusedException>(() => EnqueueAsync(AiJobKinds.DesignProposal, garden));
+        var refused = await Assert.ThrowsAsync<AiJobRefusedException>(() => EnqueueAsync(AiJobKinds.DreamImage, garden));
         Assert.Equal("quota-reached", refused.Code);
         // Another garden has its own quota.
-        await EnqueueAsync(AiJobKinds.DesignProposal, Ids.New());
+        await EnqueueAsync(AiJobKinds.DreamImage, Ids.New());
     }
 
     [Fact]
@@ -237,13 +237,13 @@ public sealed class AiJobRunnerTests(ApiFactory factory) : IClassFixture<ApiFact
         var garden = Ids.New();
         await SaveSettingsAsync(AiSettings.Defaults with
         {
-            Quotas = new Dictionary<string, int>(AiSettings.Defaults.Quotas) { [AiJobKinds.DesignProposal] = 1 },
+            Quotas = new Dictionary<string, int>(AiSettings.Defaults.Quotas) { [AiJobKinds.DreamImage] = 1 },
         });
         _model.Errors.Enqueue(new AiProviderException("Ingen API-nyckel för Claude är inställd.", retryable: false));
-        await EnqueueAsync(AiJobKinds.DesignProposal, garden);
+        await EnqueueAsync(AiJobKinds.DreamImage, garden);
         await RunAsync();
 
-        await EnqueueAsync(AiJobKinds.DesignProposal, garden);
+        await EnqueueAsync(AiJobKinds.DreamImage, garden);
     }
 
     [Fact]
@@ -302,10 +302,10 @@ public sealed class AiJobRunnerTests(ApiFactory factory) : IClassFixture<ApiFact
         }
     }
 
-    /// <summary>Stands in for an AI step that has no real handler yet (design proposals, sub-project 9): one text call.</summary>
+    /// <summary>Stands in for an AI step that has no real handler yet (dream images, sub-project 10): one text call.</summary>
     private sealed class StepHandler : IAiJobHandler
     {
-        public string Kind => AiJobKinds.DesignProposal;
+        public string Kind => AiJobKinds.DreamImage;
 
         public async Task<JsonElement> RunAsync(AiJob job, IAiCalls calls, CancellationToken cancellationToken)
         {
