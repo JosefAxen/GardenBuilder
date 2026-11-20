@@ -6,7 +6,8 @@ import { useEditorUiStore, type EditorPanel } from './editorUiStore'
 import { useKeyboardShortcuts } from './keyboard'
 import { PhotoPanel } from './photos/PhotoPanel'
 import { ProposalPanel } from './proposals/ProposalPanel'
-import { PricePanel } from './PricePanel'
+import { PriceDetails } from './price/PriceDetails'
+import { PriceSummary } from './price/PriceSummary'
 import { schedulePrice } from './priceStore'
 import { useCatalogStore } from './catalogStore'
 import { SceneCanvas } from './SceneCanvas'
@@ -20,6 +21,7 @@ import { ViewSwitch } from './shell/ViewSwitch'
 import { useSavedDesign } from './useSavedDesign'
 import './editor.css'
 import './shell/shell.css'
+import './price/price.css'
 
 const PANELS: { value: EditorPanel; label: string; icon: typeof LayoutGrid }[] = [
   { value: 'catalog', label: 'Katalog', icon: LayoutGrid },
@@ -44,7 +46,7 @@ export function EditorPage() {
 
   return (
     <div className="editor">
-      <EditorHeader />
+      <EditorHeader price={<PriceSummary />} />
       <main className="editor-window">
         <SceneCanvas />
         <div className="editor-window__top-left">
@@ -59,11 +61,11 @@ export function EditorPage() {
           </div>
         </div>
         <ShapingStrip />
-        <PricePanel />
         <StatusLine ready={ready} />
         <SaveConflict />
         <DesignLoading load={load} />
       </main>
+      <PriceDetails />
       <section className="editor-shelf" aria-label="Katalog och paneler">
         <div className="editor-shelf__side">
           <Tabs label="Panel" value={panel} tabs={PANELS} controls="editor-panel" onChange={(p) => ready && useEditorUiStore.getState().setPanel(p)} />

@@ -1,6 +1,7 @@
 /* The editor's Plantskolan frame: fir header, rounded scene window, floating rail, shelf. */
 
 .editor {
+  position: relative;
   display: grid;
   grid-template-rows: 80px minmax(0, 1fr) 156px;
   row-gap: var(--space-4);
