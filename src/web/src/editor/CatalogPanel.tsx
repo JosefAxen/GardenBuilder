@@ -1,7 +1,6 @@
-import { useMemo } from 'react'
 import type { CatalogArticle } from '../api/catalog'
 import type { SceneElement, SurfaceMaterial } from '../api/scene'
-import { groupForPanel, replaceOptions } from './panelGroups'
+import { replaceOptions } from './panelGroups'
 import { findArticle, useCatalogStore } from './catalogStore'
 import { useSceneStore } from './sceneStore'
 import { keepSelected, removeSelected, replaceSelected, rotateSelected } from './selectionCommands'
@@ -80,44 +79,18 @@ function Selection({ element }: { element: SceneElement }) {
   )
 }
 
-function ArticleRow({ article, label }: { article: CatalogArticle; label: string }) {
-  const tool = useSceneStore((s) => s.tool)
-  const { setTool, select } = useSceneStore.getState()
-  const active = (tool.mode === 'place' || tool.mode === 'line') && tool.articleId === article.id
-  const outOfStock = article.stockStatus === 'out-of-stock'
-
-  const startPlacing = () => {
-    select(null)
-    setTool(article.geometry === 'point' ? { mode: 'place', articleId: article.id } : { mode: 'line', articleId: article.id })
-  }
-
-  return (
-    <li className={[active && 'active', outOfStock && 'out-of-stock'].filter(Boolean).join(' ') || undefined}>
-      <span className="swatch" style={{ background: article.color }} />
-      <span className="name">{label}</span>
-      {outOfStock ? (
-        <span className="stock">Slut i lager</span>
-      ) : (
-        // Surfaces need a polygon tool, which does not exist yet; they can only be swapped.
-        article.geometry !== 'surface' && (
-          <button onClick={() => (active ? setTool({ mode: 'select' }) : startPlacing())}>{active ? 'Klar' : 'Lägg till'}</button>
-        )
-      )}
-    </li>
-  )
-}
-
+/**
+ * The selected element and the tool hint, top right in the scene window. The article list moved to the shelf; this
+ * becomes the plant label in the next step.
+ */
 export function CatalogPanel() {
   const tool = useSceneStore((s) => s.tool)
   const selectedId = useSceneStore((s) => s.selectedId)
   const elements = useSceneStore((s) => s.document.elements)
-  const status = useCatalogStore((s) => s.status)
-  const articles = useCatalogStore((s) => s.articles)
-  const categories = useMemo(() => groupForPanel(articles), [articles])
   const selected = elements.find((e) => e.id === selectedId)
 
   return (
-    <aside className="editor-panel">
+    <aside className="editor-panel selection-panel">
       {selected ? (
         <Selection element={selected} />
       ) : (
@@ -127,37 +100,6 @@ export function CatalogPanel() {
           {tool.mode === 'select' && 'Klicka på ett element för att välja det, dra för att flytta.'}
         </p>
       )}
-
-      {status === 'loading' && <p className="editor-hint">Laddar katalogen…</p>}
-      {status === 'error' && (
-        <div className="editor-error" role="alert">
-          <p>Katalogen kunde inte hämtas.</p>
-          <button onClick={() => void useCatalogStore.getState().load()}>Försök igen</button>
-        </div>
-      )}
-
-      {categories.map(({ category, varieties }) => (
-        <section key={category}>
-          <h3>{category}</h3>
-          {varieties.map((variety) =>
-            variety.articles.length === 1 ? (
-              <ul key={variety.name}>
-                <ArticleRow article={variety.articles[0]} label={variety.articles[0].name} />
-              </ul>
-            ) : (
-              <div key={variety.name} className="variety">
-                <h4>{variety.name}</h4>
-                <ul>
-                  {variety.articles.map((article) => (
-                    // The variety name is the heading, so the row shows just the size part of the name.
-                    <ArticleRow key={article.id} article={article} label={article.name.replace(variety.name, '').trim() || article.name} />
-                  ))}
-                </ul>
-              </div>
-            ),
-          )}
-        </section>
-      ))}
     </aside>
   )
 }

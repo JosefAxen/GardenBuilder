@@ -1,8 +1,6 @@
-import { Images, Layers, LayoutGrid } from 'lucide-react'
 import { useEffect } from 'react'
-import { Tabs } from '../ui'
 import { CatalogPanel } from './CatalogPanel'
-import { useEditorUiStore, type EditorPanel } from './editorUiStore'
+import { useEditorUiStore } from './editorUiStore'
 import { useKeyboardShortcuts } from './keyboard'
 import { PhotoPanel } from './photos/PhotoPanel'
 import { ProposalPanel } from './proposals/ProposalPanel'
@@ -18,16 +16,12 @@ import { ShapingStrip } from './shell/ShapingStrip'
 import { StatusLine } from './shell/StatusLine'
 import { ToolRail } from './shell/ToolRail'
 import { ViewSwitch } from './shell/ViewSwitch'
+import { Shelf } from './shelf/Shelf'
 import { useSavedDesign } from './useSavedDesign'
 import './editor.css'
 import './shell/shell.css'
 import './price/price.css'
-
-const PANELS: { value: EditorPanel; label: string; icon: typeof LayoutGrid }[] = [
-  { value: 'catalog', label: 'Katalog', icon: LayoutGrid },
-  { value: 'photos', label: 'Foton', icon: Images },
-  { value: 'proposals', label: 'Förslag', icon: Layers },
-]
+import './shelf/shelf.css'
 
 export function EditorPage() {
   const document = useSceneStore((s) => s.document)
@@ -61,19 +55,13 @@ export function EditorPage() {
           </div>
         </div>
         <ShapingStrip />
+        <CatalogPanel />
         <StatusLine ready={ready} />
         <SaveConflict />
         <DesignLoading load={load} />
       </main>
       <PriceDetails />
-      <section className="editor-shelf" aria-label="Katalog och paneler">
-        <div className="editor-shelf__side">
-          <Tabs label="Panel" value={panel} tabs={PANELS} controls="editor-panel" onChange={(p) => ready && useEditorUiStore.getState().setPanel(p)} />
-        </div>
-        <div className="editor-shelf__content" id={panel === 'catalog' ? 'editor-panel' : undefined}>
-          <CatalogPanel />
-        </div>
-      </section>
+      <Shelf ready={ready} />
     </div>
   )
 }

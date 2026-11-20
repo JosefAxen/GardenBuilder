@@ -269,3 +269,31 @@
   min-width: 0;
   overflow: auto;
 }
+
+/* Interim: the selected element, top right, until the plant label replaces it. */
+.selection-panel {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  width: 296px;
+  max-height: calc(100% - 96px);
+  border-radius: var(--radius-l);
+  background: var(--linen);
+  box-shadow: var(--lift);
+}
+
+.selection-panel:has(> .editor-hint) {
+  top: auto;
+  bottom: 64px;
+  right: 50%;
+  width: auto;
+  transform: translateX(50%);
+  padding: 6px 14px;
+  background: rgba(248, 244, 236, 0.85);
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+.selection-panel .editor-hint {
+  margin: 0;
+}
