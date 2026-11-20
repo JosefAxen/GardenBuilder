@@ -7,7 +7,9 @@ import { findArticle, useCatalogStore } from '../catalogStore'
 import { replaceOptions } from '../panelGroups'
 import { useSceneStore } from '../sceneStore'
 import { keepSelected, removeSelected, replaceSelected, rotateSelected } from '../selectionCommands'
+import { ArticleThumb } from '../shelf/ArticleThumb'
 import { formatUnitPrice } from '../shelf/shelfCards'
+import { hasThumbnail } from '../shelf/thumbnails'
 import { labelFacts } from './labelFacts'
 
 const MATERIAL_NAMES: Record<SurfaceMaterial, string> = {
@@ -51,7 +53,14 @@ function Label({ element }: { element: SceneElement }) {
   return (
     <Card as="section" className="plant-label" aria-labelledby={headingId}>
       <span className="plant-label__hole" aria-hidden />
-      <div className="plant-label__status">{STATUS[element.status]}</div>
+      {article && hasThumbnail(article) ? (
+        <div className="plant-label__hero">
+          <ArticleThumb article={article} />
+          <div className="plant-label__status">{STATUS[element.status]}</div>
+        </div>
+      ) : (
+        <div className="plant-label__status">{STATUS[element.status]}</div>
+      )}
       <h2 id={headingId} className="plant-label__name">
         {name}
       </h2>

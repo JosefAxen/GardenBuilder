@@ -37,6 +37,25 @@
   display: flex;
 }
 
+.plant-label__hero {
+  position: relative;
+  height: 118px;
+  border-radius: var(--radius-m);
+  overflow: hidden;
+  background: radial-gradient(200px 100px at 50% 40%, #fff9f0, var(--linen-3));
+}
+
+.plant-label__hero .article-thumb {
+  position: absolute;
+  inset: 0;
+}
+
+.plant-label__hero .plant-label__status {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+}
+
 .plant-label__name {
   margin-top: var(--space-3);
   font-size: 21px;

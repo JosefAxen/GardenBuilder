@@ -17,6 +17,7 @@ import { ToolRail } from './shell/ToolRail'
 import { ViewSwitch } from './shell/ViewSwitch'
 import { PlantLabel, ToolHint } from './label/PlantLabel'
 import { Shelf } from './shelf/Shelf'
+import { ThumbnailStudio } from './shelf/ThumbnailStudio'
 import { useSavedDesign } from './useSavedDesign'
 import './editor.css'
 import './shell/shell.css'
@@ -64,6 +65,7 @@ export function EditorPage() {
       </main>
       <PriceDetails />
       <Shelf ready={ready} />
+      <ThumbnailStudio />
     </div>
   )
 }

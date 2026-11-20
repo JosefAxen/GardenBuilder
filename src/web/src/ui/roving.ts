@@ -21,7 +21,10 @@ export function rovingIndex(event: KeyboardEvent, current: number, count: number
   }
 }
 
-/** Moves focus to the item at index inside the group element, after React has re-rendered. */
+/**
+ * Moves focus to the item at index inside the group element, at once: the items are the same elements before and after
+ * the re-render, so there is nothing to wait for (waiting a frame made focus arrive late and a test flaky).
+ */
 export function focusItem(group: HTMLElement | null, selector: string, index: number) {
-  requestAnimationFrame(() => group?.querySelectorAll<HTMLElement>(selector)[index]?.focus())
+  group?.querySelectorAll<HTMLElement>(selector)[index]?.focus()
 }
