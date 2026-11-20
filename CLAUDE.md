@@ -41,3 +41,4 @@ Drömträdgård: customers design their garden in 3D from stock items and send a
   (`src/web/src/editor/sceneStore.ts`); React Three Fiber renders from it. No state only in three.js objects.
 - Every scene change is a command (add, move, replace, remove) so undo/redo works.
 - Scene coordinates: x = east, y = north, meters. In three.js the ground is the XZ plane and north is -Z.
+- UI uses the tokens and components in `src/web/src/ui` (Plantskolan); see [DESIGN.md](DESIGN.md). No raw colours in page CSS.
