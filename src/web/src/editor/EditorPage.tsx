@@ -1,8 +1,5 @@
 import { useEffect } from 'react'
-import { useEditorUiStore } from './editorUiStore'
 import { useKeyboardShortcuts } from './keyboard'
-import { PhotoPanel } from './photos/PhotoPanel'
-import { ProposalPanel } from './proposals/ProposalPanel'
 import { PriceDetails } from './price/PriceDetails'
 import { PriceSummary } from './price/PriceSummary'
 import { schedulePrice } from './priceStore'
@@ -12,6 +9,7 @@ import { useSceneStore } from './sceneStore'
 import { DesignLoading, SaveConflict } from './SaveStatus'
 import { EditorHeader } from './shell/EditorHeader'
 import { ShapingStrip } from './shell/ShapingStrip'
+import { SidePanel } from './shell/SidePanel'
 import { StatusLine } from './shell/StatusLine'
 import { ToolRail } from './shell/ToolRail'
 import { ViewSwitch } from './shell/ViewSwitch'
@@ -21,13 +19,13 @@ import { ThumbnailStudio } from './shelf/ThumbnailStudio'
 import { useSavedDesign } from './useSavedDesign'
 import './editor.css'
 import './shell/shell.css'
+import './shell/panels.css'
 import './price/price.css'
 import './shelf/shelf.css'
 import './label/label.css'
 
 export function EditorPage() {
   const document = useSceneStore((s) => s.document)
-  const panel = useEditorUiStore((s) => s.panel)
   useKeyboardShortcuts()
   const load = useSavedDesign()
   const ready = load === 'ready'
@@ -49,11 +47,7 @@ export function EditorPage() {
           <ToolRail ready={ready} />
           <div className="editor-window__beside-rail">
             <ViewSwitch />
-            {ready && panel !== 'catalog' && (
-              <aside className="side-panel" id="editor-panel">
-                {panel === 'photos' ? <PhotoPanel /> : <ProposalPanel />}
-              </aside>
-            )}
+            <SidePanel ready={ready} />
           </div>
         </div>
         <ShapingStrip />

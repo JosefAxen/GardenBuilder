@@ -1,4 +1,6 @@
+import { Camera, Check, MapPin, Sparkles, Trash2, Upload } from 'lucide-react'
 import { useEffect, useRef } from 'react'
+import { Badge, Button, Notice } from '../../ui'
 import { useSaveStore } from '../saveStore'
 import { useSceneStore } from '../sceneStore'
 import { interpretPhotos, loadPhotos, removePhoto, startPin, uploadFiles, usePhotoStore } from './photoStore'
@@ -16,29 +18,42 @@ function Review() {
   return (
     <section className="photo-review">
       <h3>Det här såg vi på fotona</h3>
-      <p className="editor-hint">Ta med det som stämmer. Du kan flytta och ändra allt efteråt.</p>
-      {house && (
-        <div className="photo-proposal">
-          <span className="name">
-            Husets färg och tak
-            {house.wallColor && <span className="swatch" style={{ background: house.wallColor }} />}
-            {house.roofColor && <span className="swatch" style={{ background: house.roofColor }} />}
-          </span>
-          <button onClick={takeHouse}>Ta med</button>
-        </div>
-      )}
-      <ul>
+      <p className="panel-hint">Ta med det som stämmer. Du kan flytta och ändra allt efteråt.</p>
+      <ul className="photo-proposals">
+        {house && (
+          <li className="photo-proposal">
+            <span className="photo-proposal__name">
+              Husets färg och tak
+              <span className="photo-proposal__swatches">
+                {house.wallColor && <span className="photo-proposal__swatch" style={{ background: house.wallColor }} />}
+                {house.roofColor && <span className="photo-proposal__swatch" style={{ background: house.roofColor }} />}
+              </span>
+            </span>
+            <Button size="s" variant="primary" icon={Check} onClick={takeHouse}>
+              Ta med
+            </Button>
+          </li>
+        )}
         {proposals.map((p) => (
           <li key={p.element.id} className="photo-proposal">
-            <span className="name">
-              {p.label} <small>({confidenceText(p.confidence)})</small>
+            <span className="photo-proposal__name">
+              {p.label}
+              <Badge tone="neutral">{confidenceText(p.confidence)}</Badge>
             </span>
-            <button onClick={() => take(p.element.id)}>Ta med</button>
-            <button onClick={() => drop(p.element.id)}>Ta bort</button>
+            <Button size="s" variant="primary" aria-label={`Ta med ${p.label}`} onClick={() => take(p.element.id)}>
+              Ta med
+            </Button>
+            <Button size="s" variant="quiet" aria-label={`Ta bort ${p.label}`} onClick={() => drop(p.element.id)}>
+              Ta bort
+            </Button>
           </li>
         ))}
       </ul>
-      {proposals.length > 1 && <button onClick={takeAll}>Ta med alla</button>}
+      {proposals.length > 1 && (
+        <Button variant="secondary" icon={Check} onClick={takeAll}>
+          Ta med alla
+        </Button>
+      )}
     </section>
   )
 }
@@ -57,10 +72,7 @@ export function PhotoPanel() {
 
   if (!gardenId) {
     return (
-      <aside className="editor-panel">
-        <h2>Foton</h2>
-        <p className="editor-hint">Forma tomten och huset först, så sparas din trädgård. Sedan kan du ladda upp foton.</p>
-      </aside>
+      <p className="panel-hint">Forma tomten och huset först, så sparas din trädgård. Sedan kan du ladda upp foton.</p>
     )
   }
 
@@ -70,9 +82,8 @@ export function PhotoPanel() {
   const pinned = pinning && photos.find((p) => p.id === pinning.photoId)
 
   return (
-    <aside className="editor-panel photo-panel">
-      <h2>Foton</h2>
-      <p className="editor-hint">
+    <div className="panel-body photo-panel">
+      <p className="panel-hint">
         Ladda upp 1–6 foton av trädgården från olika håll. Undvik personer och registreringsskyltar.
       </p>
       <input
@@ -87,19 +98,16 @@ export function PhotoPanel() {
           void uploadFiles(files)
         }}
       />
-      <button onClick={() => input.current?.click()} disabled={busy || photos.length >= MAX_PHOTOS}>
+      <Button variant="primary" icon={Upload} onClick={() => input.current?.click()} disabled={busy || photos.length >= MAX_PHOTOS}>
         {busy ? 'Laddar upp …' : 'Ladda upp foton'}
-      </button>
-      {message && (
-        <p className="warning" role="status">
-          {message}
-        </p>
-      )}
+      </Button>
+      {message && <Notice tone="warn">{message}</Notice>}
 
       {pinned && (
         <div className="photo-pinning">
           <img src={pinned.url} alt="Fotot du visar var du tog" />
-          <p className="editor-hint">
+          <p className="photo-pinning__step">
+            <MapPin aria-hidden size={16} strokeWidth={2} />
             {pinning.position ? 'Klicka nu åt det håll du fotade.' : 'Klicka där du stod när du tog fotot.'}
           </p>
         </div>
@@ -107,11 +115,20 @@ export function PhotoPanel() {
 
       <ol className="photo-list">
         {photos.map((photo, index) => (
-          <li key={photo.id}>
+          <li key={photo.id} className="photo-card">
             <img src={photo.url} alt={`Foto ${index + 1}`} />
-            <div className="editor-row">
-              <button onClick={() => startPin(photo.id)}>{photo.camera ? 'Ändra var du stod' : 'Visa var du stod'}</button>
-              <button onClick={() => void removePhoto(photo.id)}>Ta bort</button>
+            {photo.camera && (
+              <span className="photo-card__placed">
+                <Badge tone="new">Plats visad</Badge>
+              </span>
+            )}
+            <div className="photo-card__actions">
+              <Button size="s" variant={photo.camera ? 'secondary' : 'primary'} icon={Camera} onClick={() => startPin(photo.id)}>
+                {photo.camera ? 'Ändra var du stod' : 'Visa var du stod'}
+              </Button>
+              <Button size="s" variant="quiet" icon={Trash2} aria-label={`Ta bort foto ${index + 1}`} onClick={() => void removePhoto(photo.id)}>
+                Ta bort
+              </Button>
             </div>
           </li>
         ))}
@@ -119,15 +136,19 @@ export function PhotoPanel() {
 
       {photos.length > 0 && (
         <>
-          <button onClick={() => void interpretPhotos()} disabled={!allPinned || !saved || interpret === 'running'}>
+          <Button variant="accent" icon={Sparkles} onClick={() => void interpretPhotos()} disabled={!allPinned || !saved || interpret === 'running'}>
             Tolka foton
-          </button>
-          {!allPinned && <p className="editor-hint">Visa var du stod för varje foto först.</p>}
-          {interpret === 'running' && <p role="status">Tolkar dina foton …</p>}
+          </Button>
+          {!allPinned && <p className="panel-hint">Visa var du stod för varje foto först.</p>}
+          {interpret === 'running' && (
+            <p className="panel-status" role="status">
+              Tolkar dina foton …
+            </p>
+          )}
         </>
       )}
 
       <Review />
-    </aside>
+    </div>
   )
 }

@@ -1,4 +1,6 @@
+import { Check, Eye, Sparkles } from 'lucide-react'
 import { useEffect } from 'react'
+import { Badge, Button, Field, Notice } from '../../ui'
 import { useSaveStore } from '../saveStore'
 import { useSceneStore } from '../sceneStore'
 import { chooseProposal, loadProposals, setWishes, startProposals, tryProposal, useProposalStore } from './proposalStore'
@@ -28,87 +30,130 @@ export function ProposalPanel() {
   }, [gardenId])
 
   if (!gardenId) {
-    return (
-      <aside className="editor-panel">
-        <h2>Förslag</h2>
-        <p className="editor-hint">Forma tomten och huset först, så sparas din trädgård. Sedan kan du få förslag.</p>
-      </aside>
-    )
+    return <p className="panel-hint">Forma tomten och huset först, så sparas din trädgård. Sedan kan du få förslag.</p>
   }
 
   const saved = saveStatus === 'saved' || saveStatus === 'idle'
 
   return (
-    <aside className="editor-panel proposal-panel">
-      <h2>Förslag</h2>
-      <p className="editor-hint">
+    <div className="panel-body proposal-panel">
+      <p className="panel-hint">
         Berätta vad du vill ha, så tar vi fram två förslag på hela trädgården ur vårt lager. Det du har behållit står kvar.
       </p>
 
-      <label>
-        Stil
-        <select value={wishes.style} onChange={(e) => setWishes({ style: e.target.value })}>
-          {STYLES.map(([key, name]) => <option key={key} value={key}>{name}</option>)}
-        </select>
-      </label>
-      <label>
-        Budget
-        <select value={wishes.budget} onChange={(e) => setWishes({ budget: e.target.value })}>
-          {BUDGETS.map(([key, name]) => <option key={key} value={key}>{name}</option>)}
-        </select>
-      </label>
-      <label>
-        Skötsel
-        <select value={wishes.care} onChange={(e) => setWishes({ care: e.target.value })}>
-          {CARE.map(([key, name]) => <option key={key} value={key}>{name}</option>)}
-        </select>
-      </label>
-      <label>
-        Växtzon
-        <select value={wishes.zone} onChange={(e) => setWishes({ zone: Number(e.target.value) })}>
-          {ZONES.map((name, i) => <option key={name} value={i + 1}>Zon {name}</option>)}
-        </select>
-      </label>
-      <p className="editor-hint">Zon I är mildast, i Skåne; zon VIII är kallast, i fjällen.</p>
-      <label>
-        Önskemål
-        <textarea
-          maxLength={300}
-          rows={3}
-          value={wishes.note}
-          placeholder="Till exempel plats för grill eller barnens lek"
-          onChange={(e) => setWishes({ note: e.target.value })}
-        />
-      </label>
+      <div className="proposal-wishes">
+        <Field label="Stil">
+          {(field) => (
+            <select {...field} value={wishes.style} onChange={(e) => setWishes({ style: e.target.value })}>
+              {STYLES.map(([key, name]) => (
+                <option key={key} value={key}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
+        <Field label="Budget">
+          {(field) => (
+            <select {...field} value={wishes.budget} onChange={(e) => setWishes({ budget: e.target.value })}>
+              {BUDGETS.map(([key, name]) => (
+                <option key={key} value={key}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
+        <Field label="Skötsel">
+          {(field) => (
+            <select {...field} value={wishes.care} onChange={(e) => setWishes({ care: e.target.value })}>
+              {CARE.map(([key, name]) => (
+                <option key={key} value={key}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
+        <Field label="Växtzon" hint="Zon I är mildast, i Skåne; zon VIII är kallast, i fjällen.">
+          {(field) => (
+            <select {...field} value={wishes.zone} onChange={(e) => setWishes({ zone: Number(e.target.value) })}>
+              {ZONES.map((name, i) => (
+                <option key={name} value={i + 1}>
+                  Zon {name}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
+        <div className="proposal-wishes__wide">
+          <Field label="Önskemål">
+            {(field) => (
+              <textarea
+                {...field}
+                maxLength={300}
+                rows={3}
+                value={wishes.note}
+                placeholder="Till exempel plats för grill eller barnens lek"
+                onChange={(e) => setWishes({ note: e.target.value })}
+              />
+            )}
+          </Field>
+        </div>
+      </div>
       {problems.length > 0 && (
-        <ul className="warning" role="status">
-          {problems.map((p) => <li key={p}>{p}</li>)}
-        </ul>
+        <Notice tone="warn">
+          <ul className="panel-list">
+            {problems.map((p) => (
+              <li key={p}>{p}</li>
+            ))}
+          </ul>
+        </Notice>
       )}
 
-      <button onClick={() => void startProposals()} disabled={state === 'running' || !saved}>
+      <Button variant="accent" icon={Sparkles} onClick={() => void startProposals()} disabled={state === 'running' || !saved}>
         Ge mig förslag
-      </button>
-      {state === 'running' && <p role="status">Tar fram förslag …</p>}
-      {message && <p role="status" className={state === 'failed' ? 'warning' : undefined}>{message}</p>}
+      </Button>
+      {state === 'running' && (
+        <p className="panel-status" role="status">
+          Tar fram förslag …
+        </p>
+      )}
+      {message &&
+        (state === 'failed' ? (
+          <Notice tone="warn">{message}</Notice>
+        ) : (
+          <p className="panel-status" role="status">
+            {message}
+          </p>
+        ))}
 
       {proposals.map((proposal, index) => (
-        <section key={index} className={tried === index ? 'proposal-card tried' : 'proposal-card'}>
+        <section key={index} className={tried === index ? 'proposal-card is-tried' : 'proposal-card'} aria-label={proposal.name}>
+          {tried === index && (
+            <span className="proposal-card__shown">
+              <Badge tone="new">Visas nu</Badge>
+            </span>
+          )}
           <h3>{proposal.name}</h3>
-          <p>{proposal.motivation}</p>
-          <p className="proposal-price">
+          <p className="proposal-card__why">{proposal.motivation}</p>
+          <p className="proposal-card__price num">
             cirka {kronor.format(proposal.low)}–{kronor.format(proposal.high)} kr
-            {proposal.overBudget && <span className="warning"> · Över din budget</span>}
+            {proposal.overBudget && <Badge tone="warn">Över din budget</Badge>}
           </p>
           {!stale && (
-            <div className="editor-row">
-              <button onClick={() => tryProposal(index)}>Prova</button>
-              <button onClick={() => void chooseProposal(index)}>Välj det här</button>
+            <div className="proposal-card__actions">
+              <Button size="s" variant="secondary" icon={Eye} onClick={() => tryProposal(index)}>
+                Prova
+              </Button>
+              <Button size="s" variant="primary" icon={Check} onClick={() => void chooseProposal(index)}>
+                Välj det här
+              </Button>
             </div>
           )}
         </section>
       ))}
-      {tried >= 0 && <p className="editor-hint">Ångra tar tillbaka trädgården som den var.</p>}
-    </aside>
+      {tried >= 0 && <p className="panel-hint">Ångra tar tillbaka trädgården som den var.</p>}
+    </div>
   )
 }
