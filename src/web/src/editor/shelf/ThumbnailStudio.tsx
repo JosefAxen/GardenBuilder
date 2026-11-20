@@ -1,6 +1,6 @@
 import { useGLTF } from '@react-three/drei'
 import { Canvas, useThree } from '@react-three/fiber'
-import { Suspense, useEffect, useMemo, type ReactNode } from 'react'
+import { Component, Suspense, useEffect, useMemo, type ReactNode } from 'react'
 import { Box3, InstancedMesh, PerspectiveCamera, Vector3 } from 'three'
 import type { CatalogArticle } from '../../api/catalog'
 import { FormInstances } from '../GlbInstances'
@@ -13,6 +13,28 @@ import { finishThumbnail, useThumbnailQueue } from './thumbnails'
 const WIDTH = 300
 const HEIGHT = 136
 const ignore = () => {}
+
+/**
+ * Catches whatever goes wrong while a picture is drawn (a model file that will not load, a lost WebGL context, which
+ * the Canvas rethrows into the page): that picture is rejected, its card keeps its colour, and the editor stays up.
+ * Keyed per request, so the next picture starts with a clean guard.
+ */
+export class ThumbnailGuard extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+
+  static getDerivedStateFromError() {
+    return { failed: true }
+  }
+
+  componentDidCatch(error: unknown) {
+    console.warn('A catalogue picture could not be drawn; the colour is shown instead.', error)
+    finishThumbnail({ error })
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children
+  }
+}
 
 /** Waits (by suspending) until the GLB is loaded, so the capture never catches the stand-in shape. */
 function Loaded({ url, children }: { url: string; children: ReactNode }) {
@@ -92,6 +114,7 @@ export function ThumbnailStudio() {
 
   return (
     <div className="thumbnail-studio" aria-hidden>
+      <ThumbnailGuard key={current.id}>
       <Canvas
         frameloop="never"
         dpr={1}
@@ -103,6 +126,7 @@ export function ThumbnailStudio() {
         <directionalLight position={[-4, 8, 6]} intensity={2.2} color="#ffe2b8" />
         <Subject key={current.article.id} article={current.article} />
       </Canvas>
+      </ThumbnailGuard>
     </div>
   )
 }

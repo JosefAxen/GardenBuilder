@@ -30,7 +30,9 @@ export function createThumbnailCache(render: (article: CatalogArticle) => Promis
   }
 }
 
-type Request = { article: CatalogArticle; resolve: (url: string) => void; reject: (error: unknown) => void }
+type Request = { id: number; article: CatalogArticle; resolve: (url: string) => void; reject: (error: unknown) => void }
+
+let requests = 0
 
 /** Pictures waiting to be drawn, one at a time, by the ThumbnailStudio's own small renderer. */
 export const useThumbnailQueue = create<{ queue: Request[] }>(() => ({ queue: [] }))
@@ -38,7 +40,7 @@ export const useThumbnailQueue = create<{ queue: Request[] }>(() => ({ queue: []
 /** Asks the studio for a picture of the article: a PNG data URL, or a rejection when WebGL cannot draw it. */
 export function renderThumbnail(article: CatalogArticle): Promise<string> {
   return new Promise((resolve, reject) => {
-    useThumbnailQueue.setState((s) => ({ queue: [...s.queue, { article, resolve, reject }] }))
+    useThumbnailQueue.setState((s) => ({ queue: [...s.queue, { id: ++requests, article, resolve, reject }] }))
   })
 }
 

@@ -4,6 +4,8 @@ import { Button, Chip, Notice, SearchField, SegmentedControl } from '../../ui'
 import { useCatalogStore } from '../catalogStore'
 import { type EditorPanel, useEditorUiStore } from '../editorUiStore'
 import { groupForPanel } from '../panelGroups'
+import { useSceneStore } from '../sceneStore'
+import { viewLocked } from '../shell/viewLock'
 import { ArticleCard } from './ArticleCard'
 import { shelfCards } from './shelfCards'
 
@@ -19,6 +21,8 @@ const PANELS: { value: EditorPanel; label: string; icon: typeof LayoutGrid }[] =
  */
 export function Shelf({ ready }: { ready: boolean }) {
   const panel = useEditorUiStore((s) => s.panel)
+  // Shaping and pinning belong to what is open now; switching panels mid-way would strand them.
+  const locked = useSceneStore((s) => viewLocked(s.tool.mode))
   const query = useEditorUiStore((s) => s.query)
   const category = useEditorUiStore((s) => s.category)
   const status = useCatalogStore((s) => s.status)
@@ -31,7 +35,15 @@ export function Shelf({ ready }: { ready: boolean }) {
   return (
     <section className="editor-shelf" aria-label="Katalog och paneler">
       <div className="editor-shelf__side">
-        <SegmentedControl variant="track" label="Panel bredvid verktygen" value={panel} options={PANELS} onChange={(p) => ready && setPanel(p)} />
+        <SegmentedControl
+          variant="track"
+          label="Panel bredvid verktygen"
+          value={panel}
+          options={PANELS}
+          onChange={(p) => ready && setPanel(p)}
+          disabled={locked}
+          disabledReason="Gör klart formningen eller fotot först"
+        />
         <>
             <SearchField label="Sök i katalogen" value={query} onChange={setQuery} placeholder={`Sök bland ${articles.length} artiklar`} />
             <div className="shelf-chips" role="group" aria-label="Kategori">

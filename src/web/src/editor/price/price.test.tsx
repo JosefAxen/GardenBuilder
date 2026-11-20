@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PriceEstimate } from '../../api/pricing'
 import { useEditorUiStore } from '../editorUiStore'
 import { useKeyboardShortcuts } from '../keyboard'
@@ -87,5 +87,32 @@ describe('the price in the header', () => {
     usePriceStore.setState({ estimate, loading: true, error: null })
     render(<Price />)
     expect(screen.getByText('Räknar…')).toBeTruthy()
+  })
+})
+
+describe('closing the price details by clicking the garden', () => {
+  it('only closes them: the click does not reach the 3D scene', async () => {
+    const onPointerDown = vi.fn()
+    const onClick = vi.fn()
+    render(
+      <>
+        <Price />
+        <div className="editor-window">
+          <canvas data-testid="scene" onPointerDown={onPointerDown} onClick={onClick} />
+        </div>
+      </>,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /Ungefärligt pris/ }))
+
+    const scene = screen.getByTestId('scene')
+    fireEvent.pointerDown(scene)
+    fireEvent.click(scene)
+
+    expect(useEditorUiStore.getState().priceOpen).toBe(false)
+    expect(onPointerDown).not.toHaveBeenCalled()
+    expect(onClick).not.toHaveBeenCalled()
+
+    fireEvent.pointerDown(scene)
+    expect(onPointerDown).toHaveBeenCalledTimes(1)
   })
 })

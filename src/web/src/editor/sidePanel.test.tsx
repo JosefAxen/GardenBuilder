@@ -73,3 +73,20 @@ describe('the side panel', () => {
     expect(screen.queryByText(/Klicka på ett element/)).toBeNull()
   })
 })
+
+describe('panels while the view is locked', () => {
+  it('the panel switch is off while the plot is shaped', () => {
+    useSceneStore.setState({ tool: { mode: 'shape', id: 'plot' } })
+    render(<Editor />)
+    for (const radio of screen.getAllByRole('radio')) expect((radio as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('closing Foton while showing where a photo was taken ends that', async () => {
+    useEditorUiStore.setState({ panel: 'photos' })
+    useSceneStore.setState({ tool: { mode: 'pin', photoId: 'p1' }, view: 'top' })
+    render(<Editor />)
+    await userEvent.click(screen.getByRole('button', { name: 'Stäng' }))
+    expect(useSceneStore.getState().tool).toEqual({ mode: 'select' })
+    expect(useSceneStore.getState().view).toBe('perspective')
+  })
+})

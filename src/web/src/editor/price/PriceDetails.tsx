@@ -84,14 +84,23 @@ export function PriceDetails() {
 
   useEffect(() => {
     if (!open) return
+    // Capture phase: decide before the 3D scene (or anything else) sees the press.
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Element
       // The summary button toggles by itself; anything else outside the card closes it.
       if (card.current?.contains(target) || target.closest?.('.price-summary')) return
       useEditorUiStore.getState().setPriceOpen(false)
+      // A press in the garden only closes the details: it must not also place, select or move something.
+      if (target instanceof HTMLCanvasElement && target.closest('.editor-window')) {
+        event.stopPropagation()
+        const swallowClick = (click: MouseEvent) => {
+          if (click.target === target) click.stopPropagation()
+        }
+        window.addEventListener('click', swallowClick, { capture: true, once: true })
+      }
     }
-    window.addEventListener('pointerdown', onPointerDown)
-    return () => window.removeEventListener('pointerdown', onPointerDown)
+    window.addEventListener('pointerdown', onPointerDown, true)
+    return () => window.removeEventListener('pointerdown', onPointerDown, true)
   }, [open])
 
   if (!open) return null
