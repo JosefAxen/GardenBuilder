@@ -1,3 +1,4 @@
+import { sceneLook } from './sceneLook'
 import { Html, Line, OrthographicCamera } from '@react-three/drei'
 import { type ThreeEvent, useThree } from '@react-three/fiber'
 import { useState } from 'react'
@@ -46,9 +47,9 @@ export function ShapeHandles() {
     const drawn = hover ? [...tool.points, hover] : tool.points
     return (
       <>
-        {drawn.length >= 2 && <Line points={drawn.map(toVector)} color="#1d4ed8" lineWidth={2} depthTest={false} renderOrder={9} />}
+        {drawn.length >= 2 && <Line points={drawn.map(toVector)} color={sceneLook.handle} lineWidth={2} depthTest={false} renderOrder={9} />}
         {tool.points.map((p, i) => (
-          <Handle key={i} point={p} radius={px(i === 0 ? 9 : 6)} color={i === 0 ? '#f59e0b' : '#1d4ed8'} />
+          <Handle key={i} point={p} radius={px(i === 0 ? 9 : 6)} color={i === 0 ? sceneLook.firstHandle : sceneLook.handle} />
         ))}
       </>
     )
@@ -67,7 +68,7 @@ export function ShapeHandles() {
 
   return (
     <>
-      <Line points={[...points, points[0]].map(toVector)} color="#1d4ed8" lineWidth={2} depthTest={false} renderOrder={9} />
+      <Line points={[...points, points[0]].map(toVector)} color={sceneLook.handle} lineWidth={2} depthTest={false} renderOrder={9} />
       {points.map((p, i) => {
         const next = points[(i + 1) % points.length]
         const middle = { x: (p.x + next.x) / 2, y: (p.y + next.y) / 2 }
@@ -78,7 +79,7 @@ export function ShapeHandles() {
             <Handle
               point={p}
               radius={px(9)}
-              color="#1d4ed8"
+              color={sceneLook.handle}
               onPointerDown={startDrag(i, false, p)}
               onDoubleClick={(event) => {
                 event.stopPropagation()
