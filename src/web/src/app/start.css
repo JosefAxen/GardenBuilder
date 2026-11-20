@@ -1,0 +1,76 @@
+/* The start page: a plain way in while the customer flow is built (delprojekt 12). */
+
+.start {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: var(--space-8) var(--space-4);
+  background: var(--fir);
+}
+
+.start__inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  width: min(440px, 100%);
+}
+
+.start__mark {
+  color: var(--on-fir);
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.start__lead {
+  margin: calc(-1 * var(--space-3)) 0 0;
+  color: var(--on-fir-2);
+  font-size: var(--text-l);
+}
+
+.start__steps {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: var(--space-2) var(--space-5);
+  list-style: none;
+}
+
+.start__steps li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--hairline);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+}
+
+.start__steps li:last-child {
+  border-bottom: 0;
+}
+
+.start__number {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--linen-2);
+  color: var(--ink-2);
+  font-size: var(--text-s);
+  font-weight: 700;
+}
+
+.start__links {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.start__links .ui-button {
+  text-decoration: none;
+}
+
+.start__links .ui-button--accent {
+  flex: 1;
+}

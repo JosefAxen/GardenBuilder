@@ -11,6 +11,8 @@ import {
   type AiStep,
 } from '../api/ai'
 import { budgetLine, formatSek, jobLine } from './aiFormat'
+import { Plug, Save } from 'lucide-react'
+import { Button, Card, Field, Notice } from '../ui'
 
 const QUOTA_LABELS: Record<AiStep, string> = {
   'photo-interpretation': 'Fototolkningar per trädgård',
@@ -101,17 +103,21 @@ export function AiPanel() {
   const busy = job !== null && (job.status === 'queued' || job.status === 'running')
 
   return (
-    <section className="ai-panel" aria-labelledby="ai-panel-title">
+    <Card as="section" className="admin-card ai-panel" aria-labelledby="ai-panel-title">
       <h2 id="ai-panel-title">AI</h2>
 
-      {loadError && <p role="alert">{loadError}</p>}
-      {settings && <p className="ai-budget">{budgetLine(settings.todayCost, settings.dailyBudget)}</p>}
+      {loadError && <Notice tone="error">{loadError}</Notice>}
+      {settings && <Notice tone="info">{budgetLine(settings.todayCost, settings.dailyBudget)}</Notice>}
 
       <div className="ai-test">
-        <button onClick={() => void test()} disabled={busy}>
+        <Button variant="secondary" icon={Plug} onClick={() => void test()} disabled={busy}>
           Testa AI-anslutningen
-        </button>
-        {job && <p role="status">{jobLine(job.status)}</p>}
+        </Button>
+        {job && (
+          <p className="admin-muted" role="status">
+            {jobLine(job.status)}
+          </p>
+        )}
         {job?.status === 'succeeded' && job.result && (
           <dl>
             <dt>Svar</dt>
@@ -124,33 +130,37 @@ export function AiPanel() {
             <dd>{formatSek(job.result.cost)}</dd>
           </dl>
         )}
-        {job?.status === 'failed' && <p role="alert">{job.failure}</p>}
-        {testError && <p role="alert">{testError}</p>}
+        {job?.status === 'failed' && <Notice tone="error">{job.failure}</Notice>}
+        {testError && <Notice tone="error">{testError}</Notice>}
       </div>
 
       {settings && (
         <form className="ai-settings" onSubmit={(event) => void save(event)}>
-          <label>
-            Dagsbudget (kr)
-            <input
-              type="number"
-              min={0}
-              step={1}
-              value={settings.dailyBudget}
-              onChange={(e) => setSettings({ ...settings, dailyBudget: Number(e.target.value) })}
-            />
-          </label>
-          {AI_STEPS.map((step) => (
-            <label key={`quota-${step}`}>
-              {QUOTA_LABELS[step]}
+          <Field label="Dagsbudget (kr)">
+            {(field) => (
               <input
+                {...field}
                 type="number"
                 min={0}
                 step={1}
-                value={settings.quotas[step]}
-                onChange={(e) => setSettings({ ...settings, quotas: { ...settings.quotas, [step]: Number(e.target.value) } })}
+                value={settings.dailyBudget}
+                onChange={(e) => setSettings({ ...settings, dailyBudget: Number(e.target.value) })}
               />
-            </label>
+            )}
+          </Field>
+          {AI_STEPS.map((step) => (
+            <Field key={`quota-${step}`} label={QUOTA_LABELS[step]}>
+              {(field) => (
+                <input
+                  {...field}
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={settings.quotas[step]}
+                  onChange={(e) => setSettings({ ...settings, quotas: { ...settings.quotas, [step]: Number(e.target.value) } })}
+                />
+              )}
+            </Field>
           ))}
           {AI_STEPS.map((step) => (
             <label key={`switch-${step}`} className="ai-switch">
@@ -162,17 +172,27 @@ export function AiPanel() {
               {SWITCH_LABELS[step]}
             </label>
           ))}
-          <button type="submit">Spara</button>
-          {saved && <p role="status">Sparat.</p>}
+          <div className="ai-settings__save">
+            <Button type="submit" variant="primary" icon={Save}>
+              Spara
+            </Button>
+            {saved && (
+              <p className="admin-muted" role="status">
+                Sparat.
+              </p>
+            )}
+          </div>
           {problems.length > 0 && (
-            <ul role="alert">
-              {problems.map((problem) => (
-                <li key={problem}>{problem}</li>
-              ))}
-            </ul>
+            <Notice tone="error">
+              <ul className="admin-list">
+                {problems.map((problem) => (
+                  <li key={problem}>{problem}</li>
+                ))}
+              </ul>
+            </Notice>
           )}
         </form>
       )}
-    </section>
+    </Card>
   )
 }

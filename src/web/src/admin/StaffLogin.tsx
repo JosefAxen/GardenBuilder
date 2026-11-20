@@ -11,6 +11,7 @@ import {
   verifyTwoFactor,
 } from '../api/identity'
 import { messageFor, type Screen, screenFor } from './staffLoginSteps'
+import { Button, Field, Notice } from '../ui'
 import './admin.css'
 
 /**
@@ -53,6 +54,11 @@ export function StaffLogin({ onSignedIn }: { onSignedIn: () => void }) {
 
   return (
     <main className="staff-login">
+      <div className="staff-login__brand">
+        <span className="staff-login__mark">Drömträdgård</span>
+        <span className="staff-login__who">För personal</span>
+      </div>
+      <div className="staff-login__card ui-card ui-card--elevated">
       {screen === 'login' && <LoginForm busy={busy} onSubmit={(email, password) => run(async () => go(await login(email, password)))} />}
       {screen === 'password' && (
         <PasswordForm
@@ -75,11 +81,8 @@ export function StaffLogin({ onSignedIn }: { onSignedIn: () => void }) {
       )}
       {screen === 'recovery' && <RecoveryCodes codes={recoveryCodes} onDone={onSignedIn} />}
       {screen === 'code' && <CodeForm busy={busy} onSubmit={(code, recovery) => run(async () => { await verifyTwoFactor(code, recovery); onSignedIn() })} />}
-      {error && (
-        <p className="staff-login-error" role="alert">
-          {error}
-        </p>
-      )}
+      {error && <Notice tone="error">{error}</Notice>}
+      </div>
     </main>
   )
 }
@@ -95,17 +98,17 @@ function LoginForm({ busy, onSubmit }: { busy: boolean; onSubmit: (email: string
   return (
     <form onSubmit={submit}>
       <h1>Logga in</h1>
-      <label>
-        E-post
-        <input type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} />
-      </label>
-      <label>
-        Lösenord
-        <input type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-      </label>
-      <button type="submit" disabled={busy}>
+      <Field label="E-post">
+        {(field) => <input {...field} type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} />}
+      </Field>
+      <Field label="Lösenord">
+        {(field) => (
+          <input {...field} type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+        )}
+      </Field>
+      <Button type="submit" variant="primary" disabled={busy}>
         Logga in
-      </button>
+      </Button>
     </form>
   )
 }
@@ -122,18 +125,15 @@ function PasswordForm({ busy, onSubmit, onMismatch }: { busy: boolean; onSubmit:
   return (
     <form onSubmit={submit}>
       <h1>Välj ett nytt lösenord</h1>
-      <p className="staff-login-hint">Minst 12 tecken.</p>
-      <label>
-        Nytt lösenord
-        <input type="password" autoComplete="new-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-      </label>
-      <label>
-        Upprepa lösenordet
-        <input type="password" autoComplete="new-password" required value={repeat} onChange={(e) => setRepeat(e.target.value)} />
-      </label>
-      <button type="submit" disabled={busy}>
+      <Field label="Nytt lösenord" hint="Minst 12 tecken.">
+        {(field) => <input {...field} type="password" autoComplete="new-password" required value={password} onChange={(e) => setPassword(e.target.value)} />}
+      </Field>
+      <Field label="Upprepa lösenordet">
+        {(field) => <input {...field} type="password" autoComplete="new-password" required value={repeat} onChange={(e) => setRepeat(e.target.value)} />}
+      </Field>
+      <Button type="submit" variant="primary" disabled={busy}>
         Spara lösenord
-      </button>
+      </Button>
     </form>
   )
 }
@@ -161,7 +161,7 @@ function SetupForm({ busy, onSubmit, onError }: { busy: boolean; onSubmit: (code
   return (
     <form onSubmit={submit}>
       <h1>Koppla tvåfaktor</h1>
-      <p>
+      <p className="staff-login-hint">
         Skanna QR-koden med en autentiseringsapp, till exempel Microsoft Authenticator eller Google Authenticator. Går det inte att
         skanna, skriv in nyckeln:
       </p>
@@ -171,13 +171,12 @@ function SetupForm({ busy, onSubmit, onError }: { busy: boolean; onSubmit: (code
           <code className="staff-login-key">{setup.sharedKey}</code>
         </>
       )}
-      <label>
-        Kod från appen
-        <input inputMode="numeric" autoComplete="one-time-code" required value={code} onChange={(e) => setCode(e.target.value)} />
-      </label>
-      <button type="submit" disabled={busy || !setup}>
+      <Field label="Kod från appen">
+        {(field) => <input {...field} inputMode="numeric" autoComplete="one-time-code" required value={code} onChange={(e) => setCode(e.target.value)} />}
+      </Field>
+      <Button type="submit" variant="primary" disabled={busy || !setup}>
         Bekräfta
-      </button>
+      </Button>
     </form>
   )
 }
@@ -186,7 +185,7 @@ function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () => void 
   return (
     <section>
       <h1>Dina reservkoder</h1>
-      <p>Spara koderna på ett säkert ställe. Varje kod fungerar en gång, om du inte har mobilen till hands. De visas bara nu.</p>
+      <p className="staff-login-hint">Spara koderna på ett säkert ställe. Varje kod fungerar en gång, om du inte har mobilen till hands. De visas bara nu.</p>
       <ul className="staff-login-codes">
         {codes.map((code) => (
           <li key={code}>
@@ -194,7 +193,9 @@ function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () => void 
           </li>
         ))}
       </ul>
-      <button onClick={onDone}>Jag har sparat koderna</button>
+      <Button variant="primary" onClick={onDone}>
+        Jag har sparat koderna
+      </Button>
     </section>
   )
 }
@@ -210,22 +211,24 @@ function CodeForm({ busy, onSubmit }: { busy: boolean; onSubmit: (code: string, 
   return (
     <form onSubmit={submit}>
       <h1>Ange kod</h1>
-      <label>
-        {recovery ? 'Reservkod' : 'Kod från appen'}
-        <input
-          inputMode={recovery ? 'text' : 'numeric'}
-          autoComplete="one-time-code"
-          required
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-        />
-      </label>
+      <Field label={recovery ? 'Reservkod' : 'Kod från appen'}>
+        {(field) => (
+          <input
+            {...field}
+            inputMode={recovery ? 'text' : 'numeric'}
+            autoComplete="one-time-code"
+            required
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+          />
+        )}
+      </Field>
       <button type="button" className="staff-login-link" onClick={() => { setRecovery(!recovery); setCode('') }}>
         {recovery ? 'Använd appen' : 'Använd en reservkod'}
       </button>
-      <button type="submit" disabled={busy}>
+      <Button type="submit" variant="primary" disabled={busy}>
         Logga in
-      </button>
+      </Button>
     </form>
   )
 }

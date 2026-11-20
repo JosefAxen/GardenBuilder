@@ -61,13 +61,6 @@ h4 {
   white-space: nowrap;
 }
 
-/* Pages not yet in the Plantskolan layout (admin, start) keep a centred column until they are rebuilt. */
-main {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

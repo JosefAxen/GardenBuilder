@@ -1,6 +1,8 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react'
 import { fetchMe, logout, type Me } from '../api/identity'
+import { Button, Notice } from '../ui'
 import { StaffLogin } from './StaffLogin'
+import './admin.css'
 import { messageFor, trySignOut } from './staffLoginSteps'
 
 export type StaffMe = Extract<Me, { kind: 'staff' }>
@@ -37,12 +39,16 @@ export function RequireStaff({ children }: { children: (me: StaffMe, signOut: ()
 
   switch (state.status) {
     case 'loading':
-      return <main>Laddar…</main>
+      return <main className="staff-login"><p className="staff-login__loading">Laddar…</p></main>
     case 'unavailable':
       return (
-        <main>
-          <p role="alert">{messageFor('unavailable')}</p>
-          <button onClick={askAgain}>Försök igen</button>
+        <main className="staff-login">
+          <div className="staff-login__card ui-card ui-card--elevated">
+            <Notice tone="error">{messageFor('unavailable')}</Notice>
+            <Button variant="primary" onClick={askAgain}>
+              Försök igen
+            </Button>
+          </div>
         </main>
       )
     case 'login':
