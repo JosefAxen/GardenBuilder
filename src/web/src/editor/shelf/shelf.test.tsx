@@ -67,10 +67,12 @@ describe('the catalogue shelf', () => {
     expect(screen.getByText('Marksten grå')).toBeTruthy()
   })
 
-  it('shows only the tabs while Foton or Förslag is open', () => {
+  it('keeps the catalogue on the shelf while Foton or Förslag is open beside the rail', () => {
     useEditorUiStore.setState({ panel: 'photos' })
     render(<Shelf ready />)
-    expect(screen.queryByRole('searchbox')).toBeNull()
-    expect(screen.getByRole('tab', { name: 'Foton' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByRole('radio', { name: 'Foton' }).getAttribute('aria-checked')).toBe('true')
+    expect(screen.queryByRole('tab')).toBeNull()
+    expect(screen.getByRole('searchbox', { name: 'Sök i katalogen' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Lägg till Rönn' })).toBeTruthy()
   })
 })

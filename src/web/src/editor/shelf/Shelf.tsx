@@ -1,6 +1,6 @@
 import { Images, Layers, LayoutGrid } from 'lucide-react'
 import { useMemo, useRef } from 'react'
-import { Button, Chip, Notice, SearchField, Tabs } from '../../ui'
+import { Button, Chip, Notice, SearchField, SegmentedControl } from '../../ui'
 import { useCatalogStore } from '../catalogStore'
 import { type EditorPanel, useEditorUiStore } from '../editorUiStore'
 import { groupForPanel } from '../panelGroups'
@@ -13,14 +13,9 @@ const PANELS: { value: EditorPanel; label: string; icon: typeof LayoutGrid }[] =
   { value: 'proposals', label: 'Förslag', icon: Layers },
 ]
 
-const PANEL_HINT: Record<Exclude<EditorPanel, 'catalog'>, string> = {
-  photos: 'Foton är öppna till vänster i trädgården.',
-  proposals: 'Förslagen är öppna till vänster i trädgården.',
-}
-
 /**
  * The shelf along the bottom: the panel tabs, catalogue search and category chips on the left, the articles as a
- * row of cards on the right. Foton and Förslag open beside the tool rail, so then the shelf shows only the tabs.
+ * row of cards on the right. Foton and Förslag open beside the tool rail; the catalogue stays on the shelf meanwhile.
  */
 export function Shelf({ ready }: { ready: boolean }) {
   const panel = useEditorUiStore((s) => s.panel)
@@ -36,9 +31,8 @@ export function Shelf({ ready }: { ready: boolean }) {
   return (
     <section className="editor-shelf" aria-label="Katalog och paneler">
       <div className="editor-shelf__side">
-        <Tabs label="Panel" value={panel} tabs={PANELS} controls="editor-panel" onChange={(p) => ready && setPanel(p)} />
-        {panel === 'catalog' && (
-          <>
+        <SegmentedControl variant="track" label="Panel bredvid verktygen" value={panel} options={PANELS} onChange={(p) => ready && setPanel(p)} />
+        <>
             <SearchField label="Sök i katalogen" value={query} onChange={setQuery} placeholder={`Sök bland ${articles.length} artiklar`} />
             <div className="shelf-chips" role="group" aria-label="Kategori">
               <Chip selected={category === null} onClick={() => setCategory(null)}>
@@ -50,14 +44,11 @@ export function Shelf({ ready }: { ready: boolean }) {
                 </Chip>
               ))}
             </div>
-          </>
-        )}
+        </>
       </div>
 
-      <div className="editor-shelf__content" id={panel === 'catalog' ? 'editor-panel' : undefined}>
-        {panel !== 'catalog' ? (
-          <p className="shelf-message">{PANEL_HINT[panel]}</p>
-        ) : status === 'loading' ? (
+      <div className="editor-shelf__content">
+        {status === 'loading' ? (
           <p className="shelf-message">Laddar katalogen…</p>
         ) : status === 'error' ? (
           <div className="shelf-message">

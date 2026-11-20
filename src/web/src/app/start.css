@@ -38,12 +38,10 @@
 
 .start__steps li {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-3);
   padding: var(--space-3) 0;
   border-bottom: 1px solid var(--hairline);
-  font-size: var(--text-base);
-  font-weight: var(--weight-semibold);
 }
 
 .start__steps li:last-child {
@@ -51,6 +49,7 @@
 }
 
 .start__number {
+  flex: none;
   display: grid;
   place-items: center;
   width: 26px;
@@ -62,15 +61,47 @@
   font-weight: 700;
 }
 
-.start__links {
-  display: flex;
-  gap: var(--space-2);
+.start__steps li.is-current .start__number {
+  background: var(--terra);
+  color: var(--white);
 }
 
-.start__links .ui-button {
+.start__step {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-top: 3px;
+}
+
+.start__name {
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+}
+
+.start__what {
+  font-size: var(--text-m);
+  color: var(--ink-2);
+}
+
+.start__now {
+  margin-top: var(--space-1);
+  font-size: var(--text-s);
+  font-weight: var(--weight-bold);
+  color: var(--terra-ink);
+}
+
+.start__open {
+  width: 100%;
   text-decoration: none;
 }
 
-.start__links .ui-button--accent {
-  flex: 1;
+.start__staff {
+  align-self: center;
+  color: var(--on-fir-2);
+  font-size: var(--text-m);
+  text-underline-offset: 0.2em;
+}
+
+.start__staff:hover {
+  color: var(--on-fir);
 }

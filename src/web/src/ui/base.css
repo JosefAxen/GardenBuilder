@@ -1,4 +1,4 @@
-/* Base styles for every page. Pages set their own ground (the editor and start page use fir). */
+/* Base styles for every page. */
 *,
 *::before,
 *::after {
@@ -15,7 +15,8 @@ body {
   font-size: var(--text-base);
   line-height: 1.45;
   color: var(--ink);
-  background: var(--linen);
+  /* Every page sits on the fir frame; linen is for the cards on it. */
+  background: var(--fir);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: 'kern';

@@ -51,6 +51,22 @@ describe('shelfCards', () => {
   })
 })
 
+describe('sizes on single articles', () => {
+  it('a trailing size moves to the detail line', () => {
+    const spruce = tree('spruce', 'Serbisk gran 100–125 cm')
+    expect(shelfCards(groupForPanel([spruce]), null, '')).toEqual([{ article: spruce, title: 'Serbisk gran', detail: '100–125 cm' }])
+  })
+
+  it('a single size like "30 cm" also moves', () => {
+    const box = tree('box', 'Buxbom klot 30 cm')
+    expect(shelfCards(groupForPanel([box]), null, '')[0]).toMatchObject({ title: 'Buxbom klot', detail: '30 cm' })
+  })
+
+  it('a name without a size stays whole', () => {
+    expect(shelfCards(groupForPanel([rowan]), null, '')[0]).toMatchObject({ title: 'Rönn', detail: null })
+  })
+})
+
 describe('formatUnitPrice', () => {
   it.each([
     [3450, 'piece', `${new Intl.NumberFormat('sv-SE').format(3450)} kr`],

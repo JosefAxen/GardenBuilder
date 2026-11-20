@@ -6,6 +6,9 @@ export type ShelfCard = { article: CatalogArticle; title: string; detail: string
 
 const lower = (text: string) => text.toLocaleLowerCase('sv-SE')
 
+/** A size at the end of a name: "30 cm", "100–125 cm", "1,5 m". */
+const SIZE = /\s(\d+(?:,\d+)?(?:–\d+(?:,\d+)?)?\s?(?:cm|m))$/
+
 /**
  * The shelf's cards in catalogue order: one category (null for all) and those whose name or variety contains the
  * search text, ignoring case. A blank query matches everything.
@@ -17,12 +20,10 @@ export function shelfCards(categories: PanelCategory[], category: string | null,
     .flatMap(({ varieties }) =>
       varieties.flatMap(({ name, articles }) =>
         articles.map((article): ShelfCard => {
-          const grouped = articles.length > 1
-          return {
-            article,
-            title: grouped ? name : article.name,
-            detail: grouped ? article.name.replace(name, '').trim() || null : null,
-          }
+          if (articles.length > 1) return { article, title: name, detail: article.name.replace(name, '').trim() || null }
+          // A single article's own size goes on the detail line too, so every card reads name, size, price.
+          const size = SIZE.exec(article.name)
+          return size ? { article, title: article.name.slice(0, size.index).trim(), detail: size[1] } : { article, title: article.name, detail: null }
         }),
       ),
     )

@@ -12,10 +12,12 @@ type Props<T extends string> = {
   disabled?: boolean
   /** Why it is disabled, shown as a tooltip. */
   disabledReason?: string
+  /** floating: a lifted card over the scene; track: inset on a linen track, as on the shelf. */
+  variant?: 'floating' | 'track'
 }
 
 /** A choice of one of a few modes (Ovanifrån / 3D) as a radio group. */
-export function SegmentedControl<T extends string>({ label, value, options, onChange, disabled, disabledReason }: Props<T>) {
+export function SegmentedControl<T extends string>({ label, value, options, onChange, disabled, disabledReason, variant = 'floating' }: Props<T>) {
   const group = useRef<HTMLDivElement>(null)
   const current = Math.max(0, options.findIndex((o) => o.value === value))
 
@@ -26,7 +28,7 @@ export function SegmentedControl<T extends string>({ label, value, options, onCh
       aria-label={label}
       aria-disabled={disabled || undefined}
       title={disabled ? disabledReason : undefined}
-      className={disabled ? 'ui-segmented is-disabled' : 'ui-segmented'}
+      className={['ui-segmented', variant === 'track' && 'ui-segmented--track', disabled && 'is-disabled'].filter(Boolean).join(' ')}
       onKeyDown={(event) => {
         if (disabled) return
         const next = rovingIndex(event, current, options.length)
@@ -49,7 +51,7 @@ export function SegmentedControl<T extends string>({ label, value, options, onCh
             className={checked ? 'ui-segment is-checked' : 'ui-segment'}
             onClick={() => !checked && onChange(optionValue)}
           >
-            {Icon && <Icon aria-hidden size={18} strokeWidth={1.75} />}
+            {Icon && <Icon aria-hidden size={variant === 'track' ? 16 : 18} strokeWidth={1.75} />}
             {optionLabel}
           </button>
         )

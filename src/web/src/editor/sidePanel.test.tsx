@@ -8,6 +8,7 @@ import { useEditorUiStore } from './editorUiStore'
 import { PlantLabel } from './label/PlantLabel'
 import { useSaveStore } from './saveStore'
 import { useSceneStore } from './sceneStore'
+import { ToolHint } from './label/PlantLabel'
 import { Shelf } from './shelf/Shelf'
 import { SidePanel } from './shell/SidePanel'
 import { thuja } from './testArticles'
@@ -27,6 +28,7 @@ function Editor() {
     <>
       <SidePanel ready />
       <PlantLabel />
+      <ToolHint />
       <Shelf ready />
     </>
   )
@@ -44,7 +46,7 @@ beforeEach(() => {
 describe('the side panel', () => {
   it('opens Förslag from the shelf tab and Stäng goes back to the catalogue', async () => {
     render(<Editor />)
-    await userEvent.click(screen.getByRole('tab', { name: 'Förslag' }))
+    await userEvent.click(screen.getByRole('radio', { name: 'Förslag' }))
 
     expect(screen.getByRole('heading', { name: 'Förslag', level: 2 })).toBeTruthy()
 
@@ -58,9 +60,16 @@ describe('the side panel', () => {
   it('the plant label stays while the side panel is open', async () => {
     useSceneStore.getState().select('tree')
     render(<Editor />)
-    await userEvent.click(screen.getByRole('tab', { name: 'Foton' }))
+    await userEvent.click(screen.getByRole('radio', { name: 'Foton' }))
 
     expect(screen.getByRole('heading', { name: 'Foton', level: 2 })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Tuja Smaragd 40–60 cm' })).toBeTruthy()
+  })
+
+  it('the tool hint steps aside while a panel is open', async () => {
+    render(<Editor />)
+    expect(screen.getByText(/Klicka på ett element/)).toBeTruthy()
+    await userEvent.click(screen.getByRole('radio', { name: 'Förslag' }))
+    expect(screen.queryByText(/Klicka på ett element/)).toBeNull()
   })
 })

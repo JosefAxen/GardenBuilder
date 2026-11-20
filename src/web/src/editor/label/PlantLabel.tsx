@@ -4,6 +4,7 @@ import type { CatalogArticle } from '../../api/catalog'
 import type { SceneElement, SurfaceMaterial } from '../../api/scene'
 import { Badge, Button, Card, IconButton } from '../../ui'
 import { findArticle, useCatalogStore } from '../catalogStore'
+import { useEditorUiStore } from '../editorUiStore'
 import { replaceOptions } from '../panelGroups'
 import { useSceneStore } from '../sceneStore'
 import { keepSelected, removeSelected, replaceSelected, rotateSelected } from '../selectionCommands'
@@ -148,7 +149,9 @@ export function PlantLabel() {
 export function ToolHint() {
   const tool = useSceneStore((s) => s.tool)
   const selected = useSceneStore((s) => s.selectedId !== null)
-  if (selected) return null
+  // An open side panel has the customer's attention; the hint would only crowd it.
+  const panelOpen = useEditorUiStore((s) => s.panel !== 'catalog')
+  if (selected || panelOpen) return null
   const text =
     tool.mode === 'place'
       ? 'Klicka i trädgården för att placera. Esc avslutar.'
