@@ -1,5 +1,4 @@
 import { useEffect } from 'react'
-import { CatalogPanel } from './CatalogPanel'
 import { useEditorUiStore } from './editorUiStore'
 import { useKeyboardShortcuts } from './keyboard'
 import { PhotoPanel } from './photos/PhotoPanel'
@@ -16,12 +15,14 @@ import { ShapingStrip } from './shell/ShapingStrip'
 import { StatusLine } from './shell/StatusLine'
 import { ToolRail } from './shell/ToolRail'
 import { ViewSwitch } from './shell/ViewSwitch'
+import { PlantLabel, ToolHint } from './label/PlantLabel'
 import { Shelf } from './shelf/Shelf'
 import { useSavedDesign } from './useSavedDesign'
 import './editor.css'
 import './shell/shell.css'
 import './price/price.css'
 import './shelf/shelf.css'
+import './label/label.css'
 
 export function EditorPage() {
   const document = useSceneStore((s) => s.document)
@@ -55,7 +56,8 @@ export function EditorPage() {
           </div>
         </div>
         <ShapingStrip />
-        <CatalogPanel />
+        <PlantLabel />
+        <ToolHint />
         <StatusLine ready={ready} />
         <SaveConflict />
         <DesignLoading load={load} />
