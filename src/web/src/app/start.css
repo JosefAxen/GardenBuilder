@@ -1,0 +1,107 @@
+/* The start page: a plain way in while the customer flow is built (delprojekt 12). */
+
+.start {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: var(--space-8) var(--space-4);
+  background: var(--fir);
+}
+
+.start__inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  width: min(440px, 100%);
+}
+
+.start__mark {
+  color: var(--on-fir);
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.start__lead {
+  margin: calc(-1 * var(--space-3)) 0 0;
+  color: var(--on-fir-2);
+  font-size: var(--text-l);
+}
+
+.start__steps {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: var(--space-2) var(--space-5);
+  list-style: none;
+}
+
+.start__steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.start__steps li:last-child {
+  border-bottom: 0;
+}
+
+.start__number {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--linen-2);
+  color: var(--ink-2);
+  font-size: var(--text-s);
+  font-weight: 700;
+}
+
+.start__steps li.is-current .start__number {
+  background: var(--terra);
+  color: var(--white);
+}
+
+.start__step {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-top: 3px;
+}
+
+.start__name {
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+}
+
+.start__what {
+  font-size: var(--text-m);
+  color: var(--ink-2);
+}
+
+.start__now {
+  margin-top: var(--space-1);
+  font-size: var(--text-s);
+  font-weight: var(--weight-bold);
+  color: var(--terra-ink);
+}
+
+.start__open {
+  width: 100%;
+  text-decoration: none;
+}
+
+.start__staff {
+  align-self: center;
+  color: var(--on-fir-2);
+  font-size: var(--text-m);
+  text-underline-offset: 0.2em;
+}
+
+.start__staff:hover {
+  color: var(--on-fir);
+}

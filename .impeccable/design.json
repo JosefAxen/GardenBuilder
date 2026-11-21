@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-20T12:00:00Z",
+  "title": "Design System: Drömträdgård",
+  "extensions": {
+    "colorMeta": {
+      "terra": { "role": "primary", "displayName": "Nursery Terracotta", "canonical": "#BC522B", "tonalRamp": ["#38190D", "#5E2916", "#84391E", "#A54826", "#CD7D60", "#DEA995", "#EED4CA", "#F8EEEA"] },
+      "terra-ink": { "role": "primary", "displayName": "Fired Terracotta", "canonical": "#9C3F1E" },
+      "terra-soft": { "role": "primary", "displayName": "Clay Wash", "canonical": "#F6E2D6" },
+      "fir": { "role": "secondary", "displayName": "Fir", "canonical": "#1C392D", "tonalRamp": ["#08110E", "#0E1D17", "#142820", "#193228", "#556B62", "#8E9C96", "#C6CECB", "#E8EBEA"] },
+      "fir-2": { "role": "secondary", "displayName": "Fir Shade", "canonical": "#244536" },
+      "fir-3": { "role": "secondary", "displayName": "Fir Moss", "canonical": "#2F5241" },
+      "on-fir": { "role": "secondary", "displayName": "Bleached Linen on Fir", "canonical": "#F3EEE4" },
+      "on-fir-2": { "role": "secondary", "displayName": "Lichen", "canonical": "#C3CEC2" },
+      "on-fir-3": { "role": "secondary", "displayName": "Old Lichen (only on fir)", "canonical": "#97A99B" },
+      "linen": { "role": "neutral", "displayName": "Linen", "canonical": "#F8F4EC", "tonalRamp": ["#4A4947", "#7C7A76", "#AEABA5", "#DAD7D0", "#E4DBCC", "#EFE9DE", "#F8F4EC", "#FFFFFF"] },
+      "linen-2": { "role": "neutral", "displayName": "Washed Linen", "canonical": "#EFE9DE" },
+      "linen-3": { "role": "neutral", "displayName": "Raw Linen", "canonical": "#E4DBCC" },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#1E2923", "tonalRamp": ["#090C0B", "#0F1512", "#151D19", "#1E2923", "#48544D", "#626C65", "#C7CAC8", "#E9EAE9"] },
+      "ink-2": { "role": "neutral", "displayName": "Ink Grey", "canonical": "#48544D" },
+      "ink-3": { "role": "neutral", "displayName": "Ink Mist", "canonical": "#626C65" },
+      "white": { "role": "neutral", "displayName": "White", "canonical": "#FFFFFF" },
+      "hairline": { "role": "neutral", "displayName": "Hairline", "canonical": "rgba(30, 41, 35, 0.1)" },
+      "hairline-strong": { "role": "neutral", "displayName": "Hairline Strong", "canonical": "rgba(30, 41, 35, 0.18)" },
+      "scene-top": { "role": "neutral", "displayName": "Scene Dusk (top)", "canonical": "#EDE3D3", "tonalRamp": ["#44403A", "#716B61", "#9E9587", "#C7BBAA", "#D5C4AA", "#E2D5C1", "#EDE3D3", "#FCFBF9"] },
+      "scene-mid": { "role": "neutral", "displayName": "Scene Dusk (middle)", "canonical": "#E2D5C1" },
+      "scene-bottom": { "role": "neutral", "displayName": "Scene Dusk (bottom)", "canonical": "#D5C4AA" },
+      "cut": { "role": "state", "displayName": "Cut", "canonical": "#2A2420", "tonalRamp": ["#0D0B0A", "#151210", "#1D1916", "#25201C", "#5F5B58", "#959290", "#CAC8C7", "#EAE9E9"] },
+      "warn": { "role": "state", "displayName": "Ochre Warning", "canonical": "#7E520C", "tonalRamp": ["#261904", "#3F2906", "#583908", "#6F480B", "#9E7D49", "#BFA986", "#DFD4C2", "#F2EEE7"] },
+      "warn-soft": { "role": "state", "displayName": "Ochre Wash", "canonical": "#F5E6C4" },
+      "error": { "role": "state", "displayName": "Brick Error", "canonical": "#A3392B", "tonalRamp": ["#31110D", "#521D16", "#72281E", "#8F3226", "#BA6B60", "#D19C95", "#E8CECA", "#F6EBEA"] },
+      "error-soft": { "role": "state", "displayName": "Brick Wash", "canonical": "#F7E0DA" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The Drömträdgård wordmark on the start page only." },
+      "headline": { "displayName": "Headline", "purpose": "Header price span, price total, login and admin page titles." },
+      "title": { "displayName": "Title", "purpose": "Side panel titles, admin card titles; the editor wordmark at 700." },
+      "title-small": { "displayName": "Title Small", "purpose": "Proposal card titles and sub-headings in panels." },
+      "body": { "displayName": "Body", "purpose": "Base text, buttons at 650, form inputs." },
+      "body-small": { "displayName": "Body Small", "purpose": "Panel hints, status line, plant label facts, segments, search, notices." },
+      "label": { "displayName": "Label", "purpose": "Tabs, chips, field hints, header sub-lines." },
+      "caption": { "displayName": "Caption", "purpose": "Tool rail captions; badges at 650." },
+      "numeric": { "displayName": "Numeric", "purpose": "Prices and measures, always tabular numerals." }
+    },
+    "shadows": [
+      { "name": "lift", "value": "0 1px 2px rgba(40, 30, 15, 0.08), 0 6px 16px -6px rgba(40, 30, 15, 0.16), 0 18px 40px -16px rgba(40, 30, 15, 0.24)", "purpose": "Every floating linen object over the scene: cards, tool rail, side panel, plant label, segmented control, price details." },
+      { "name": "lift-dark", "value": "0 1px 2px rgba(0, 0, 0, 0.25), 0 12px 32px -12px rgba(0, 0, 0, 0.5)", "purpose": "The shelf, resting directly on fir." },
+      { "name": "lift-small", "value": "0 1px 2px rgba(40, 30, 15, 0.12), 0 2px 6px -2px rgba(40, 30, 15, 0.12)", "purpose": "Small raised parts inside linen: the selected tab, the add button on article cards." },
+      { "name": "accent-press", "value": "inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 6px 14px -8px rgba(20, 15, 10, 0.45)", "purpose": "The terracotta accent button only." },
+      { "name": "focus-ring", "value": "outline: 2px solid var(--terra); outline-offset: 2px", "purpose": "Global :focus-visible; inputs draw it as inset 1px + outer 2px terracotta box-shadow." }
+    ],
+    "motion": [
+      { "name": "ease", "value": "cubic-bezier(0.2, 0.7, 0.2, 1)", "purpose": "The one easing for every state change." },
+      { "name": "duration", "value": "160ms", "purpose": "Colour, shadow and transform transitions." },
+      { "name": "enter", "value": "180-240ms fade with a 4-6px drop", "purpose": "Plant label, price details, thumbnails appearing." },
+      { "name": "reduced-motion", "value": "0.01ms", "purpose": "prefers-reduced-motion collapses all transitions and animations." }
+    ],
+    "breakpoints": [
+      { "name": "admin-narrow", "value": "600px" },
+      { "name": "editor-min-width", "value": "1024px" }
+    ],
+    "scene": {
+      "source": "src/web/src/editor/sceneLook.ts",
+      "background": "#EDE3D3",
+      "hemisphere": { "sky": "#FFF3E0", "ground": "#7A6A4F", "intensity": 1.15 },
+      "sun": { "color": "#FFE2B8", "intensity": 2.1, "position": [-14, 20, 12], "note": "low golden sun from the south-west (three.js -x, +z)" },
+      "selection": "#BC522B",
+      "selectedEmissive": "#5A2410",
+      "handle": "#BC522B",
+      "firstHandle": "#1C392D",
+      "shadowType": "PCFShadowMap"
+    }
+  },
+  "components": [
+    {
+      "name": "Accent Button",
+      "kind": "button",
+      "refersTo": "button-accent",
+      "description": "The single most important action on a surface. One per view.",
+      "html": "<button class=\"ds-btn ds-btn-accent\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z\"/></svg>Ge mig förslag</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 42px; padding: 0 16px; border: 0; border-radius: 12px; font-family: 'Familjen Grotesk Variable', system-ui, sans-serif; font-size: 14px; font-weight: 650; letter-spacing: -0.005em; cursor: pointer; transition: background-color 160ms cubic-bezier(0.2,0.7,0.2,1), transform 160ms cubic-bezier(0.2,0.7,0.2,1); } .ds-btn:active { transform: translateY(1px); } .ds-btn:focus-visible { outline: 2px solid #BC522B; outline-offset: 2px; } .ds-btn-accent { background: #BC522B; color: #FFFFFF; box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 6px 14px -8px rgba(20,15,10,0.45); } .ds-btn-accent:hover { background: #9C3F1E; }"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Fir button for strong actions that are not the one primary action (Byt, Behåll).",
+      "html": "<button class=\"ds-btn-p\">Byt</button>",
+      "css": ".ds-btn-p { display: inline-flex; align-items: center; height: 42px; padding: 0 16px; border: 0; border-radius: 12px; background: #1C392D; color: #F3EEE4; font-family: 'Familjen Grotesk Variable', system-ui, sans-serif; font-size: 14px; font-weight: 650; cursor: pointer; transition: background-color 160ms cubic-bezier(0.2,0.7,0.2,1); } .ds-btn-p:hover { background: #244536; } .ds-btn-p:active { transform: translateY(1px); } .ds-btn-p:focus-visible { outline: 2px solid #BC522B; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary and Danger Buttons",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Washed linen with a hairline inset; danger keeps the surface and uses error text.",
+      "html": "<div class=\"ds-row\"><button class=\"ds-btn-s\">Avbryt</button><button class=\"ds-btn-s ds-btn-danger\">Ta bort</button></div>",
+      "css": ".ds-row { display: flex; gap: 8px; padding: 16px; background: #F8F4EC; } .ds-btn-s { height: 42px; padding: 0 16px; border: 0; border-radius: 12px; background: #EFE9DE; color: #1E2923; box-shadow: inset 0 0 0 1px rgba(30,41,35,0.1); font-family: 'Familjen Grotesk Variable', system-ui, sans-serif; font-size: 14px; font-weight: 650; cursor: pointer; transition: background-color 160ms cubic-bezier(0.2,0.7,0.2,1); } .ds-btn-s:hover { background: #E4DBCC; } .ds-btn-danger { color: #A3392B; } .ds-btn-danger:hover { background: #F7E0DA; } .ds-btn-s:focus-visible { outline: 2px solid #BC522B; outline-offset: 2px; }"
+    },
+    {
+      "name": "Tool Rail",
+      "kind": "nav",
+      "refersTo": "tool-rail",
+      "description": "Floating linen rail of captioned 56px icon buttons; the active tool is fir.",
+      "html": "<div class=\"ds-rail\"><button class=\"ds-rail-btn is-active\" aria-pressed=\"true\"><svg width=\"21\" height=\"21\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z\"/></svg><span>Välj</span></button><button class=\"ds-rail-btn\" aria-pressed=\"false\"><svg width=\"21\" height=\"21\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/></svg><span>Hus</span></button><i class=\"ds-rail-sep\"></i><button class=\"ds-rail-btn\"><svg width=\"21\" height=\"21\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 14 4 9l5-5\"/><path d=\"M4 9h10.5a5.5 5.5 0 0 1 0 11H11\"/></svg><span>Ångra</span></button></div>",
+      "css": ".ds-rail { display: inline-flex; flex-direction: column; gap: 2px; width: 68px; padding: 6px; border-radius: 18px; background: #F8F4EC; box-shadow: 0 1px 2px rgba(40,30,15,0.08), 0 6px 16px -6px rgba(40,30,15,0.16), 0 18px 40px -16px rgba(40,30,15,0.24); } .ds-rail-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; width: 56px; height: 56px; border: 0; border-radius: 12px; background: transparent; color: #48544D; font-family: 'Familjen Grotesk Variable', system-ui, sans-serif; font-size: 11.5px; font-weight: 600; line-height: 1; cursor: pointer; transition: background-color 160ms cubic-bezier(0.2,0.7,0.2,1), color 160ms cubic-bezier(0.2,0.7,0.2,1); } .ds-rail-btn:hover { background: #EFE9DE; color: #1E2923; } .ds-rail-btn.is-active { background: #1C392D; color: #F3EEE4; } .ds-rail-btn:focus-visible { outline: 2px solid #BC522B; outline-offset: 2px; } .ds-rail-sep { height: 1px; margin: 5px 10px; background: rgba(30,41,35,0.1); }"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "nav",
+      "refersTo": "segmented",
+      "description": "Ovanifrån / 3D view switch: a floating linen pill, checked segment in fir.",
+      "html": "<div class=\"ds-seg\" role=\"radiogroup\" aria-label=\"Vy\"><button class=\"ds-segment is-checked\" role=\"radio\" aria-checked=\"true\">Ovanifrån</button><button class=\"ds-segment\" role=\"radio\" aria-checked=\"false\">3D</button></div>",
+      "css": ".ds-seg { display: inline-flex; gap: 2px; padding: 5px; border-radius: 14px; background: #F8F4EC; box-shadow: 0 1px 2px rgba(40,30,15,0.08), 0 6px 16px -6px rgba(40,30,15,0.16), 0 18px 40px -16px rgba(40,30,15,0.24); } .ds-segment { height: 36px; padding: 0 13px; border: 0; border-radius: 10px; background: transparent; color: #48544D; font-family: 'Familjen Grotesk Variable', system-ui, sans-serif; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: background-color 160ms cubic-bezier(0.2,0.7,0.2,1); } .ds-segment:hover:not(.is-checked) { background: #EFE9DE; color: #1E2923; } .ds-segment.is-checked { background: #1C392D; color: #F3EEE4; } .ds-segment:focus-visible { outline: 2px solid #BC522B; outline-offset: 2px; }"
+    },
+    {
+      "name": "Search Field",
+      "kind": "input",
+      "refersTo": "search-field",
+      "description": "Washed-linen search on the shelf; white with a terracotta ring on focus.",
+      "html": "<label class=\"ds-search\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input type=\"search\" placeholder=\"Sök bland växter och material\" aria-label=\"Sök\"></label>",
+      "css": ".ds-search { position: relative; display: flex; align-items: center; width: 244px; } .ds-search svg { position: absolute; left: 12px; color: #48544D; pointer-events: none; } .ds-search input { width: 100%; height: 38px; padding: 0 36px 0 37px; border: 0; border-radius: 11px; background: #EFE9DE; color: #1E2923; font-family: 'Familjen Grotesk Variable', system-ui, sans-serif; font-size: 13.5px; outline: none; transition: box-shadow 160ms cubic-bezier(0.2,0.7,0.2,1), background-color 160ms cubic-bezier(0.2,0.7,0.2,1); } .ds-search input::placeholder { color: #626C65; } .ds-search input:focus-visible { background: #FFFFFF; box-shadow: 0 0 0 2px #BC522B; }"
+    },
+    {
+      "name": "Category Chips",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Catalogue filters; the selected chip turns fir.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip is-selected\" aria-pressed=\"true\">Alla</button><button class=\"ds-chip\" aria-pressed=\"false\">Buskar</button><button class=\"ds-chip\" aria-pressed=\"false\">Perenner</button></div>",
+      "css": ".ds-chips { display: flex; gap: 5px; } .ds-chip { height: 26px; padding: 0 10px; border: 0; border-radius: 999px; background: #EFE9DE; color: #48544D; font-family: 'Familjen Grotesk Variable', system-ui, sans-serif; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: background-color 160ms cubic-bezier(0.2,0.7,0.2,1), color 160ms cubic-bezier(0.2,0.7,0.2,1); } .ds-chip:hover:not(.is-selected) { background: #E4DBCC; color: #1E2923; } .ds-chip.is-selected { background: #1C392D; color: #F3EEE4; } .ds-chip:focus-visible { outline: 2px solid #BC522B; outline-offset: 2px; }"
+    },
+    {
+      "name": "Plant Label",
+      "kind": "card",
+      "refersTo": "plant-label",
+      "description": "The selected element as a nursery tag with a punched hole, dotted fact leaders and a price span.",
+      "html": "<article class=\"ds-label\"><i class=\"ds-label-hole\"></i><div class=\"ds-label-hero\"><span class=\"ds-badge-new\">Ny i designen</span></div><h2>Rosenspirea 'Anthony Waterer'</h2><dl><div><dt>Höjd</dt><i></i><dd>0,8 m</dd></div><div><dt>Antal</dt><i></i><dd>3 st</dd></div></dl><p class=\"ds-label-price\"><b>540 – 690 kr</b><span>inkl. moms</span></p></article>",
+      "css": ".ds-label { position: relative; width: 296px; padding: 26px 20px 20px; border-radius: 18px; background: #F8F4EC; color: #1E2923; font-family: 'Familjen Grotesk Variable', system-ui, sans-serif; box-shadow: 0 1px 2px rgba(40,30,15,0.08), 0 6px 16px -6px rgba(40,30,15,0.16), 0 18px 40px -16px rgba(40,30,15,0.24); } .ds-label-hole { position: absolute; top: 10px; left: 50%; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: #E4DBCC; box-shadow: inset 0 1.5px 2px rgba(60,40,20,0.35); } .ds-label-hero { position: relative; height: 118px; border-radius: 12px; background: radial-gradient(200px 100px at 50% 40%, #fff9f0, #E4DBCC); } .ds-badge-new { position: absolute; left: 10px; top: 10px; display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: 7px; background: #F6E2D6; color: #9C3F1E; font-size: 11.5px; font-weight: 650; } .ds-badge-new::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #BC522B; } .ds-label h2 { margin: 12px 0 0; font-size: 21px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.15; } .ds-label dl { margin: 12px 0 0; } .ds-label dl div { display: flex; align-items: baseline; gap: 8px; min-height: 30px; font-size: 13.5px; } .ds-label dt { color: #48544D; } .ds-label dl i { flex: 1; border-bottom: 1.5px dotted rgba(30,41,35,0.18); transform: translateY(-3px); } .ds-label dd { margin: 0; font-weight: 650; font-variant-numeric: tabular-nums; } .ds-label-price { display: flex; align-items: baseline; gap: 8px; margin: 12px 0 0; padding-top: 12px; border-top: 1px solid rgba(30,41,35,0.1); } .ds-label-price b { font-size: 23px; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; } .ds-label-price span { font-size: 12.5px; color: #626C65; }"
+    },
+    {
+      "name": "Article Card",
+      "kind": "card",
+      "refersTo": "article-card",
+      "description": "A shelf card: rendered thumbnail well, name, detail, price span, and the add button.",
+      "html": "<div class=\"ds-article\"><div class=\"ds-article-media\"><span class=\"ds-article-swatch\"></span><button class=\"ds-article-add\" aria-label=\"Lägg till\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M5 12h14\"/><path d=\"M12 5v14\"/></svg></button></div><p class=\"ds-article-title\">Smultronschersmin</p><p class=\"ds-article-detail\">Buske · 1,5 m</p><p class=\"ds-article-price\">290 – 340 kr</p></div>",
+      "css": ".ds-article { display: flex; flex-direction: column; width: 150px; font-family: 'Familjen Grotesk Variable', system-ui, sans-serif; color: #1E2923; } .ds-article p { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-article-media { position: relative; display: grid; place-items: center; height: 68px; border-radius: 12px; background: radial-gradient(90px 50px at 50% 38%, #fffbf4, #E4DBCC); } .ds-article-swatch { width: 30px; height: 30px; border-radius: 50%; background: #6E8F55; box-shadow: inset 0 -4px 6px rgba(0,0,0,0.18), 0 3px 6px -2px rgba(40,30,15,0.3); } .ds-article-add { position: absolute; right: 6px; bottom: 6px; display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 9px; background: #FFFFFF; color: #1C392D; box-shadow: 0 1px 2px rgba(40,30,15,0.12), 0 2px 6px -2px rgba(40,30,15,0.12); cursor: pointer; transition: background-color 160ms cubic-bezier(0.2,0.7,0.2,1), color 160ms cubic-bezier(0.2,0.7,0.2,1); } .ds-article-add:hover { background: #1C392D; color: #F3EEE4; } .ds-article-add:focus-visible { outline: 2px solid #BC522B; outline-offset: 2px; } .ds-article-title { margin-top: 7px !important; font-size: 13.5px; font-weight: 650; line-height: 1.2; } .ds-article-detail { font-size: 12.5px; color: #626C65; } .ds-article-price { font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Notice",
+      "kind": "custom",
+      "refersTo": "notice-warn",
+      "description": "Inline panel message; info on washed linen, warn and error on their soft grounds.",
+      "html": "<div class=\"ds-notice\" role=\"alert\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3\"/><path d=\"M12 9v4\"/><path d=\"M12 17h.01\"/></svg><p>Spara designen först, så kan förslagen bygga på den.</p></div>",
+      "css": ".ds-notice { display: flex; align-items: flex-start; gap: 10px; max-width: 340px; padding: 10px 12px; border-radius: 12px; background: #F5E6C4; color: #7E520C; font-family: 'Familjen Grotesk Variable', system-ui, sans-serif; font-size: 13.5px; line-height: 1.4; } .ds-notice svg { flex: none; margin-top: 1px; } .ds-notice p { margin: 0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "A Nursery Afternoon",
+    "overview": "The customer's own garden is the subject, shown as a warm, lit model inside a rounded window. Around that window sits a deep fir-green frame, and every tool is a linen object laid on top of it or floating over the scene: a tool rail like a slat of wood, a shelf along the bottom like a nursery bench, a plant label that hangs from a punched hole. The world deliberately refuses the category default of a grey CAD sidebar with a blue accent.\n\nDensity is that of a working tool, not a brochure: type runs small (11.5 to 22px in the editor), controls are compact (34 to 42px tall), and the scene gets nearly all the room. Warmth comes from material, not decoration: linen surfaces, soft layered shadows tinted brown, a golden low sun in the scene, and a single terracotta voice that marks only what matters now.\n\nEverything the customer reads is Swedish. Money and measures are always tabular numerals, and prices are always shown as a span (\"38 400 – 46 900 kr\"), never as one exact figure.",
+    "keyCharacteristics": [
+      "Fir frame, linen objects, warm scene window. Three materials, nothing else.",
+      "Terracotta appears once per view: the single primary action, or the current selection.",
+      "One typeface (Familjen Grotesk, variable) carrying every role through weight and size.",
+      "Soft, warm, layered lift on linen; no hard borders, hairlines only.",
+      "Lucide icons at 1.75 stroke (1.9 inside buttons and notices).",
+      "Every visible text/ground pair holds WCAG AA, enforced by a unit test."
+    ],
+    "rules": [
+      { "name": "The One Terracotta Rule", "body": "Terracotta (`terra`) is reserved for the single primary action on a surface and for selection. It is never a decorative colour, never a second button, never a heading. If two terracotta things compete in one view, one of them is wrong.", "section": "colors" },
+      { "name": "The Fir Means On Rule", "body": "Every pressed, checked or selected choice in a control group (tool, segment, chip) turns fir with on-fir text. Selection of an *object* in the garden is terracotta; selection of a *mode* is fir.", "section": "colors" },
+      { "name": "The Lichen Floor Rule", "body": "`on-fir-3` is allowed only on `fir`. On `fir-2` it drops below AA (a test documents the failure).", "section": "colors" },
+      { "name": "The Tested Pairs Rule", "body": "These pairs are verified at ≥ 4.5:1 in `contrast.test.ts` and are the only text/ground pairs to use: ink, ink-2, ink-3 on linen; ink-2, ink-3 on linen-2; on-fir, on-fir-2, on-fir-3 on fir; white on terra; terra-ink on terra-soft; on-fir on cut; warn and error on linen; warn on warn-soft; error on error-soft. `tokens.css` and `palette.ts` must hold identical values (also tested).", "section": "colors" },
+      { "name": "The Tabular Money Rule", "body": "Every price, measure and count uses tabular numerals (the `.num` class, `font-variant-numeric: tabular-nums`). Prices are a span in SEK including VAT.", "section": "typography" },
+      { "name": "The One Family Rule", "body": "No second typeface, no system display face. Contrast is made with weight and size.", "section": "typography" },
+      { "name": "The Floating Linen Rule", "body": "Anything laid over the scene is linen with Lift and an 18px radius. Nothing floats without its shadow, and nothing inside a floating object gets Lift again.", "section": "elevation" },
+      { "name": "The Hairline Rule", "body": "Edges are drawn with an inset 1px hairline box-shadow or a 1px hairline rule, never a solid opaque border.", "section": "elevation" }
+    ],
+    "dos": [
+      "**Do** put every page on the fir frame and every tool on linen; the scene sits in a 22px-radius window inset 16px.",
+      "**Do** use terracotta for exactly one primary action per surface and for selection of garden objects, nothing else.",
+      "**Do** mark the \"on\" state of a mode, tool or filter with fir and on-fir text.",
+      "**Do** use only the tested text/ground pairs; keep `on-fir-3` on `fir` only.",
+      "**Do** keep the global focus ring: 2px solid terracotta, 2px offset (inputs draw it as a box-shadow ring).",
+      "**Do** use Lift for anything floating over the scene and tonal steps (linen → linen-2 → white) inside it.",
+      "**Do** write prices as a span in SEK including VAT, with tabular numerals, and keep every visible string Swedish.",
+      "**Do** take colours from `tokens.css` in CSS and from `palette.ts` in the 3D scene; add a new colour to both and to the contrast test."
+    ],
+    "donts": [
+      "**Don't** use a grey CAD sidebar with a blue accent; that is the category default this world replaces.",
+      "**Don't** put two terracotta buttons in one view, or use terracotta for headings, decoration or warnings.",
+      "**Don't** draw solid grey borders; use hairline insets and rules.",
+      "**Don't** put `on-fir-3` on `fir-2` or any lighter ground; it fails AA.",
+      "**Don't** add a second typeface or set money in proportional numerals.",
+      "**Don't** light or colour the scene with values outside `sceneLook.ts` and `palette.ts`, and don't tint article models with world colours."
+    ]
+  }
+}

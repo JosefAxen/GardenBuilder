@@ -1,0 +1,271 @@
+/* The editor's Plantskolan frame: fir header, rounded scene window, floating rail, shelf. */
+
+.editor {
+  position: relative;
+  display: grid;
+  grid-template-rows: 80px minmax(0, 1fr) 156px;
+  row-gap: var(--space-4);
+  height: 100dvh;
+  min-width: 1024px;
+  padding: 0 var(--space-4) var(--space-4);
+  background: var(--fir);
+  color: var(--ink);
+  overflow: hidden;
+}
+
+/* ---------- Header on fir */
+.editor-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding: 0 0 0 var(--space-2);
+  color: var(--on-fir);
+}
+
+.editor-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.editor-brand__mark {
+  color: var(--on-fir);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  text-decoration: none;
+}
+
+.editor-brand__mark:hover {
+  color: var(--white);
+}
+
+.editor-brand .save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-s);
+  color: var(--on-fir-2);
+}
+
+.editor-brand .save-status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #9fd3a8;
+}
+
+.editor-brand .save-status.warning {
+  color: var(--warn-soft);
+}
+
+.editor-brand .save-status.warning::before {
+  background: var(--warn-soft);
+}
+
+.editor-header__end {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+/* ---------- Scene window */
+.editor-window {
+  position: relative;
+  min-height: 0;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: var(--scene-ground);
+}
+
+.editor-window > canvas,
+.editor-window > div:first-child {
+  position: absolute !important;
+  inset: 0;
+}
+
+.editor-window__top-left {
+  position: absolute;
+  top: var(--space-4);
+  left: var(--space-4);
+  bottom: 64px;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  pointer-events: none;
+}
+
+.editor-window__top-left > * {
+  pointer-events: auto;
+}
+
+.editor-window__beside-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  max-height: 100%;
+  min-height: 0;
+  pointer-events: none;
+}
+
+.editor-window__beside-rail > * {
+  pointer-events: auto;
+}
+
+/* ---------- Tool rail */
+.tool-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 68px;
+  padding: 6px;
+  border-radius: var(--radius-l);
+  background: var(--linen);
+  box-shadow: var(--lift);
+}
+
+.tool-rail__separator {
+  height: 1px;
+  margin: 5px 10px;
+  background: var(--hairline);
+}
+
+/* ---------- Side panel (Foton, Förslag) */
+.side-panel {
+  width: 380px;
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-l);
+  background: var(--linen);
+  box-shadow: var(--lift);
+}
+
+/* ---------- Shaping strip */
+.shaping-strip {
+  position: absolute;
+  top: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: min(640px, calc(100% - 520px));
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border-radius: var(--radius-m);
+}
+
+.shaping-strip__hint {
+  flex: 1;
+  margin: 0 var(--space-2) 0 0;
+  font-size: var(--text-m);
+  color: var(--ink-2);
+  line-height: 1.35;
+}
+
+/* ---------- Status line */
+.status-line {
+  position: absolute;
+  left: var(--space-4);
+  right: var(--space-4);
+  bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--text-m);
+  color: var(--ink-2);
+  pointer-events: none;
+}
+
+.status-line > * {
+  pointer-events: auto;
+}
+
+.status-line__removed {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.status-line__removed i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--cut);
+}
+
+/* ---------- Dev menu */
+.dev-menu {
+  position: relative;
+  margin-left: auto;
+}
+
+.dev-menu > .ui-icon-button {
+  background: rgba(248, 244, 236, 0.7);
+}
+
+.dev-menu__panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + var(--space-2));
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
+  width: 240px;
+  padding: var(--space-3);
+}
+
+.dev-menu__check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-m);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.dev-menu__check input {
+  accent-color: var(--fir);
+}
+
+.dev-menu__perf {
+  margin: 0;
+  font-size: var(--text-s);
+  color: var(--ink-2);
+}
+
+/* ---------- Shelf */
+.editor-shelf {
+  display: flex;
+  min-height: 0;
+  border-radius: var(--radius-xl);
+  background: var(--linen);
+  box-shadow: var(--lift-dark);
+  overflow: hidden;
+}
+
+.editor-shelf__side {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  width: 276px;
+  padding: 14px var(--space-4);
+  border-right: 1px solid var(--hairline);
+}
+
+.editor-shelf__content {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+}

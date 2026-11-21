@@ -1,3 +1,4 @@
+import { sceneLook } from './sceneLook'
 import type { ThreeEvent } from '@react-three/fiber'
 import { useMemo } from 'react'
 import type { Point2 } from '../api/scene'
@@ -39,7 +40,7 @@ export function LineView({
   // The catalog requires both for hedges and fences; the fallbacks only guard a broken article.
   const height = article.height ?? 1
   const width = article.width ?? 0.3
-  const emissive = selected ? '#665500' : '#000000'
+  const emissive = selected ? sceneLook.selectedEmissive : '#000000'
   // Keyed on ghost: three.js does not rebuild a material when its transparency changes.
   const material = <meshStandardMaterial key={ghost ? 'ghost' : 'solid'} color={article.color} emissive={emissive} flatShading transparent={ghost} opacity={ghost ? 0.5 : 1} />
 

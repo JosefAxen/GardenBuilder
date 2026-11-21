@@ -1,3 +1,4 @@
+import { sceneLook } from './sceneLook'
 import { OrbitControls } from '@react-three/drei'
 import { Canvas, type ThreeEvent, useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
@@ -67,7 +68,7 @@ function FlatPolygon({
       <meshStandardMaterial
         key={removed ? 'removed' : 'kept'}
         color={color}
-        emissive={selected ? '#665500' : '#000000'}
+        emissive={selected ? sceneLook.selectedEmissive : '#000000'}
         transparent={removed}
         opacity={removed ? 0.35 : 1}
         depthWrite={!removed}
@@ -143,7 +144,7 @@ function SelectionMarker({ point }: { point: PlacedPoint }) {
   return (
     <mesh position={[point.position.x, 0.04, -point.position.y]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
       <ringGeometry args={[radius - 0.08, radius, 48]} />
-      <meshBasicMaterial color="#ffd23f" />
+      <meshBasicMaterial color={sceneLook.selection} />
     </mesh>
   )
 }
@@ -361,12 +362,13 @@ export function SceneCanvas() {
   const measuring = useSceneStore((s) => s.measuring)
   return (
     // Draw only when something changes (saves battery on laptops), except while measuring performance.
-    <Canvas shadows dpr={[1, 2]} frameloop={measuring ? 'always' : 'demand'} camera={{ position: [18, 16, 18], fov: 45 }}>
-      <color attach="background" args={['#dfe9f2']} />
-      <hemisphereLight args={['#eaf3ff', '#6b7a55', 0.8]} />
+    <Canvas shadows={{ type: sceneLook.shadowType }} dpr={[1, 2]} frameloop={measuring ? 'always' : 'demand'} camera={{ position: [18, 16, 18], fov: 45 }}>
+      <color attach="background" args={[sceneLook.background]} />
+      <hemisphereLight args={sceneLook.hemisphere} />
       <directionalLight
-        position={[12, 25, 8]}
-        intensity={1.6}
+        position={sceneLook.sun.position}
+        intensity={sceneLook.sun.intensity}
+        color={sceneLook.sun.color}
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-camera-left={-20}

@@ -1,0 +1,200 @@
+/* The selected element as a nursery plant label, top right in the scene window. */
+
+.plant-label {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  width: 296px;
+  max-height: calc(100% - 80px);
+  padding: 26px var(--space-5) var(--space-5);
+  overflow-y: auto;
+  animation: label-in 200ms var(--ease);
+}
+
+@keyframes label-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* The punched hole a label hangs by. */
+.plant-label__hole {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-radius: 50%;
+  background: var(--linen-3);
+  box-shadow: inset 0 1.5px 2px rgba(60, 40, 20, 0.35);
+}
+
+.plant-label__status {
+  display: flex;
+}
+
+.plant-label__hero {
+  position: relative;
+  height: 118px;
+  border-radius: var(--radius-m);
+  overflow: hidden;
+  background: radial-gradient(200px 100px at 50% 40%, #fff9f0, var(--linen-3));
+}
+
+.plant-label__hero .article-thumb {
+  position: absolute;
+  inset: 0;
+}
+
+.plant-label__hero .plant-label__status {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+}
+
+.plant-label__name {
+  margin-top: var(--space-3);
+  font-size: 21px;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.plant-label__facts {
+  margin: var(--space-3) 0 0;
+}
+
+.plant-label__fact {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-height: 30px;
+  font-size: var(--text-m);
+}
+
+.plant-label__fact dt {
+  color: var(--ink-2);
+}
+
+.plant-label__leader {
+  flex: 1;
+  border-bottom: 1.5px dotted var(--hairline-strong);
+  transform: translateY(-3px);
+}
+
+.plant-label__fact dd {
+  margin: 0;
+  font-weight: var(--weight-bold);
+}
+
+.plant-label__price {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--hairline);
+}
+
+.plant-label__price b {
+  font-size: 23px;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.02em;
+}
+
+.plant-label__price span {
+  font-size: var(--text-s);
+  color: var(--ink-3);
+}
+
+.plant-label__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.plant-label__actions .ui-button {
+  flex: 1;
+  padding: 0 var(--space-3);
+}
+
+.plant-label__actions .ui-icon-button {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-m);
+  background: var(--linen-2);
+}
+
+.plant-label__swap {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--hairline);
+}
+
+.plant-label__swap h3 {
+  font-size: var(--text-m);
+  font-weight: var(--weight-bold);
+}
+
+.plant-label__hint {
+  margin: 2px 0 var(--space-2);
+  font-size: var(--text-s);
+  color: var(--ink-3);
+}
+
+.plant-label__swap ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plant-label__swap li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--hairline);
+  font-size: var(--text-m);
+}
+
+.plant-label__swatch {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+.plant-label__option {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.plant-label__option-price {
+  color: var(--ink-3);
+  font-size: var(--text-s);
+  white-space: nowrap;
+}
+
+/* ---------- The tool hint, low in the window when nothing is selected */
+.tool-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 64px;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(248, 244, 236, 0.85);
+  color: var(--ink-2);
+  font-size: var(--text-m);
+  white-space: nowrap;
+  pointer-events: none;
+}

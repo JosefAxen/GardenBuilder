@@ -1,3 +1,4 @@
+import { Button } from '../ui'
 import { keepMine, statusText, takeLatest, useSaveStore } from './saveStore'
 import type { DesignLoad } from './useSavedDesign'
 
@@ -19,11 +20,15 @@ export function SaveConflict() {
   const status = useSaveStore((s) => s.status)
   if (status !== 'conflict') return null
   return (
-    <div className="save-conflict" role="alertdialog" aria-labelledby="save-conflict-text">
+    <div className="save-conflict ui-card ui-card--elevated" role="alertdialog" aria-labelledby="save-conflict-text">
       <p id="save-conflict-text">{statusText('conflict')}</p>
-      <div className="buttons">
-        <button onClick={() => void takeLatest()}>Hämta den senaste</button>
-        <button onClick={keepMine}>Behåll min</button>
+      <div className="save-conflict__buttons">
+        <Button variant="primary" onClick={() => void takeLatest()}>
+          Hämta den senaste
+        </Button>
+        <Button variant="secondary" onClick={keepMine}>
+          Behåll min
+        </Button>
       </div>
     </div>
   )
@@ -34,7 +39,9 @@ export function DesignLoading({ load }: { load: DesignLoad }) {
   if (load === 'ready') return null
   return (
     <div className="design-loading" role="status">
-      <p>{load === 'loading' ? 'Hämtar din design…' : 'Det gick inte att hämta din design. Försöker igen…'}</p>
+      <p className="design-loading__card ui-card ui-card--elevated">
+        <span className="design-loading__spinner" aria-hidden />
+        {load === 'loading' ? 'Hämtar din design…' : 'Det gick inte att hämta din design. Försöker igen…'}</p>
     </div>
   )
 }

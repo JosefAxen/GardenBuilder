@@ -1,0 +1,202 @@
+/* The price in the fir header and its details card. */
+
+.price-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  min-width: 260px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--radius-m);
+  background: transparent;
+  color: var(--on-fir);
+  text-align: right;
+  cursor: pointer;
+  transition: background-color var(--duration) var(--ease);
+}
+
+.price-summary:hover,
+.price-summary[aria-expanded='true'] {
+  background: var(--fir-2);
+}
+
+.price-summary__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-s);
+  color: var(--on-fir-2);
+}
+
+.price-summary__chevron {
+  transition: transform var(--duration) var(--ease);
+}
+
+.price-summary__chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.price-summary__value {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  white-space: nowrap;
+  transition: opacity var(--duration) var(--ease);
+}
+
+.price-summary__value.is-stale {
+  opacity: 0.5;
+}
+
+.price-summary__note {
+  font-size: var(--text-s);
+  color: var(--on-fir-2);
+  white-space: nowrap;
+}
+
+.price-summary__note--error {
+  color: var(--warn-soft);
+  white-space: normal;
+  max-width: 260px;
+}
+
+/* ---------- Details card, under the header on the right */
+.price-details-anchor {
+  position: absolute;
+  top: 72px;
+  right: var(--space-4);
+  z-index: 20;
+}
+
+.price-details {
+  width: 340px;
+  max-height: min(70vh, 620px);
+  overflow-y: auto;
+  padding: var(--space-5);
+  animation: price-details-in 180ms var(--ease);
+}
+
+.price-details.is-stale > :not(.price-details__note) {
+  opacity: 0.5;
+}
+
+@keyframes price-details-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+.price-details p {
+  margin: 0;
+}
+
+.price-details__total {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.02em;
+}
+
+.price-details__confidence {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: var(--space-1) !important;
+  font-size: var(--text-m);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-2);
+}
+
+.confidence {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--warn);
+}
+
+.confidence--high {
+  background: var(--fir-3);
+}
+
+.confidence--low {
+  background: var(--terra);
+}
+
+.price-details__hint {
+  margin-top: var(--space-1) !important;
+  font-size: var(--text-s);
+  color: var(--ink-3);
+}
+
+.price-subtotals {
+  margin: var(--space-4) 0 var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--hairline);
+}
+
+.price-subtotals div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 3px 0;
+  font-size: var(--text-m);
+}
+
+.price-subtotals dt {
+  color: var(--ink-2);
+}
+
+.price-subtotals dd {
+  margin: 0;
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.price-subtotals__vat {
+  margin-top: var(--space-1);
+  padding-top: var(--space-2) !important;
+  border-top: 1px dashed var(--hairline-strong);
+}
+
+.price-subtotals__vat dt,
+.price-subtotals__vat dd {
+  color: var(--ink-3);
+  font-weight: var(--weight-regular) !important;
+}
+
+.price-details__toggle {
+  margin-left: calc(-1 * var(--space-3));
+}
+
+.price-lines {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+}
+
+.price-lines li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--hairline);
+  font-size: var(--text-m);
+}
+
+.price-lines__quantity {
+  color: var(--ink-3);
+}
+
+.price-lines__amount {
+  grid-column: 1 / -1;
+  text-align: right;
+  font-weight: var(--weight-semibold);
+}
+
+.price-details__note {
+  margin-top: var(--space-4) !important;
+  font-size: var(--text-s);
+  color: var(--ink-3);
+}

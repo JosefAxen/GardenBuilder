@@ -1,0 +1,86 @@
+/*
+ * Plantskolan design tokens. Every colour, size, radius and shadow in the app comes from here.
+ * The colour values must match palette.ts (a test checks it). --on-fir-3 is only allowed on --fir.
+ */
+:root {
+  /* Frame: fir green */
+  --fir: #1C392D;
+  --fir-2: #244536;
+  --fir-3: #2F5241;
+  --on-fir: #F3EEE4;
+  --on-fir-2: #C3CEC2;
+  --on-fir-3: #97A99B;
+
+  /* Surfaces: linen */
+  --linen: #F8F4EC;
+  --linen-2: #EFE9DE;
+  --linen-3: #E4DBCC;
+
+  /* Text */
+  --ink: #1E2923;
+  --ink-2: #48544D;
+  --ink-3: #626C65;
+
+  /* Accent: terracotta */
+  --terra: #BC522B;
+  --terra-ink: #9C3F1E;
+  --terra-soft: #F6E2D6;
+
+  /* States */
+  --cut: #2A2420;
+  --warn: #7E520C;
+  --warn-soft: #F5E6C4;
+  --error: #A3392B;
+  --error-soft: #F7E0DA;
+  --white: #FFFFFF;
+
+  /* The 3D window */
+  --scene-top: #EDE3D3;
+  --scene-mid: #E2D5C1;
+  --scene-bottom: #D5C4AA;
+  --scene-ground: radial-gradient(700px 360px at 42% 58%, rgba(255, 248, 236, 0.85), rgba(255, 248, 236, 0) 70%),
+    linear-gradient(180deg, var(--scene-top) 0%, var(--scene-mid) 55%, var(--scene-bottom) 100%);
+
+  /* Lines and hairlines on linen */
+  --hairline: rgba(30, 41, 35, 0.1);
+  --hairline-strong: rgba(30, 41, 35, 0.18);
+  --focus: var(--terra);
+
+  /* Elevation */
+  --lift: 0 1px 2px rgba(40, 30, 15, 0.08), 0 6px 16px -6px rgba(40, 30, 15, 0.16), 0 18px 40px -16px rgba(40, 30, 15, 0.24);
+  --lift-dark: 0 1px 2px rgba(0, 0, 0, 0.25), 0 12px 32px -12px rgba(0, 0, 0, 0.5);
+  --lift-small: 0 1px 2px rgba(40, 30, 15, 0.12), 0 2px 6px -2px rgba(40, 30, 15, 0.12);
+
+  /* Radii */
+  --radius-s: 8px;
+  --radius-m: 12px;
+  --radius-l: 18px;
+  --radius-xl: 22px;
+
+  /* Spacing, a 4 px rhythm */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+
+  /* Type */
+  --font: 'Familjen Grotesk Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --text-xs: 11.5px;
+  --text-s: 12.5px;
+  --text-m: 13.5px;
+  --text-base: 14px;
+  --text-l: 16px;
+  --text-xl: 19px;
+  --text-2xl: 22px;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 650;
+
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --duration: 160ms;
+}
