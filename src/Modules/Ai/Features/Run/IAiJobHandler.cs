@@ -25,6 +25,9 @@ internal sealed record AiTextResult(TextResponse Response, int DurationMs, Money
 internal interface IAiCalls
 {
     Task<AiTextResult> TextAsync(string promptVersion, TextRequest request, CancellationToken cancellationToken);
+
+    /// <summary>One image from the image model, with the same guards and logging as text. Tokens are logged as 0.</summary>
+    Task<ImageResponse> ImageAsync(string promptVersion, ImageRequest request, CancellationToken cancellationToken);
 }
 
 /// <summary>A guard stopped the job before any call; trying again cannot help today.</summary>

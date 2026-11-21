@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace GardenBuilder.IntegrationTests;
 
@@ -31,6 +32,7 @@ public sealed class AiJobRunnerTests(ApiFactory factory) : IClassFixture<ApiFact
         {
             s.AddAiJobRunner();
             s.AddSingleton<ITextModel>(_model);
+            s.AddSingleton<IImageModel>(new TestImageModel(Options.Create(new ImagesOptions { TestDelaySeconds = 0 })));
             s.AddScoped<IAiJobHandler, StepHandler>();
         }));
         using var scope = _app.Services.CreateScope();
@@ -50,6 +52,11 @@ public sealed class AiJobRunnerTests(ApiFactory factory) : IClassFixture<ApiFact
 
     private async Task<Guid> EnqueueAsync(string kind, Guid? gardenId = null) =>
         await With(s => s.GetRequiredService<IAiJobs>().EnqueueAsync(kind, gardenId, null, JsonSerializer.SerializeToElement(new { }), Ct));
+
+    /// <summary>A dream-image job whose stand-in handler makes one image call instead of a text call.</summary>
+    private async Task<Guid> EnqueueImageAsync() =>
+        await With(s => s.GetRequiredService<IAiJobs>().EnqueueAsync(
+            AiJobKinds.DreamImage, Ids.New(), null, JsonSerializer.SerializeToElement(new { image = true }), Ct));
 
     private Task<bool> RunAsync() => With(s => s.GetRequiredService<JobRunner>().RunNextAsync(Ct));
 
@@ -205,6 +212,53 @@ public sealed class AiJobRunnerTests(ApiFactory factory) : IClassFixture<ApiFact
     }
 
     [Fact]
+    public async Task An_image_call_logs_one_row_with_the_test_model_at_no_cost()
+    {
+        var id = await EnqueueImageAsync();
+
+        await RunAsync();
+
+        var job = await JobAsync(id);
+        Assert.Equal(AiJobStatus.Succeeded, job?.Status);
+        Assert.True(job?.Result?.GetProperty("bytes").GetInt32() > 0);
+        var call = Assert.Single(await CallsAsync());
+        Assert.Equal("test-image", call.Model);
+        Assert.Equal("test", call.Provider);
+        Assert.Equal("image-test@1", call.PromptVersion);
+        Assert.Equal("ok", call.Outcome);
+        Assert.Equal(0, call.InputTokens);
+        Assert.Equal(0, call.OutputTokens);
+        Assert.Equal(Money.InSek(0m), call.Cost);
+    }
+
+    [Fact]
+    public async Task An_image_call_for_a_step_that_is_off_is_refused()
+    {
+        var id = await EnqueueImageAsync();
+        await SaveSettingsAsync(AiSettings.Defaults with
+        {
+            Enabled = new Dictionary<string, bool>(AiSettings.Defaults.Enabled) { [AiJobKinds.DreamImage] = false },
+        });
+
+        await RunAsync();
+
+        Assert.Equal(AiGuards.StepOff, (await JobAsync(id))?.Failure);
+        Assert.Empty(await CallsAsync());
+    }
+
+    [Fact]
+    public async Task An_image_call_over_the_daily_budget_is_refused()
+    {
+        var id = await EnqueueImageAsync();
+        await SpendAsync(500m);
+
+        await RunAsync();
+
+        Assert.Equal(AiGuards.BudgetReached, (await JobAsync(id))?.Failure);
+        Assert.Single(await CallsAsync());
+    }
+
+    [Fact]
     public async Task A_model_without_a_price_is_never_called()
     {
         _model.Model = "claude-x";
@@ -309,6 +363,14 @@ public sealed class AiJobRunnerTests(ApiFactory factory) : IClassFixture<ApiFact
 
         public async Task<JsonElement> RunAsync(AiJob job, IAiCalls calls, CancellationToken cancellationToken)
         {
+            if (job.Input.TryGetProperty("image", out _))
+            {
+                using var render = new ImageMagick.MagickImage(ImageMagick.MagickColors.SkyBlue, 64, 48);
+                var image = await calls.ImageAsync(
+                    "image-test@1", new ImageRequest("En trädgård.", render.ToByteArray(ImageMagick.MagickFormat.Png), [], 64, 48), cancellationToken);
+                return JsonSerializer.SerializeToElement(new { bytes = image.Jpeg.Length });
+            }
+
             var result = await calls.TextAsync("step-test@1", new TextRequest(null, "Föreslå en rabatt.", 64), cancellationToken);
             return JsonSerializer.SerializeToElement(new { answer = result.Response.Text });
         }

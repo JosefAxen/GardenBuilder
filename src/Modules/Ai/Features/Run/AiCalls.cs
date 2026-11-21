@@ -15,6 +15,7 @@ internal sealed partial class AiCalls(
     AiJob job,
     JobQueue queue,
     ITextModel model,
+    IImageModel imageModel,
     AiGuards guards,
     CostLog costs,
     AiSettingsStore settings,
@@ -25,6 +26,7 @@ internal sealed partial class AiCalls(
     public const string CutOff = "Svaret från AI:n blev avklippt.";
     public const string Refused = "AI:n avböjde att svara.";
     public const string TimedOut = "Claude svarade inte i tid.";
+    public const string ImageTimedOut = "Bildtjänsten svarade inte i tid.";
 
     /// <summary>The last day the 80 % warning was logged, so it is logged once a day per Worker.</summary>
     private static DateTimeOffset _warnedFor;
@@ -48,13 +50,13 @@ internal sealed partial class AiCalls(
         }
         catch (AiProviderException e)
         {
-            await LogAsync(promptVersion, modelName, started, clock, 0, 0, Money.InSek(0m), "error", e.InnerException?.GetType().Name ?? e.GetType().Name, cancellationToken);
+            await LogAsync(model.Provider, promptVersion, modelName, started, clock, 0, 0, Money.InSek(0m), "error", e.InnerException?.GetType().Name ?? e.GetType().Name, cancellationToken);
             throw;
         }
         catch (OperationCanceledException e) when (!cancellationToken.IsCancellationRequested)
         {
             // Nobody asked to stop, so the provider timed out. Worth another attempt.
-            await LogAsync(promptVersion, modelName, started, clock, 0, 0, Money.InSek(0m), "error", e.GetType().Name, cancellationToken);
+            await LogAsync(model.Provider, promptVersion, modelName, started, clock, 0, 0, Money.InSek(0m), "error", e.GetType().Name, cancellationToken);
             throw new AiProviderException(TimedOut, retryable: true, e);
         }
 
@@ -69,7 +71,7 @@ internal sealed partial class AiCalls(
             _ => "ok",
         };
         var durationMs = await LogAsync(
-            promptVersion, response.Model, started, clock, response.InputTokens, response.OutputTokens, cost, outcome, null, cancellationToken);
+            model.Provider, promptVersion, response.Model, started, clock, response.InputTokens, response.OutputTokens, cost, outcome, null, cancellationToken);
 
         return outcome switch
         {
@@ -79,13 +81,47 @@ internal sealed partial class AiCalls(
         };
     }
 
+    public async Task<ImageResponse> ImageAsync(string promptVersion, ImageRequest request, CancellationToken cancellationToken)
+    {
+        var modelName = imageModel.ModelFor(job.Kind);
+        request = request with { Model = modelName };
+        if (await guards.RefuseCallAsync(job.Kind, modelName, cancellationToken) is { } refusal)
+        {
+            throw new AiJobStoppedException(refusal);
+        }
+
+        await queue.RenewLeaseAsync(job.Id, job.Attempts, cancellationToken);
+        var started = time.GetUtcNow();
+        var clock = Stopwatch.StartNew();
+        ImageResponse response;
+        try
+        {
+            response = await imageModel.EditAsync(request, cancellationToken);
+        }
+        catch (AiProviderException e)
+        {
+            await LogAsync(imageModel.Provider, promptVersion, modelName, started, clock, 0, 0, Money.InSek(0m), "error", e.InnerException?.GetType().Name ?? e.GetType().Name, cancellationToken);
+            throw;
+        }
+        catch (OperationCanceledException e) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Nobody asked to stop, so the provider timed out. Worth another attempt.
+            await LogAsync(imageModel.Provider, promptVersion, modelName, started, clock, 0, 0, Money.InSek(0m), "error", e.GetType().Name, cancellationToken);
+            throw new AiProviderException(ImageTimedOut, retryable: true, e);
+        }
+
+        var cost = AiCost.OfImage(response.Model, pricing.Value) ?? AiCost.OfImage(modelName, pricing.Value) ?? Money.InSek(0m);
+        await LogAsync(imageModel.Provider, promptVersion, response.Model, started, clock, 0, 0, cost, "ok", null, cancellationToken);
+        return response;
+    }
+
     private async Task<int> LogAsync(
-        string promptVersion, string usedModel, DateTimeOffset started, Stopwatch clock, int inputTokens, int outputTokens,
+        string provider, string promptVersion, string usedModel, DateTimeOffset started, Stopwatch clock, int inputTokens, int outputTokens,
         Money cost, string outcome, string? errorType, CancellationToken cancellationToken)
     {
         var durationMs = (int)clock.ElapsedMilliseconds;
         await costs.AddAsync(
-            AiCall.Create(job.Id, promptVersion, model.Provider, usedModel, started, durationMs, inputTokens, outputTokens, cost, outcome, errorType),
+            AiCall.Create(job.Id, promptVersion, provider, usedModel, started, durationMs, inputTokens, outputTokens, cost, outcome, errorType),
             cancellationToken);
         await WarnNearBudgetAsync(cancellationToken);
         return durationMs;
