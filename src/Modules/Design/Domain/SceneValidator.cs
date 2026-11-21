@@ -42,6 +42,21 @@ internal static class SceneValidator
     /// <summary>The largest width or height an existing thing without an article may have, in meters.</summary>
     public const double MaxThingSize = 40;
 
+    public const int MaxViews = 8;
+
+    public const int MaxViewName = 40;
+
+    /// <summary>A view may stand outside the plot, on the street or a neighbour's lawn, but not far away.</summary>
+    public const double ViewTolerance = 10;
+
+    public const double MinEyeHeight = 0.5;
+
+    public const double MaxViewHeight = 30;
+
+    public const double MinFieldOfView = 20;
+
+    public const double MaxFieldOfView = 90;
+
     public static IReadOnlyList<SceneError> Validate(SceneDocument scene)
     {
         ArgumentNullException.ThrowIfNull(scene);
@@ -96,7 +111,39 @@ internal static class SceneValidator
                 .Select(e => new SceneError("outside-plot", e.Id, $"Element {e.Id} lies more than {PlotTolerance} m outside the plot.")));
         }
 
+        errors.AddRange(CheckViews(scene.ViewsOrEmpty, plot));
         return errors;
+    }
+
+    private static IEnumerable<SceneError> CheckViews(IReadOnlyList<SceneView> views, Polygon? plot)
+    {
+        if (views.Count > MaxViews)
+        {
+            yield return new SceneError("too-many-views", null, $"A design may have at most {MaxViews} views; found {views.Count}.");
+            yield break;
+        }
+
+        foreach (var view in views)
+        {
+            var name = view.Name?.Trim() ?? string.Empty;
+            if (name.Length is 0 or > MaxViewName)
+            {
+                yield return new SceneError("bad-view-name", view.Id, $"View {view.Id} needs a name of 1 to {MaxViewName} characters.");
+            }
+            else if (view.Eye.Height is < MinEyeHeight or > MaxViewHeight || view.Target.Height is < 0 or > MaxViewHeight)
+            {
+                yield return new SceneError("bad-view-height", view.Id, $"View {view.Id} has an eye height outside {MinEyeHeight}–{MaxViewHeight} m or a target outside 0–{MaxViewHeight} m.");
+            }
+            else if (view.FieldOfView is < MinFieldOfView or > MaxFieldOfView)
+            {
+                yield return new SceneError("bad-field-of-view", view.Id, $"View {view.Id} has a field of view outside {MinFieldOfView}–{MaxFieldOfView} degrees.");
+            }
+            else if (plot is not null
+                && (plot.DistanceTo(new Point2(view.Eye.X, view.Eye.Y)) > ViewTolerance || plot.DistanceTo(new Point2(view.Target.X, view.Target.Y)) > ViewTolerance))
+            {
+                yield return new SceneError("view-outside-plot", view.Id, $"View {view.Id} stands or looks more than {ViewTolerance} m outside the plot.");
+            }
+        }
     }
 
     private static IEnumerable<Point2> PointsOf(SceneElement element) => element switch

@@ -53,21 +53,21 @@ public sealed class DesignEndpointTests(ApiFactory factory) : IClassFixture<ApiF
     }
 
     [Fact]
-    public async Task Get_returns_garden_id_and_version_2_for_a_stored_version_1_scene()
+    public async Task Get_returns_garden_id_and_version_3_for_a_stored_version_1_scene()
     {
         using var client = IdentityTestHelpers.HttpsClient(factory);
         var id = await CreateAsync(client);
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<GardenBuilder.Modules.Design.Infrastructure.DesignDbContext>();
-            var version1 = SceneJson.Serialize(Scene(10)).Replace("\"formatVersion\":2", "\"formatVersion\":1", StringComparison.Ordinal);
+            var version1 = SceneJson.Serialize(Scene(10)).Replace("\"formatVersion\":3", "\"formatVersion\":1", StringComparison.Ordinal).Replace(",\"views\":[]", "", StringComparison.Ordinal);
             await db.Database.ExecuteSqlAsync($"UPDATE design.designs SET working_copy = {version1}::jsonb WHERE id = {id}", Ct);
         }
 
         var body = await GetAsync(client, id);
 
         Assert.NotEqual(Guid.Empty, body.GetProperty("gardenId").GetGuid());
-        Assert.Equal(2, body.GetProperty("scene").GetProperty("formatVersion").GetInt32());
+        Assert.Equal(3, body.GetProperty("scene").GetProperty("formatVersion").GetInt32());
     }
 
     [Fact]

@@ -9,15 +9,31 @@ namespace GardenBuilder.Contracts.Scenes;
 /// system where +X is east and +Y is north. The ground is flat. TypeScript types and the JSON schema are generated
 /// from these types (npm --prefix src/web run gen:scene).
 /// </summary>
-public sealed record SceneDocument(int FormatVersion, IReadOnlyList<SceneElement> Elements)
+/// <param name="Views">The customer's saved views for dream images; null only in documents read from before version 3,
+/// which reading upgrades to an empty list.</param>
+public sealed record SceneDocument(int FormatVersion, IReadOnlyList<SceneElement> Elements, IReadOnlyList<SceneView>? Views = null)
 {
     /// <summary>Bump when the format changes in a way old documents must be upgraded for.</summary>
-    /// <remarks>Version 2 added form and size for existing things without an article, and the house's colours.</remarks>
-    public const int CurrentFormatVersion = 2;
+    /// <remarks>Version 2 added form and size for existing things without an article, and the house's colours. Version 3
+    /// added saved views.</remarks>
+    public const int CurrentFormatVersion = 3;
+
+    /// <summary>The saved views, empty when there are none.</summary>
+    [JsonIgnore]
+    public IReadOnlyList<SceneView> ViewsOrEmpty => Views ?? [];
 
     /// <summary>The oldest version <see cref="SceneJson.Deserialize"/> still reads and upgrades.</summary>
     public const int OldestReadableFormatVersion = 1;
 }
+
+/// <summary>A point in the scene with a height: x east, y north, height above the ground, all in meters.</summary>
+public sealed record Point3(double X, double Y, double Height);
+
+/// <summary>
+/// A camera view the customer saved, to make a dream image from. <paramref name="FieldOfView"/> is the vertical field of
+/// view in degrees.
+/// </summary>
+public sealed record SceneView(Guid Id, string Name, Point3 Eye, Point3 Target, double FieldOfView);
 
 /// <summary>One thing in the scene. The JSON property "kind" says which type it is.</summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]

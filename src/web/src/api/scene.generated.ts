@@ -9,6 +9,7 @@ export type SurfaceMaterial = "grass" | "paving" | "gravel" | "decking" | "bed";
 export interface SceneDocument {
   formatVersion: number;
   elements: SceneElement[];
+  views?: SceneView[] | null;
 }
 export interface PlotElement {
   kind: "plot";
@@ -63,4 +64,16 @@ export interface PointElement {
   id: string;
   status: ElementStatus;
   measurementSource: MeasurementSource;
+}
+export interface SceneView {
+  id: string;
+  name: string;
+  eye: Point3;
+  target: Point3;
+  fieldOfView: number;
+}
+export interface Point3 {
+  x: number;
+  y: number;
+  height: number;
 }

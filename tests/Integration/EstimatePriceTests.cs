@@ -59,7 +59,7 @@ public sealed class EstimatePriceTests(ApiFactory factory) : IClassFixture<ApiFa
     [Theory]
     [InlineData("not json")]
     [InlineData("null")]
-    [InlineData("{\"formatVersion\":3,\"elements\":[]}")]
+    [InlineData("{\"formatVersion\":4,\"elements\":[]}")]
     [InlineData("{\"formatVersion\":1,\"elements\":[],\"extra\":1}")]
     public async Task Unreadable_body_is_400(string body)
     {

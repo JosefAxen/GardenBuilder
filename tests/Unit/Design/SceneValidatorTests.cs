@@ -70,7 +70,7 @@ public sealed class SceneValidatorTests
     [Fact]
     public void Unknown_format_version_is_an_error()
     {
-        var error = SingleError(ValidScene() with { FormatVersion = 3 });
+        var error = SingleError(ValidScene() with { FormatVersion = 4 });
 
         Assert.Equal("format-version", error.Code);
         Assert.Null(error.ElementId);
@@ -260,5 +260,52 @@ public sealed class SceneValidatorTests
         var scene = SceneJson.Deserialize(json);
 
         Assert.Empty(SceneValidator.Validate(scene));
+    }
+
+    private static SceneView View(string name = "Från altanen", double eyeX = 0, double eyeY = -12, double eyeHeight = 1.7, double fov = 50) =>
+        new(Ids.New(), name, new Point3(eyeX, eyeY, eyeHeight), new Point3(0, 5, 1), fov);
+
+    private static SceneDocument WithViews(params SceneView[] views) => ValidScene() with { Views = views };
+
+    [Fact]
+    public void A_view_nine_meters_outside_the_plot_is_valid()
+    {
+        Assert.Empty(SceneValidator.Validate(WithViews(View(eyeY: -19))));
+    }
+
+    [Fact]
+    public void A_view_eleven_meters_outside_the_plot_is_refused()
+    {
+        Assert.Equal("view-outside-plot", SingleError(WithViews(View(eyeY: -21))).Code);
+    }
+
+    [Fact]
+    public void Nine_views_are_too_many()
+    {
+        Assert.Equal("too-many-views", SingleError(WithViews([.. Enumerable.Range(0, 9).Select(_ => View())])).Code);
+    }
+
+    [Theory]
+    [InlineData("   ")]
+    [InlineData("En vy med ett namn som är alldeles för långt")]
+    public void A_view_needs_a_short_name(string name)
+    {
+        Assert.Equal("bad-view-name", SingleError(WithViews(View(name))).Code);
+    }
+
+    [Theory]
+    [InlineData(0.4)]
+    [InlineData(30.5)]
+    public void A_view_height_must_be_sensible(double height)
+    {
+        Assert.Equal("bad-view-height", SingleError(WithViews(View(eyeHeight: height))).Code);
+    }
+
+    [Theory]
+    [InlineData(19)]
+    [InlineData(91)]
+    public void A_field_of_view_must_be_sensible(double fov)
+    {
+        Assert.Equal("bad-field-of-view", SingleError(WithViews(View(fov: fov))).Code);
     }
 }
