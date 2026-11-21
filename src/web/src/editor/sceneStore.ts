@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Point2, RoofShape, SceneDocument, SceneElement, SurfaceMaterial } from '../api/scene'
+import type { Point2, RoofShape, SceneDocument, SceneElement, SceneView, SurfaceMaterial } from '../api/scene'
 import type { CatalogArticle } from '../api/catalog'
 import { demoScene, stressElements } from './demoScene'
 import { placementProblem } from './placement'
@@ -30,6 +30,9 @@ export type SceneCommand =
   | { type: 'redraw'; id: string; points: Point2[] }
   /** The house's colours and roof, for example as the photos showed them. Null colours are left out. */
   | { type: 'house-look'; id: string; wallColor: string | null; roofColor: string | null; roof: RoofShape }
+  /** A saved camera view for dream images. Check it with viewProblem first. */
+  | { type: 'add-view'; view: SceneView }
+  | { type: 'remove-view'; id: string }
 
 const MIN_CORNERS = 3
 
@@ -114,6 +117,13 @@ export function applyCommand(document: SceneDocument, command: SceneCommand): Sc
         }
         return next.roof === e.roof && next.wallColor === e.wallColor && next.roofColor === e.roofColor ? e : next
       })
+    case 'add-view':
+      return { ...document, views: [...(document.views ?? []), command.view] }
+    case 'remove-view': {
+      const views = document.views ?? []
+      if (!views.some((v) => v.id === command.id)) return document
+      return { ...document, views: views.filter((v) => v.id !== command.id) }
+    }
   }
 }
 
