@@ -288,6 +288,27 @@ public sealed class AiJobRunnerTests(ApiFactory factory) : IClassFixture<ApiFact
     }
 
     [Fact]
+    public async Task Ten_enqueues_at_once_never_pass_the_quota_of_five()
+    {
+        var garden = Ids.New();
+
+        var attempts = await Task.WhenAll(Enumerable.Range(0, 10).Select(async _ =>
+        {
+            try
+            {
+                await EnqueueAsync(AiJobKinds.DreamImage, garden);
+                return true;
+            }
+            catch (AiJobRefusedException e) when (e.Code == "quota-reached")
+            {
+                return false;
+            }
+        }));
+
+        Assert.Equal(AiSettings.Defaults.Quotas[AiJobKinds.DreamImage], attempts.Count(ok => ok));
+    }
+
+    [Fact]
     public async Task Failed_jobs_do_not_count_against_the_quota()
     {
         var garden = Ids.New();

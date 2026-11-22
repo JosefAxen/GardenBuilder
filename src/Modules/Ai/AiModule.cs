@@ -54,7 +54,7 @@ public static class AiModule
     public static IEndpointRouteBuilder MapAiEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGroup("/api/ai").WithTags("Ai").MapAiAdmin();
-        app.MapGroup("/api/gardens").WithTags("Ai").MapPhotoInterpretation().MapDesignProposals();
+        app.MapGroup("/api/gardens").WithTags("Ai").MapPhotoInterpretation().MapDesignProposals().MapDreamImages();
 
         return app;
     }
