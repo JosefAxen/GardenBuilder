@@ -21,6 +21,7 @@ import { boxCenter } from './geometry'
 import { crowdingFootprints, findCrowdedPlants } from './spacing'
 import { lookOf } from './existingLook'
 import { pickTarget } from './selectionCommands'
+import { CaptureBridge } from './dream/CaptureBridge'
 
 // Scene coordinates are (x = east, y = north). In three.js the ground is the XZ plane with -Z as north.
 const toShape = (points: Point2[]) => new Shape(points.map((p) => new Vector2(p.x, p.y)))
@@ -330,20 +331,23 @@ function Scene() {
       {byForm.map(([form, items]) => (
         <FormInstances key={form} form={form} items={items} models={models} detail={detail} onPointerDown={startDrag} />
       ))}
-      <GrowthRings items={placed} crowded={crowded} />
-      {selectedPoint && <SelectionMarker point={selectedPoint} />}
+      {/* Editing helpers: hidden when a view is drawn for a dream image (userData.helper). */}
+      <group userData={{ helper: true }}>
+        <GrowthRings items={placed} crowded={crowded} />
+        {selectedPoint && <SelectionMarker point={selectedPoint} />}
 
-      {ghost && <GrowthRings items={[ghost]} crowded={new Set()} />}
-      {ghost && isPointForm(ghost.article.typeModel) && (
-        <FormInstances form={ghost.article.typeModel} items={[ghost]} models={models} detail={detail} onPointerDown={ignore} />
-      )}
-      {tool.mode === 'line' && tool.start && hover && placeArticle?.geometry === 'line' && (
-        <LineView points={[tool.start, hover]} article={placeArticle} ghost />
-      )}
+        {ghost && <GrowthRings items={[ghost]} crowded={new Set()} />}
+        {ghost && isPointForm(ghost.article.typeModel) && (
+          <FormInstances form={ghost.article.typeModel} items={[ghost]} models={models} detail={detail} onPointerDown={ignore} />
+        )}
+        {tool.mode === 'line' && tool.start && hover && placeArticle?.geometry === 'line' && (
+          <LineView points={[tool.start, hover]} article={placeArticle} ghost />
+        )}
 
-      <ShapeHandles />
-      <CameraPins />
-      <ProposalGhosts />
+        <ShapeHandles />
+        <CameraPins />
+        <ProposalGhosts />
+      </group>
       {view === 'top' && <TopCamera />}
       <OrbitControls
         key={view}
@@ -354,6 +358,7 @@ function Scene() {
         maxPolarAngle={Math.PI / 2.1}
       />
       {measuring && <PerfMeter />}
+      <CaptureBridge />
     </>
   )
 }
