@@ -5,6 +5,7 @@ using GardenBuilder.Modules.Ai.Features.Costs;
 using GardenBuilder.Contracts.Ai;
 using GardenBuilder.Modules.Ai.Features.Admin;
 using GardenBuilder.Modules.Ai.Features.DesignProposals;
+using GardenBuilder.Modules.Ai.Features.DreamImages;
 using GardenBuilder.Modules.Ai.Features.PhotoInterpretation;
 using GardenBuilder.Modules.Ai.Features.Queue;
 using GardenBuilder.Modules.Ai.Features.Run;
@@ -44,6 +45,7 @@ public static class AiModule
         builder.Services.AddScoped<AiGuards>();
         builder.Services.AddScoped<AiJobs>();
         builder.Services.AddScoped<IAiJobs>(services => services.GetRequiredService<AiJobs>());
+        builder.Services.AddScoped<DreamImageStore>();
         builder.Services.Configure<AiPricingOptions>(builder.Configuration.GetSection(AiPricingOptions.Section));
 
         return builder;

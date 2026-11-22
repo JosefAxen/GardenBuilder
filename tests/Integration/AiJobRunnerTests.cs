@@ -33,6 +33,8 @@ public sealed class AiJobRunnerTests(ApiFactory factory) : IClassFixture<ApiFact
             s.AddAiJobRunner();
             s.AddSingleton<ITextModel>(_model);
             s.AddSingleton<IImageModel>(new TestImageModel(Options.Create(new ImagesOptions { TestDelaySeconds = 0 })));
+            // The stand-in step takes the dream-image kind, so the real handler steps aside.
+            s.Remove(s.Single(d => d.ImplementationType == typeof(GardenBuilder.Modules.Ai.Features.DreamImages.DreamImageHandler)));
             s.AddScoped<IAiJobHandler, StepHandler>();
         }));
         using var scope = _app.Services.CreateScope();
