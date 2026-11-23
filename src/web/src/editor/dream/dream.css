@@ -1,0 +1,276 @@
+/* The Drömbild panel. Plantskolan tokens only. */
+
+.dream-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.dream-section__title {
+  margin: 0;
+  font-size: var(--text-l);
+  font-weight: var(--weight-bold);
+  color: var(--ink);
+}
+
+/* ---------- Saved views */
+.dream-views {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dream-view {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  border-radius: var(--radius-m);
+  background: var(--white);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+
+.dream-view__name {
+  min-width: 0;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.dream-view__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.dream-save {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* ---------- Photos and quota */
+.dream-photos {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-m);
+  background: var(--linen-2);
+  cursor: pointer;
+}
+
+.dream-photos input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  accent-color: var(--fir);
+  cursor: pointer;
+}
+
+.dream-photos input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.dream-photos__label {
+  display: block;
+  font-size: var(--text-m);
+  font-weight: var(--weight-semibold);
+  color: var(--ink);
+}
+
+.dream-photos__hint {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--text-s);
+  color: var(--ink-2);
+  line-height: 1.4;
+}
+
+.dream-quota {
+  margin: 0;
+  font-size: var(--text-m);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-2);
+}
+
+/* ---------- Gallery */
+.dream-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dream-card {
+  overflow: hidden;
+  border-radius: var(--radius-l);
+  background: var(--white);
+  box-shadow: inset 0 0 0 1px var(--hairline), var(--lift-small);
+}
+
+.dream-card__picture {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: var(--linen-2);
+  aspect-ratio: 3 / 2;
+}
+
+button.dream-card__picture {
+  cursor: zoom-in;
+}
+
+button.dream-card__picture:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+.dream-card__picture img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dream-card.is-failed .dream-card__picture img {
+  opacity: 0.75;
+}
+
+.dream-card__waiting {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(100deg, var(--linen-2) 30%, var(--linen) 50%, var(--linen-2) 70%);
+  background-size: 300% 100%;
+  animation: dream-waiting 1.6s var(--ease) infinite;
+}
+
+@keyframes dream-waiting {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dream-card__waiting {
+    animation: none;
+  }
+}
+
+.dream-card__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+}
+
+.dream-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.dream-card__badges:empty {
+  display: none;
+}
+
+.dream-card__title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 100%;
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--ink);
+}
+
+.dream-card__date {
+  flex: none;
+  font-size: var(--text-s);
+  font-weight: var(--weight-regular);
+  color: var(--ink-3);
+}
+
+.dream-card__note {
+  margin: 0;
+  font-size: var(--text-s);
+  color: var(--ink-2);
+  line-height: 1.4;
+}
+
+/* ---------- Enlarged image */
+.dream-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: var(--space-6);
+  background: color-mix(in srgb, var(--fir) 82%, transparent);
+}
+
+.dream-overlay__frame {
+  display: flex;
+  flex-direction: column;
+  max-width: min(1200px, 100%);
+  max-height: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: var(--linen);
+  box-shadow: var(--lift-dark);
+}
+
+.dream-overlay__frame img {
+  display: block;
+  min-height: 0;
+  max-width: 100%;
+  object-fit: contain;
+  background: var(--cut);
+}
+
+.dream-overlay__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.dream-overlay__text {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.dream-overlay__text p {
+  margin: 0;
+  font-size: var(--text-m);
+  color: var(--ink-2);
+}
+
+.dream-overlay__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.dream-overlay__actions a {
+  text-decoration: none;
+}
