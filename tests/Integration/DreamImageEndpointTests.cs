@@ -146,7 +146,26 @@ public sealed class DreamImageEndpointTests(ApiFactory factory) : IClassFixture<
         Assert.Equal(jobId, Assert.Single(list!).GetProperty("id").GetGuid());
     }
 
-    public static TheoryData<string> BadRenders => ["jpeg-named-png", "nine-megabytes", "claims-20000-px"];
+    [Fact]
+    public async Task The_download_link_saves_the_image_as_a_file()
+    {
+        // The storage lives on another address than the page, where browsers ignore <a download>, so the link itself
+        // must ask to be saved; otherwise "Ladda ner" replaces the editor with the bare image.
+        var (client, gardenId, designId) = await CustomerWithViewAsync();
+        var jobId = await PostOkAsync(client, gardenId, designId);
+        await RunAsync();
+
+        var job = await client.GetFromJsonAsync<JsonElement>(Dreams(gardenId, $"/{jobId}"), Ct);
+        using var storage = new HttpClient();
+        using var response = await storage.GetAsync(job.GetProperty("downloadUrl").GetString(), Ct);
+
+        response.EnsureSuccessStatusCode();
+        Assert.Equal("attachment", response.Content.Headers.ContentDisposition?.DispositionType);
+        Assert.Equal("drombild.jpg", response.Content.Headers.ContentDisposition?.FileName?.Trim('"'));
+        Assert.Equal("image/jpeg", response.Content.Headers.ContentType?.MediaType);
+    }
+
+    public static TheoryData<string> BadRenders =>["jpeg-named-png", "nine-megabytes", "claims-20000-px"];
 
     [Theory]
     [MemberData(nameof(BadRenders))]

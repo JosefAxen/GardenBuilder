@@ -32,6 +32,7 @@ function image(id: string, status: DreamImage['status'], extra: Partial<DreamIma
     test: false,
     createdAt: '2026-11-22T10:00:00Z',
     imageUrl: status === 'succeeded' ? `https://blob/${id}/image.jpg` : null,
+    downloadUrl: status === 'succeeded' ? `https://blob/${id}/image.jpg?rscd=attachment` : null,
     renderUrl: `https://blob/${id}/render.jpg`,
     failure: status === 'failed' ? 'Bildtjänsten avböjde.' : null,
     ...extra,
@@ -143,7 +144,7 @@ describe('the Drömbild panel', () => {
     await userEvent.click(await screen.findByRole('button', { name: /Visa Från gatan större/ }))
     const dialog = screen.getByRole('dialog')
     expect(within(dialog).getByText('Offerten gäller designen, inte bilden.')).toBeTruthy()
-    expect(within(dialog).getByRole('link', { name: 'Ladda ner' }).getAttribute('href')).toBe('https://blob/ok/image.jpg')
+    expect(within(dialog).getByRole('link', { name: 'Ladda ner' }).getAttribute('href')).toBe('https://blob/ok/image.jpg?rscd=attachment')
 
     await userEvent.keyboard('{Escape}')
 

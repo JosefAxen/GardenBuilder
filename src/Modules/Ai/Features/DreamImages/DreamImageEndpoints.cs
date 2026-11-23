@@ -24,7 +24,7 @@ internal static class DreamImageEndpoints
     public sealed record CodeResponse(string Code);
 
     public sealed record DreamImageResponse(
-        Guid Id, string Status, string ViewName, int Revision, bool Test, DateTimeOffset CreatedAt, Uri? ImageUrl, Uri RenderUrl, string? Failure);
+        Guid Id, string Status, string ViewName, int Revision, bool Test, DateTimeOffset CreatedAt, Uri? ImageUrl, Uri? DownloadUrl, Uri RenderUrl, string? Failure);
 
     public static RouteGroupBuilder MapDreamImages(this RouteGroupBuilder group)
     {
@@ -178,6 +178,7 @@ internal static class DreamImageEndpoints
             result?.Test ?? false,
             job.CreatedAt,
             result is null ? null : store.LinkFor(DreamImageStore.ImageBlob(gardenId, job.Id)),
+            result is null ? null : store.DownloadLinkFor(DreamImageStore.ImageBlob(gardenId, job.Id)),
             store.LinkFor(DreamImageStore.RenderBlob(gardenId, job.Id)),
             job.Status == AiJobStatus.Failed ? job.Failure : null);
     }

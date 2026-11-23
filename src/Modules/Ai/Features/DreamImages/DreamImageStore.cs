@@ -53,4 +53,20 @@ internal sealed class DreamImageStore(BlobServiceClient blobs, TimeProvider time
     /// <summary>A read-only link to one blob that stops working after <see cref="LinkLifetime"/>.</summary>
     public Uri LinkFor(string blobName) =>
         Container.GetBlobClient(blobName).GenerateSasUri(BlobSasPermissions.Read, time.GetUtcNow().Add(LinkLifetime));
+
+    /// <summary>
+    /// Like <see cref="LinkFor"/>, but the storage answers "save as a file". The storage is on another address than the
+    /// page, where browsers ignore &lt;a download&gt;, so the link itself has to ask.
+    /// </summary>
+    public Uri DownloadLinkFor(string blobName)
+    {
+        var sas = new BlobSasBuilder(BlobSasPermissions.Read, time.GetUtcNow().Add(LinkLifetime))
+        {
+            BlobContainerName = ContainerName,
+            BlobName = blobName,
+            Resource = "b",
+            ContentDisposition = "attachment; filename=\"drombild.jpg\"",
+        };
+        return Container.GetBlobClient(blobName).GenerateSasUri(sas);
+    }
 }

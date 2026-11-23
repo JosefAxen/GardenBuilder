@@ -17,6 +17,7 @@ function image(id: string, status: DreamImage['status']): DreamImage {
     test: true,
     createdAt: '2026-11-22T10:00:00Z',
     imageUrl: status === 'succeeded' ? `https://blob/${id}/image.jpg` : null,
+    downloadUrl: null,
     renderUrl: `https://blob/${id}/render.jpg`,
     failure: status === 'failed' ? 'Bildtjänsten avböjde.' : null,
   }

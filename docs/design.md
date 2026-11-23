@@ -258,7 +258,10 @@ kameran, och vanlig kod lägger kartorna på tomten, klipper mot tomtgränsen oc
 Se [designen för fototolkningen](superpowers/specs/2026-11-18-photo-interpretation-design.md). Modell: Claude Sonnet 5.5
 (ett prov 2026-11-18 på fem foton: nästan lika bra som Opus, 0,15 kr och 9 sekunder per foto).
 
-Drömbilden styrs av renderingen från 3D-scenen, så att växterna hamnar där de står i designen.
+Drömbilden styrs av renderingen från 3D-scenen, så att växterna hamnar där de står i designen. Kundens foton skickas
+bara med om kunden låter rutan "Skicka med mina foton" vara ikryssad, och då högst två, tagna åt samma håll som vyn.
+Bildtjänsten är inte vald än: Google och Black Forest Labs jämförs när nycklarna finns, och fram till dess ger ett
+testläge en märkt "Testbild". Se [designen för drömbilden](superpowers/specs/2026-11-21-dream-image-design.md).
 
 **Så blir designförslagen giltiga**
 

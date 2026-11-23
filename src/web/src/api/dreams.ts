@@ -9,6 +9,8 @@ export type DreamImage = {
   test: boolean
   createdAt: string
   imageUrl: string | null
+  /** The same image, but the storage answers "save as a file" (<a download> does not work across addresses). */
+  downloadUrl: string | null
   /** The 3D render the customer saw, shown when the image failed. */
   renderUrl: string
   failure: string | null

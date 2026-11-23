@@ -252,8 +252,8 @@ function DreamOverlay({ image, onClose }: { image: DreamImage; onClose: () => vo
             <p>Offerten gäller designen, inte bilden.</p>
           </div>
           <div className="dream-overlay__actions">
-            {image.imageUrl && (
-              <a className="ui-button ui-button--secondary ui-button--s" href={image.imageUrl} download={`drombild-${image.viewName}.jpg`}>
+            {image.downloadUrl && (
+              <a className="ui-button ui-button--secondary ui-button--s" href={image.downloadUrl} download="drombild.jpg">
                 <Download aria-hidden size={16} strokeWidth={1.9} />
                 Ladda ner
               </a>
