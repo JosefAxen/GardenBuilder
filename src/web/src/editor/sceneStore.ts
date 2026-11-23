@@ -3,6 +3,7 @@ import type { Point2, RoofShape, SceneDocument, SceneElement, SceneView, Surface
 import type { CatalogArticle } from '../api/catalog'
 import { demoScene, stressElements } from './demoScene'
 import { placementProblem } from './placement'
+import { nearPlot } from './dream/viewRules'
 
 /**
  * Editor state. The scene document lives here and React Three Fiber renders from it;
@@ -36,13 +37,21 @@ export type SceneCommand =
 
 const MIN_CORNERS = 3
 
-/** Changes the corners of a plot or a building; everything else is left as it is. */
+/**
+ * Changes the corners of a plot or a building; everything else is left as it is. A new plot also drops the saved views
+ * that are now too far from it, in the same step: the server refuses a design with such a view, so keeping it would
+ * stop every later save. Undo brings the view back together with the old plot.
+ */
 function reshape(document: SceneDocument, id: string, change: (points: Point2[]) => Point2[] | null): SceneDocument {
-  return updateElement(document, id, (e) => {
+  const reshaped = updateElement(document, id, (e) => {
     if (e.kind !== 'plot' && e.kind !== 'building') return e
     const points = change(e.points)
     return points && points.length >= MIN_CORNERS ? { ...e, points } : e
   })
+  const plot = reshaped.elements.find((e) => e.id === id)
+  if (reshaped === document || plot?.kind !== 'plot' || !reshaped.views) return reshaped
+  const views = reshaped.views.filter((v) => nearPlot(v, plot.points))
+  return views.length === reshaped.views.length ? reshaped : { ...reshaped, views }
 }
 
 /**

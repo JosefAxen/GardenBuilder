@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DreamImage } from '../../api/dreams'
 import type { SceneView } from '../../api/scene'
 import { useSaveStore } from '../saveStore'
-import { createDream, FAILED, loadDreams, remaining, setSendPhotos, useDreamStore } from './dreamStore'
+import { createDream, FAILED, freshDream, loadDreams, remaining, setSendPhotos, useDreamStore } from './dreamStore'
 
 const view: SceneView = { id: 'v1', name: 'Från gatan', eye: { x: 10, y: -5, height: 1.7 }, target: { x: 10, y: 10, height: 1 }, fieldOfView: 50 }
 const png = new Blob([new Uint8Array([1])], { type: 'image/png' })
@@ -128,5 +128,49 @@ describe('the dream store', () => {
     expect(useDreamStore.getState().sendPhotos).toBe(true)
     await loadDreams('g3')
     expect(useDreamStore.getState().sendPhotos).toBe(false)
+  })
+
+  it('keeps the links of finished images while it polls, so their pictures are not fetched again', async () => {
+    vi.useFakeTimers()
+    const old = image('old', 'succeeded')
+    useDreamStore.setState({ images: [old] })
+    let call = 0
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
+      if (init?.method === 'POST') return new Response(JSON.stringify({ id: 'job-1' }), { status: 202 })
+      call++
+      // Every answer signs the links anew, as the server does.
+      const again = { ...old, imageUrl: `https://blob/old/image.jpg?sig=${call}`, renderUrl: `https://blob/old/render.jpg?sig=${call}` }
+      return new Response(JSON.stringify([image('job-1', call < 3 ? 'running' : 'succeeded'), again]), { status: 200 })
+    }))
+
+    const done = createDream(view, png)
+    await vi.advanceTimersByTimeAsync(3_000 * 4)
+    await done
+
+    const images = useDreamStore.getState().images
+    expect(images.map((i) => i.id)).toEqual(['job-1', 'old'])
+    expect(images[1]).toBe(old)
+    expect(images[0].status).toBe('succeeded')
+  })
+
+  it('freshDream asks for new links and puts them in the gallery', async () => {
+    const stale = image('ok', 'succeeded')
+    useDreamStore.setState({ images: [stale] })
+    const fresh = { ...stale, imageUrl: 'https://blob/ok/image.jpg?sig=new', downloadUrl: 'https://blob/ok/image.jpg?sig=new&rscd=attachment' }
+    const fetchMock = vi.fn(async (_url: string) => new Response(JSON.stringify(fresh), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await freshDream(stale)
+
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/gardens/g1/dream-images/ok')
+    expect(result.downloadUrl).toBe(fresh.downloadUrl)
+    expect(useDreamStore.getState().images[0].downloadUrl).toBe(fresh.downloadUrl)
+  })
+
+  it('freshDream falls back to the image it had when the call fails', async () => {
+    const stale = image('ok', 'succeeded')
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('', { status: 500 })))
+
+    expect(await freshDream(stale)).toBe(stale)
   })
 })

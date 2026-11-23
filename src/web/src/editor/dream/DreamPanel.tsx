@@ -5,7 +5,7 @@ import type { SceneView } from '../../api/scene'
 import { Badge, Button, Field, IconButton, Notice } from '../../ui'
 import { useSaveStore } from '../saveStore'
 import { useSceneStore } from '../sceneStore'
-import { createDream, FAILED, loadDreams, QUOTA, remaining, removeDream, setSendPhotos, useDreamStore } from './dreamStore'
+import { createDream, FAILED, freshDream, loadDreams, QUOTA, remaining, removeDream, setSendPhotos, useDreamStore } from './dreamStore'
 import { currentView, renderView, showView } from './viewCapture'
 import { viewProblem } from './viewRules'
 import './dream.css'
@@ -36,6 +36,13 @@ export function DreamPanel() {
   const left = remaining(images)
   const saved = saveStatus === 'saved' || saveStatus === 'idle'
   const working = state === 'working'
+
+  /** Opens at once, then swaps in fresh links: the gallery's may be older than their ten minutes. */
+  const enlarge = async (image: DreamImage) => {
+    setOpen(image)
+    const fresh = await freshDream(image)
+    setOpen((current) => (current?.id === fresh.id ? fresh : current))
+  }
 
   const create = async (view: SceneView) => {
     try {
@@ -112,7 +119,7 @@ export function DreamPanel() {
           <ul className="dream-gallery">
             {images.map((image) => (
               <li key={image.id}>
-                <DreamCard image={image} stale={image.revision < revision} onOpen={() => setOpen(image)} />
+                <DreamCard image={image} stale={image.revision < revision} onOpen={() => void enlarge(image)} />
               </li>
             ))}
           </ul>

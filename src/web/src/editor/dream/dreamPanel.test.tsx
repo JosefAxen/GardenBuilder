@@ -47,7 +47,10 @@ function Editor() {
 
 function show(views: SceneView[], images: DreamImage[]) {
   useSceneStore.getState().load({ formatVersion: 3, elements: [plot, tree], views } as SceneDocument)
-  vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(images), { status: 200 })))
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+    const one = images.find((i) => url.endsWith(`/${i.id}`))
+    return new Response(JSON.stringify(one ?? images), { status: 200 })
+  }))
   render(<Editor />)
 }
 
@@ -150,5 +153,19 @@ describe('the Drömbild panel', () => {
 
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(useSceneStore.getState().selectedId).toBe('tree')
+  })
+
+  it('opening an image fetches fresh links, so Ladda ner works after ten minutes', async () => {
+    useSceneStore.getState().load({ formatVersion: 3, elements: [plot, tree], views: [view] } as SceneDocument)
+    const stale = image('ok', 'succeeded')
+    const fresh = { ...stale, downloadUrl: 'https://blob/ok/image.jpg?sig=new&rscd=attachment' }
+    vi.stubGlobal('fetch', vi.fn(async (url: string) =>
+      new Response(JSON.stringify(url.endsWith('/ok') ? fresh : [stale]), { status: 200 })))
+    render(<Editor />)
+
+    await userEvent.click(await screen.findByRole('button', { name: /Visa Från gatan större/ }))
+
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByRole('link', { name: 'Ladda ner' }).getAttribute('href')).toBe(fresh.downloadUrl)
   })
 })

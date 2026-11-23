@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { deleteDream, DreamError, listDreams, startDream, type DreamImage } from '../../api/dreams'
+import { deleteDream, DreamError, getDream, listDreams, startDream, type DreamImage } from '../../api/dreams'
 import type { SceneView } from '../../api/scene'
 import { useSaveStore } from '../saveStore'
 
@@ -62,6 +62,18 @@ export function setSendPhotos(on: boolean): void {
 
 const isDone = (image: DreamImage | undefined) => image?.status === 'succeeded' || image?.status === 'failed'
 
+/**
+ * The new gallery, but an image whose status has not changed keeps the object, and so the links, it already had. Every
+ * answer signs the links anew, and new links would make the browser fetch every picture again on each poll.
+ */
+function merge(before: DreamImage[], after: DreamImage[]): DreamImage[] {
+  const known = new Map(before.map((i) => [i.id, i]))
+  return after.map((i) => {
+    const old = known.get(i.id)
+    return old && old.status === i.status ? old : i
+  })
+}
+
 /** Asks for the gallery every three seconds until the image is done, the garden changes, or it takes too long. */
 async function follow(gardenId: string, jobId: string): Promise<void> {
   set({ state: 'working', message: null })
@@ -72,7 +84,7 @@ async function follow(gardenId: string, jobId: string): Promise<void> {
       if (get().gardenId !== gardenId) return
       const images = await listDreams(gardenId)
       if (get().gardenId !== gardenId) return
-      set({ images })
+      set({ images: merge(get().images, images) })
       const image = images.find((i) => i.id === jobId)
       if (isDone(image)) {
         set(image!.status === 'succeeded' ? { state: 'idle', message: null } : { state: 'failed', message: FAILED })
@@ -123,5 +135,21 @@ export async function removeDream(id: string): Promise<void> {
     set({ images: get().images.filter((i) => i.id !== id), message: null })
   } catch (error) {
     set({ message: error instanceof DreamError ? error.message : FAILED })
+  }
+}
+
+/**
+ * The image with new links, for opening it large or downloading it: the gallery's links may be older than their ten
+ * minutes. Falls back to the image as it was when the call fails.
+ */
+export async function freshDream(image: DreamImage): Promise<DreamImage> {
+  const { gardenId } = get()
+  if (!gardenId) return image
+  try {
+    const fresh = await getDream(gardenId, image.id)
+    if (get().gardenId === gardenId) set({ images: get().images.map((i) => (i.id === fresh.id ? fresh : i)) })
+    return fresh
+  } catch {
+    return image
   }
 }

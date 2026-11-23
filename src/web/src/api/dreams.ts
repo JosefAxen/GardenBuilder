@@ -68,6 +68,11 @@ export async function listDreams(gardenId: string): Promise<DreamImage[]> {
   return (await (await send(dreams(gardenId))).json()) as DreamImage[]
 }
 
+/** One image with freshly signed links; links only work for ten minutes. */
+export async function getDream(gardenId: string, id: string): Promise<DreamImage> {
+  return (await (await send(`${dreams(gardenId)}/${id}`)).json()) as DreamImage
+}
+
 /** Removes a failed image from the gallery. */
 export async function deleteDream(gardenId: string, id: string): Promise<void> {
   await send(`${dreams(gardenId)}/${id}`, { method: 'DELETE' })

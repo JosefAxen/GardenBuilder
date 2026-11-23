@@ -1,4 +1,4 @@
-import type { SceneDocument, SceneView } from '../../api/scene'
+import type { Point2, SceneDocument, SceneView } from '../../api/scene'
 import { distanceToPolygon } from '../geometry'
 
 /** The same limits as SceneValidator on the server. */
@@ -13,6 +13,11 @@ export function viewProblem(view: SceneView, document: SceneDocument): string | 
   const name = view.name.trim()
   if (name.length === 0 || name.length > MAX_NAME) return 'Ge vyn ett namn.'
   const plot = document.elements.find((e) => e.kind === 'plot')
-  if (plot && [view.eye, view.target].some((p) => distanceToPolygon(p, plot.points) > TOLERANCE)) return 'Ställ kameran närmare trädgården.'
+  if (plot && !nearPlot(view, plot.points)) return 'Ställ kameran närmare trädgården.'
   return null
+}
+
+/** Whether the camera stands and looks within the tolerance of the plot, as the server requires. */
+export function nearPlot(view: SceneView, plot: Point2[]): boolean {
+  return [view.eye, view.target].every((p) => distanceToPolygon(p, plot) <= TOLERANCE)
 }

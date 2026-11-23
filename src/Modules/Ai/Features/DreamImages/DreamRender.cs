@@ -12,10 +12,18 @@ internal static class DreamRender
     public const int MaxSide = 4096;
     private const uint Quality = 90;
 
+    private static readonly byte[] PngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+
+    /// <summary>
+    /// Whether the bytes start like a PNG. Checked by plain code before ImageMagick sees the upload, so it never has to
+    /// guess the format of untrusted bytes; its readers for formats such as SVG and MVG can reach files and URLs.
+    /// </summary>
+    public static bool HasPngSignature(ReadOnlySpan<byte> bytes) => bytes.StartsWith(PngSignature);
+
     /// <summary>The render as JPEG, or null when it is not a PNG we accept.</summary>
     public static byte[]? Encode(byte[] bytes)
     {
-        if (bytes.Length == 0 || bytes.Length > MaxBytes)
+        if (bytes.Length > MaxBytes || !HasPngSignature(bytes))
         {
             return null;
         }
@@ -23,7 +31,7 @@ internal static class DreamRender
         MagickImageInfo info;
         try
         {
-            info = new MagickImageInfo(bytes);
+            info = new MagickImageInfo(bytes, new MagickReadSettings { Format = MagickFormat.Png });
         }
         catch (MagickException)
         {
