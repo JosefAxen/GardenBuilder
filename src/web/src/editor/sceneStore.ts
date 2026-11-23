@@ -1,8 +1,9 @@
 import { create } from 'zustand'
-import type { Point2, RoofShape, SceneDocument, SceneElement, SurfaceMaterial } from '../api/scene'
+import type { Point2, RoofShape, SceneDocument, SceneElement, SceneView, SurfaceMaterial } from '../api/scene'
 import type { CatalogArticle } from '../api/catalog'
 import { demoScene, stressElements } from './demoScene'
 import { placementProblem } from './placement'
+import { nearPlot } from './dream/viewRules'
 
 /**
  * Editor state. The scene document lives here and React Three Fiber renders from it;
@@ -30,16 +31,27 @@ export type SceneCommand =
   | { type: 'redraw'; id: string; points: Point2[] }
   /** The house's colours and roof, for example as the photos showed them. Null colours are left out. */
   | { type: 'house-look'; id: string; wallColor: string | null; roofColor: string | null; roof: RoofShape }
+  /** A saved camera view for dream images. Check it with viewProblem first. */
+  | { type: 'add-view'; view: SceneView }
+  | { type: 'remove-view'; id: string }
 
 const MIN_CORNERS = 3
 
-/** Changes the corners of a plot or a building; everything else is left as it is. */
+/**
+ * Changes the corners of a plot or a building; everything else is left as it is. A new plot also drops the saved views
+ * that are now too far from it, in the same step: the server refuses a design with such a view, so keeping it would
+ * stop every later save. Undo brings the view back together with the old plot.
+ */
 function reshape(document: SceneDocument, id: string, change: (points: Point2[]) => Point2[] | null): SceneDocument {
-  return updateElement(document, id, (e) => {
+  const reshaped = updateElement(document, id, (e) => {
     if (e.kind !== 'plot' && e.kind !== 'building') return e
     const points = change(e.points)
     return points && points.length >= MIN_CORNERS ? { ...e, points } : e
   })
+  const plot = reshaped.elements.find((e) => e.id === id)
+  if (reshaped === document || plot?.kind !== 'plot' || !reshaped.views) return reshaped
+  const views = reshaped.views.filter((v) => nearPlot(v, plot.points))
+  return views.length === reshaped.views.length ? reshaped : { ...reshaped, views }
 }
 
 /**
@@ -114,6 +126,13 @@ export function applyCommand(document: SceneDocument, command: SceneCommand): Sc
         }
         return next.roof === e.roof && next.wallColor === e.wallColor && next.roofColor === e.roofColor ? e : next
       })
+    case 'add-view':
+      return { ...document, views: [...(document.views ?? []), command.view] }
+    case 'remove-view': {
+      const views = document.views ?? []
+      if (!views.some((v) => v.id === command.id)) return document
+      return { ...document, views: views.filter((v) => v.id !== command.id) }
+    }
   }
 }
 

@@ -10,6 +10,16 @@
       "items": {
         "$ref": "#/$defs/SceneElement"
       }
+    },
+    "views": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/$defs/SceneView"
+      },
+      "default": null
     }
   },
   "required": [
@@ -337,6 +347,57 @@
           "$ref": "#/$defs/PointElement"
         }
       ]
+    },
+    "Point3": {
+      "title": "Point3",
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "height"
+      ],
+      "additionalProperties": false
+    },
+    "SceneView": {
+      "title": "SceneView",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "eye": {
+          "$ref": "#/$defs/Point3"
+        },
+        "target": {
+          "$ref": "#/$defs/Point3"
+        },
+        "fieldOfView": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "eye",
+        "target",
+        "fieldOfView"
+      ],
+      "additionalProperties": false
     }
   }
 }

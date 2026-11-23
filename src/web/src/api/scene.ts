@@ -10,10 +10,12 @@ export type {
   MeasurementSource,
   PlotElement,
   Point2,
+  Point3,
   PointElement,
   RoofShape,
   SceneDocument,
   SceneElement,
+  SceneView,
   SurfaceElement,
   SurfaceMaterial,
 } from './scene.generated'

@@ -15,7 +15,12 @@ public static class SceneJson
 {
     public static JsonSerializerOptions Options { get; } = CreateOptions();
 
-    public static string Serialize(SceneDocument scene) => JsonSerializer.Serialize(scene, Options);
+    /// <summary>Writes a scene. "views" is always written, as [] when there are none.</summary>
+    public static string Serialize(SceneDocument scene)
+    {
+        ArgumentNullException.ThrowIfNull(scene);
+        return JsonSerializer.Serialize(scene.Views is null ? scene with { Views = [] } : scene, Options);
+    }
 
     /// <summary>Reads a scene. Throws <see cref="JsonException"/> for any malformed input.</summary>
     public static SceneDocument Deserialize(string json)
@@ -41,15 +46,22 @@ public static class SceneJson
         }
 
         // A number like 1e400 overflows to Infinity, which nothing downstream can use and Serialize refuses to write.
-        if (!scene.Elements.All(HasOnlyFiniteNumbers))
+        if (!scene.Elements.All(HasOnlyFiniteNumbers) || !scene.ViewsOrEmpty.All(HasOnlyFiniteNumbers))
         {
             throw new JsonException("A scene can only contain finite numbers.");
         }
 
-        // Version 1 lacks only optional fields, so upgrading it means calling it version 2.
-        return scene.FormatVersion < SceneDocument.CurrentFormatVersion
-            ? scene with { FormatVersion = SceneDocument.CurrentFormatVersion }
-            : scene;
+        if (scene.Views is { } views && views.Any(view => view is null))
+        {
+            throw new JsonException("A scene view cannot be null.");
+        }
+
+        // Versions 1 and 2 lack only optional fields, so upgrading means calling it the current version, with no views.
+        return scene with
+        {
+            FormatVersion = Math.Max(scene.FormatVersion, SceneDocument.CurrentFormatVersion),
+            Views = scene.Views ?? [],
+        };
     }
 
     private static bool HasOnlyFiniteNumbers(SceneElement element) => element switch
@@ -61,6 +73,12 @@ public static class SceneJson
         PointElement point => IsFinite(point.Position) && double.IsFinite(point.Rotation) && IsFinite(point.Width) && IsFinite(point.Height),
         _ => true,
     };
+
+    private static bool HasOnlyFiniteNumbers(SceneView view) =>
+        view.Eye is { } eye && view.Target is { } target
+        && double.IsFinite(eye.X) && double.IsFinite(eye.Y) && double.IsFinite(eye.Height)
+        && double.IsFinite(target.X) && double.IsFinite(target.Y) && double.IsFinite(target.Height)
+        && double.IsFinite(view.FieldOfView);
 
     private static bool IsFinite(Point2 point) => double.IsFinite(point.X) && double.IsFinite(point.Y);
 

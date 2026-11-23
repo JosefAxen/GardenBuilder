@@ -41,7 +41,7 @@ public sealed class SceneJsonTests
 
         var json = SceneJson.Serialize(scene);
 
-        Assert.Contains("\"formatVersion\":2", json, StringComparison.Ordinal);
+        Assert.Contains("\"formatVersion\":3", json, StringComparison.Ordinal);
         Assert.Contains("\"kind\":\"point\"", json, StringComparison.Ordinal);
         Assert.Contains("\"status\":\"existing-keep\"", json, StringComparison.Ordinal);
         Assert.Contains("\"measurementSource\":\"estimated\"", json, StringComparison.Ordinal);
@@ -121,9 +121,9 @@ public sealed class SceneJsonTests
     public void Unsupported_format_version_is_named_in_the_error()
     {
         // A future version may carry fields this version does not know; the error must say "version", not "camera".
-        var error = Assert.Throws<JsonException>(() => SceneJson.Deserialize("""{"formatVersion":3,"elements":[],"camera":{}}"""));
+        var error = Assert.Throws<JsonException>(() => SceneJson.Deserialize("""{"formatVersion":4,"elements":[],"camera":{}}"""));
 
-        Assert.Contains("format version 3", error.Message, StringComparison.Ordinal);
+        Assert.Contains("format version 4", error.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -174,7 +174,7 @@ public sealed class SceneJsonTests
     }
 
     [Fact]
-    public void Version_1_is_read_as_version_2()
+    public void Version_1_is_read_as_version_3()
     {
         const string json = """
             {"formatVersion":1,"elements":[{"kind":"point","id":"019a7d3c-0000-7000-8000-000000000002","status":"existing-keep",
@@ -183,14 +183,8 @@ public sealed class SceneJsonTests
 
         var scene = SceneJson.Deserialize(json);
 
-        Assert.Equal(2, scene.FormatVersion);
+        Assert.Equal(3, scene.FormatVersion);
         Assert.Null(Assert.IsType<PointElement>(Assert.Single(scene.Elements)).Form);
-    }
-
-    [Fact]
-    public void Version_3_is_refused()
-    {
-        Assert.Throws<JsonException>(() => SceneJson.Deserialize("""{"formatVersion":3,"elements":[]}"""));
     }
 
     [Fact]
@@ -223,5 +217,43 @@ public sealed class SceneJsonTests
 
         Assert.DoesNotContain("\"form\"", json, StringComparison.Ordinal);
         Assert.DoesNotContain("\"width\"", json, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Reads_version_2_and_upgrades_to_3_with_no_views()
+    {
+        var json = SceneJson.Serialize(EveryKind() with { FormatVersion = 3, Views = [] }).Replace("\"formatVersion\":3", "\"formatVersion\":2", StringComparison.Ordinal).Replace(",\"views\":[]", "", StringComparison.Ordinal);
+
+        var scene = SceneJson.Deserialize(json);
+
+        Assert.Equal(3, scene.FormatVersion);
+        Assert.NotNull(scene.Views);
+        Assert.Empty(scene.Views);
+    }
+
+    [Fact]
+    public void Round_trips_a_view()
+    {
+        var view = new SceneView(Ids.New(), "Från altanen", new Point3(5, -9, 1.7), new Point3(10, 8, 1), 50);
+        var scene = EveryKind() with { Views = [view] };
+
+        var read = SceneJson.Deserialize(SceneJson.Serialize(scene));
+
+        Assert.Equal(view, Assert.Single(read.ViewsOrEmpty));
+        Assert.Contains("\"views\":[{", SceneJson.Serialize(scene), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Always_writes_views_even_when_none_were_given()
+    {
+        Assert.Contains("\"views\":[]", SceneJson.Serialize(EveryKind()), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Refuses_version_4()
+    {
+        var json = SceneJson.Serialize(EveryKind()).Replace("\"formatVersion\":3", "\"formatVersion\":4", StringComparison.Ordinal);
+
+        Assert.Throws<JsonException>(() => SceneJson.Deserialize(json));
     }
 }

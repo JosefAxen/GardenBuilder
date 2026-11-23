@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type EditorPanel = 'catalog' | 'photos' | 'proposals'
+export type EditorPanel = 'catalog' | 'photos' | 'proposals' | 'dream'
 
 /**
  * What the editor's chrome shows: which panel, whether the price details are open, and the catalogue search.

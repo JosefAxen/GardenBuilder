@@ -383,12 +383,12 @@ The editor is a fixed, full-viewport grid on fir (`100dvh`, minimum width 1024px
 
 - **Header (on fir):** wordmark with save state underneath on the left (a 6px dot before the state text); on the right, the price summary button (label, price span, note), right-aligned, which opens the price details card anchored under it at the right edge (340px wide).
 - **Scene window:** 22px radius, warm scene gradient behind the canvas. Floating inside it with 16px inset:
-  - top left, the **tool rail** (68px wide: Välj, Tomt, Hus, separator, Ångra, Gör om), with the **Ovanifrån / 3D** segmented control beside it and the **side panel** (380px, Foton or Förslag) below that control, all in one column that stops 64px above the bottom;
+  - top left, the **tool rail** (68px wide: Välj, Tomt, Hus, separator, Ångra, Gör om), with the **Ovanifrån / 3D** segmented control beside it and the **side panel** (380px, Foton, Förslag or Drömbild) below that control, all in one column that stops 64px above the bottom;
   - top centre, the **shaping strip** while editing the plot or house outline;
   - top right, the **plant label** (296px) when something is selected;
   - bottom centre, the pill **tool hint** when nothing is selected;
   - along the bottom, the **status line** (removed-count, dev wrench at the far right).
-- **Shelf:** a linen bench with a 276px left side (tabs, search, scrolling category chips that fade out at 85%) separated by a hairline from a horizontally scrolling row of 150px article cards (gap 10px, scroll-snap).
+- **Shelf:** a linen bench with a 344px left side (wide enough for the four tabs Katalog, Foton, Förslag, Drömbild) (tabs, search, scrolling category chips that fade out at 85%) separated by a hairline from a horizontally scrolling row of 150px article cards (gap 10px, scroll-snap).
 
 Spacing follows a **4px rhythm** (4, 8, 12, 16, 20, 24, 32, 40). Floating objects sit 16px from the window edges; panels pad 16–20px; control groups gap 2px inside a 3–6px track.
 
@@ -473,6 +473,8 @@ The bench along the bottom. Each article card is 150px: a 68px media well (12px 
 
 ### Side panel
 380px linen panel with Lift for Foton and Förslag, with a sticky header (19px title, close button). Proposal cards are white inner cards with a title, a reason, a price span and two equal buttons; the tried proposal carries the terracotta ring.
+
+The **Drömbild** panel holds, top to bottom: the saved views (name, an eye icon to show it, a bin to remove it, and an accent "Skapa drömbild" button), the name field with "Spara den här vyn", the photo consent checkbox on a linen-2 block, the quota line, and the gallery. Gallery cards are white inner cards with a 3:2 picture, badges (Inspirationsbild, Testbild, Skapas …), the view name and date, and a quiet note when the design has changed; a failed card shows the faded 3D render, the explanation and a danger "Ta bort". Clicking a finished image opens it large on a fir veil with "Offerten gäller designen, inte bilden.", Ladda ner and Stäng.
 
 ### 3D scene look (`sceneLook.ts`)
 A nursery afternoon in the scene itself: clear colour `scene-top`; hemisphere light from a warm sky (#FFF3E0) to an umber ground (#7A6A4F) at 1.15; a low golden sun (#FFE2B8, intensity 2.1) from the south-west (three.js position −14, 20, 12) casting PCF shadows. Selection is terracotta (ring under a selected plant, glow on surfaces and lines with emissive #5A2410); shaping handles are terracotta with the first corner in fir. Model colours come from the articles and are not tinted by the world. Edge-length labels while shaping are small linen tags (12px semibold).

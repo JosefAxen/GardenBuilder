@@ -42,3 +42,21 @@ so they can be studied.
 
 To rerun before changing `ProposalPrompt` or the model: shape a test garden, open "Förslag", run a round with fixed
 wishes and compare the cards and the 3D view. Raise `ProposalPrompt.Version` with every change.
+
+## Dream image: choosing the image service (not run yet)
+
+The dream image runs in test mode (`Images:Provider = "test"`) until the keys exist. To compare Google and Black Forest
+Labs once they do:
+
+1. Josef sets the keys as user secrets on the Worker, never in appsettings or git:
+   `Images:GoogleApiKey` and `Images:BflApiKey` (the planned names; the two provider adapters are not written yet).
+2. Give every model a price under `Ai:Prices` (`PerImageUsd`) in both the Api and the Worker, or the Worker refuses to
+   start.
+3. Shape a test garden with plants, upload and place two photos, and save the same three views (from the street, from
+   the patio, from above the lawn).
+4. For each provider, set `Images:Provider` and `Images:Model`, restart, and make one image per view with photos and one
+   without. That is 6 images per provider; reset the quota between runs by using a new garden.
+5. Compare side by side: are the plants where the design has them, does the house keep its shape and colour, is
+   anything added that is not in the design, and how close is it to the photos. Note time and cost from the AI call log.
+
+Raise `DreamPrompt.Version` with every prompt change, and keep the photos in `evals/photos/` (git-ignored).

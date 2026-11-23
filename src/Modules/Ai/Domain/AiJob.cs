@@ -50,9 +50,9 @@ internal sealed class AiJob
     public DateTimeOffset? CompletedAt { get; private set; }
 
     public static AiJob Create(
-        string kind, Guid? gardenId, Guid? customerId, Guid? requestedByStaffId, JsonElement input, DateTimeOffset now) => new()
+        string kind, Guid? gardenId, Guid? customerId, Guid? requestedByStaffId, JsonElement input, DateTimeOffset now, Guid? id = null) => new()
     {
-        Id = Ids.New(),
+        Id = id ?? Ids.New(),
         Kind = kind,
         Status = AiJobStatus.Queued,
         Input = input.Clone(),

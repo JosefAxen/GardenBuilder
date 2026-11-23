@@ -13,6 +13,7 @@ internal sealed partial class JobRunner(
     JobQueue queue,
     IEnumerable<IAiJobHandler> handlers,
     ITextModel model,
+    IImageModel imageModel,
     AiGuards guards,
     CostLog costs,
     AiSettingsStore settings,
@@ -39,7 +40,7 @@ internal sealed partial class JobRunner(
             return true;
         }
 
-        var calls = new AiCalls(job, queue, model, guards, costs, settings, pricing, time, logger);
+        var calls = new AiCalls(job, queue, model, imageModel, guards, costs, settings, pricing, time, logger);
         try
         {
             var result = await handler.RunAsync(job, calls, cancellationToken);

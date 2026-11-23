@@ -1,4 +1,4 @@
-import { Images, Layers, LayoutGrid } from 'lucide-react'
+import { Images, Layers, LayoutGrid, Sparkles } from 'lucide-react'
 import { useMemo, useRef } from 'react'
 import { Button, Chip, Notice, SearchField, SegmentedControl } from '../../ui'
 import { useCatalogStore } from '../catalogStore'
@@ -13,6 +13,7 @@ const PANELS: { value: EditorPanel; label: string; icon: typeof LayoutGrid }[] =
   { value: 'catalog', label: 'Katalog', icon: LayoutGrid },
   { value: 'photos', label: 'Foton', icon: Images },
   { value: 'proposals', label: 'Förslag', icon: Layers },
+  { value: 'dream', label: 'Drömbild', icon: Sparkles },
 ]
 
 /**

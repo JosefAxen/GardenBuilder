@@ -210,3 +210,41 @@ describe('load', () => {
     expect(useSceneStore.getInitialState().detail).toBe('high')
   })
 })
+
+describe('saved views when the plot changes shape', () => {
+  // 8 m south of the plot: allowed. After the south edge moves 5 m north it is 13 m away, which the server refuses,
+  // and every later save of the design would fail with no word about why.
+  const street = { id: 'street', name: 'Från gatan', eye: { x: 5, y: -8, height: 1.7 }, target: { x: 5, y: 5, height: 1 }, fieldOfView: 50 }
+  const patio = { id: 'patio', name: 'Från altanen', eye: { x: 5, y: 8, height: 1.7 }, target: { x: 5, y: 9, height: 1 }, fieldOfView: 50 }
+  const withViews: SceneDocument = { ...scene, formatVersion: 3, views: [street, patio] }
+
+  it('drops a view that ends up too far away, and keeps the others', () => {
+    const result = applyCommand(withViews, {
+      type: 'redraw',
+      id: 'plot',
+      points: [{ x: 0, y: 5 }, { x: 10, y: 5 }, { x: 10, y: 10 }, { x: 0, y: 10 }],
+    })
+
+    expect(result.views?.map((v) => v.id)).toEqual(['patio'])
+  })
+
+  it('undo brings the view back with the old plot', () => {
+    useSceneStore.getState().load(withViews)
+    useSceneStore.getState().execute({ type: 'move-point', id: 'plot', index: 0, point: { x: 0, y: 5 } })
+    useSceneStore.getState().execute({ type: 'move-point', id: 'plot', index: 1, point: { x: 10, y: 5 } })
+    expect(useSceneStore.getState().document.views?.map((v) => v.id)).toEqual(['patio'])
+
+    useSceneStore.getState().undo()
+    useSceneStore.getState().undo()
+
+    expect(useSceneStore.getState().document.views?.map((v) => v.id)).toEqual(['street', 'patio'])
+  })
+
+  it('reshaping a building leaves the views alone', () => {
+    const house = { kind: 'building' as const, id: 'house', status: 'existing-keep' as const, measurementSource: 'estimated' as const, height: 5, points: [{ x: 1, y: 6 }, { x: 4, y: 6 }, { x: 4, y: 9 }, { x: 1, y: 9 }] }
+    const document = { ...withViews, elements: [...withViews.elements, house] } as SceneDocument
+    const result = applyCommand(document, { type: 'move-point', id: 'house', index: 0, point: { x: 0, y: 6 } })
+
+    expect(result.views).toBe(document.views)
+  })
+})

@@ -31,6 +31,24 @@ public sealed class AiCostTests
         // 1 000 in and 500 out: 0.004 + 0.01 USD = 0.014 USD = 0.147 kr.
         Assert.Equal(Money.InSek(0.15m), AiCost.Of("claude-opus-5-5", 1_000, 500, Pricing));
     }
+
+    [Fact]
+    public void An_image_costs_its_fixed_price_per_image()
+    {
+        var pricing = new AiPricingOptions
+        {
+            UsdToSek = 10.50m,
+            Prices = new()
+            {
+                ["test-image"] = new ModelPrice { PerImageUsd = 0m },
+                ["image-x"] = new ModelPrice { PerImageUsd = 0.04m },
+            },
+        };
+
+        Assert.Equal(Money.InSek(0m), AiCost.OfImage("test-image", pricing));
+        Assert.Equal(Money.InSek(0.42m), AiCost.OfImage("image-x", pricing));
+        Assert.Null(AiCost.OfImage("image-y", pricing));
+    }
 }
 
 public sealed class AiSettingsTests

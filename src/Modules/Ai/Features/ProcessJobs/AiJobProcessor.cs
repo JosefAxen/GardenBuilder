@@ -15,6 +15,7 @@ namespace GardenBuilder.Modules.Ai.Features.ProcessJobs;
 internal sealed partial class AiJobProcessor(
     IServiceScopeFactory scopes,
     IOptions<AnthropicOptions> anthropic,
+    IOptions<ImagesOptions> images,
     IOptions<AiPricingOptions> pricing,
     ILogger<AiJobProcessor> logger) : BackgroundService
 {
@@ -28,7 +29,7 @@ internal sealed partial class AiJobProcessor(
             LogNoKey(logger);
         }
 
-        foreach (var model in anthropic.Value.AllModels.Where(m => !pricing.Value.HasPrice(m)))
+        foreach (var model in anthropic.Value.AllModels.Concat(images.Value.AllModels).Where(m => !pricing.Value.HasPrice(m)))
         {
             LogNoPrice(logger, model);
         }
