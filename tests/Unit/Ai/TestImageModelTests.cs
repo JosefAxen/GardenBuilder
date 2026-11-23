@@ -45,6 +45,20 @@ public sealed class TestImageModelTests
     }
 
     [Fact]
+    public async Task The_stamp_spells_Testbild_in_block_letters_that_need_no_font()
+    {
+        // 1200×800: border 8, tag at 24, block size 7, letters start two blocks in.
+        var response = await Model().EditAsync(Request(Render(1200, 800)), Ct);
+
+        using var image = new MagickImage(response.Jpeg);
+        var pixels = image.GetPixels();
+        var topOfT = pixels.GetPixel(55, 41).ToColor()!;
+        var besideStemOfT = pixels.GetPixel(41, 62).ToColor()!;
+        Assert.True(topOfT.R > 230 && topOfT.G > 230 && topOfT.B > 230, $"top of T is {topOfT}");
+        Assert.InRange(Math.Abs(besideStemOfT.G - new MagickColor(TestImageModel.BorderColor).G), 0, 24);
+    }
+
+    [Fact]
     public async Task With_TestFailEvery_2_the_second_call_fails_on_purpose()
     {
         var model = Model(failEvery: 2);
