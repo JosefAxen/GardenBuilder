@@ -120,4 +120,91 @@ public sealed class PhotoEncoderTests
     {
         Assert.Null(PhotoEncoder.Encode(Image(100, 100, MagickFormat.Gif)));
     }
+
+    // ImageMagick's readers for SVG and MVG can open local files and URLs, so such uploads must be turned away by plain
+    // code before ImageMagick sees a single byte.
+    private const string Svg =
+        """<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><image href="file:///etc/passwd"/></svg>""";
+
+    private const string Mvg = "push graphic-context\nviewbox 0 0 10 10\nimage over 0,0 10,10 'https://example.com/x.png'\npop graphic-context\n";
+
+    [Theory]
+    [InlineData(Svg)]
+    [InlineData(Mvg)]
+    [InlineData("<?xml version=\"1.0\"?>" + Svg)]
+    public void Svg_and_mvg_are_not_recognised_as_photos(string content)
+    {
+        var bytes = System.Text.Encoding.UTF8.GetBytes(content);
+
+        Assert.Null(PhotoEncoder.DetectFormat(bytes));
+        Assert.Null(PhotoEncoder.Encode(new MemoryStream(bytes)));
+    }
+
+    public static TheoryData<byte[]> TruncatedSignatures =>
+    new()
+    {
+        Array.Empty<byte>(),
+        new byte[] { 0xFF, 0xD8 },
+        new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A },
+        "RIFF\0\0\0\0WEB"u8.ToArray(),
+        "\0\0\0\u0018ftyphei"u8.ToArray(),
+    };
+
+    [Theory]
+    [MemberData(nameof(TruncatedSignatures))]
+    public void A_truncated_signature_is_not_recognised(byte[] bytes)
+    {
+        Assert.Null(PhotoEncoder.DetectFormat(bytes));
+        Assert.Null(PhotoEncoder.Encode(new MemoryStream(bytes)));
+    }
+
+    [Theory]
+    [InlineData("RIFF\0\0\0\0WAVE")]
+    [InlineData("\0\0\0\u0018ftypqt  ")]
+    [InlineData("GIF89a")]
+    public void Lookalike_containers_are_not_recognised(string content)
+    {
+        Assert.Null(PhotoEncoder.DetectFormat(System.Text.Encoding.Latin1.GetBytes(content)));
+    }
+
+    [Theory]
+    [InlineData(MagickFormat.Jpeg, MagickFormat.Jpeg)]
+    [InlineData(MagickFormat.Png, MagickFormat.Png)]
+    [InlineData(MagickFormat.WebP, MagickFormat.WebP)]
+    public void Real_images_are_recognised_by_their_signature(MagickFormat written, MagickFormat detected)
+    {
+        using var stream = Image(20, 20, written);
+
+        Assert.Equal(detected, PhotoEncoder.DetectFormat(stream.ToArray()));
+    }
+
+    [Theory]
+    [InlineData("heic", MagickFormat.Heic)]
+    [InlineData("heix", MagickFormat.Heic)]
+    [InlineData("mif1", MagickFormat.Heic)]
+    [InlineData("avif", MagickFormat.Avif)]
+    public void Heif_brands_are_recognised(string brand, MagickFormat detected)
+    {
+        var bytes = System.Text.Encoding.Latin1.GetBytes("\0\0\0\u0018ftyp" + brand + "\0\0\0\0mif1");
+
+        Assert.Equal(detected, PhotoEncoder.DetectFormat(bytes));
+    }
+
+    [Fact]
+    public void A_png_signature_in_front_of_an_svg_is_refused()
+    {
+        // The decoder is pinned to PNG, so the SVG after the signature is never interpreted as SVG.
+        byte[] bytes = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, .. System.Text.Encoding.UTF8.GetBytes(Svg)];
+
+        Assert.Null(PhotoEncoder.Encode(new MemoryStream(bytes)));
+    }
+
+    [Fact]
+    public void ImageMagick_resource_limits_are_set()
+    {
+        PhotoEncoder.ApplyResourceLimits();
+
+        Assert.Equal(PhotoEncoder.MemoryLimit, ResourceLimits.Memory);
+        Assert.Equal((ulong)PhotoEncoder.MaxPixels, ResourceLimits.Area);
+    }
 }

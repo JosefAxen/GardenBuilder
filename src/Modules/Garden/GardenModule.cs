@@ -34,6 +34,7 @@ public static class GardenModule
         builder.Services.TryAddSingleton(TimeProvider.System);
         builder.Services.AddScoped<IGardens, Gardens>();
         builder.AddAzureBlobServiceClient(ResourceNames.Blobs);
+        PhotoEncoder.ApplyResourceLimits();
         builder.Services.AddScoped<PhotoStore>();
         builder.Services.AddScoped<IGardenPhotos, GardenPhotos>();
 
